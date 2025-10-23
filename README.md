@@ -22,12 +22,33 @@
 
 ## 사용 방법
 
-```bash
-npm install
-npm run dev
-```
+### 사전 준비
 
-`npm run dev` 명령 실행 후 [http://localhost:3000](http://localhost:3000)에서 페이지를 확인할 수 있습니다.
+- **Node.js 18.17 이상**(또는 20.x LTS)과 함께 설치되는 npm이 필요합니다.  
+  설치 후에는 아래 명령으로 버전을 확인해주세요.
+  ```bash
+  node -v
+  npm -v
+  ```
+
+### 실행 절차
+
+1. 프로젝트 루트에서 의존성을 설치합니다.
+   ```bash
+   npm install
+   ```
+2. 개발 서버를 실행합니다.
+   ```bash
+   npm run dev
+   ```
+3. 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 페이지를 확인합니다.
+
+### 문제 해결
+
+- `npm run dev` 실행 시 `"next"은(는) 내부 또는 외부 명령이 아닙니다.` 라는 메시지가 출력된다면,
+  1) `node_modules` 폴더가 있는지 확인하고, 없다면 `npm install`이 실패한 것입니다. 오류 메시지를 확인한 뒤 네트워크/프록시 설정을 조정하거나 다시 실행해주세요.
+  2) `node_modules`가 있는데도 동일한 오류가 뜬다면 `npm install` 과정에서 손상되었을 가능성이 있으므로 `rm -rf node_modules package-lock.json` 후 다시 설치해 주세요.
+  스크립트는 로컬 `node_modules/next/dist/bin/next`를 직접 호출하도록 되어 있어, 의존성 설치가 정상적으로 완료되면 Windows에서도 바로 실행됩니다.
 
 ## GitHub에 업로드하기
 
