@@ -49,6 +49,13 @@
   1) `node_modules` 폴더가 있는지 확인하고, 없다면 `npm install`이 실패한 것입니다. 오류 메시지를 확인한 뒤 네트워크/프록시 설정을 조정하거나 다시 실행해주세요.
   2) `node_modules`가 있는데도 동일한 오류가 뜬다면 `npm install` 과정에서 손상되었을 가능성이 있으므로 `rm -rf node_modules package-lock.json` 후 다시 설치해 주세요.
   스크립트는 로컬 `node_modules/next/dist/bin/next`를 직접 호출하도록 되어 있어, 의존성 설치가 정상적으로 완료되면 Windows에서도 바로 실행됩니다.
+- **변경 사항을 즉시 확인하고 싶다면 `npm run dev`를 사용하세요.** 개발 서버는 HMR(Hot Module Replacement)을 지원하므로 저장 후 브라우저를 새로고침하지 않아도 화면이 자동으로 갱신됩니다. `npm run start`는 배포 모드이기 때문에 변경 내용을 볼 때마다 `npm run build`를 다시 실행해야 하고, 실행 중인 서버도 재시작해야 합니다.
+- Windows에서 `npm run dev`를 사용하다 포트가 남아 있는 오류가 발생하면 `Ctrl + C`로 서버를 종료한 뒤 새 터미널을 열어 다시 실행하거나, `netstat -ano | find "3000"`으로 포트를 사용하는 프로세스를 확인하고 강제로 종료해 주세요.
+
+### Git 상태 메시지 이해하기
+
+- `git status`에 `modified: tsconfig.json`이 보인다면 로컬에서 TypeScript 옵션을 바꾼 상태입니다. 프로젝트 기본 설정을 유지하고 싶다면 `git restore tsconfig.json`으로 되돌리고, 변경 사항을 유지하려면 적절한 커밋 메시지와 함께 커밋하세요.
+- `package-lock.json`이 `Untracked file`로 나타나는 경우는 `npm install` 후 생성된 잠금 파일이 아직 Git에 추가되지 않았기 때문입니다. 저장소에 잠금 파일을 포함하려면 `git add package-lock.json` 후 커밋하고, 기존 상태로 되돌리고 싶다면 `git clean -f package-lock.json`으로 삭제할 수 있습니다.
 
 ## GitHub에 업로드하기
 
