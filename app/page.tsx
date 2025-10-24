@@ -1,5 +1,8 @@
+'use client';
+
 import Image from 'next/image';
 import { Leaf, PenLine, ArrowRight, Instagram, Send } from 'lucide-react';
+import { FormEvent, useState, useTransition } from 'react';
 
 const featuredPosts = [
   {
@@ -47,6 +50,106 @@ const categories = [
 ];
 
 const socialPlaceholders = Array.from({ length: 6 });
+
+function NewsletterForm() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const pending = isPending || isSubmitting;
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (pending) {
+      return;
+    }
+    const emailToSubmit = email.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(emailToSubmit)) {
+      setStatus('error');
+      setMessage('유효한 이메일 주소를 입력해주세요.');
+      return;
+    }
+
+    setStatus('idle');
+    setMessage('');
+    setIsSubmitting(true);
+
+    void (async () => {
+      try {
+        const response = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email: emailToSubmit })
+        });
+
+        const data = await response.json();
+
+        startTransition(() => {
+          if (!response.ok) {
+            setStatus('error');
+            setMessage(data?.message ?? '구독에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            return;
+          }
+
+          setEmail('');
+          setStatus('success');
+          setMessage(data?.message ?? '구독이 완료되었습니다. 감사합니다!');
+        });
+      } catch (error) {
+        startTransition(() => {
+          setStatus('error');
+          setMessage('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-2">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <input
+            type="email"
+            name="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="이메일 주소"
+            required
+            autoComplete="email"
+            className="w-full rounded-full px-5 py-3 text-sm text-soop-ink focus:outline-none focus:ring-2 focus:ring-soop-leaf disabled:opacity-60"
+            disabled={pending}
+          />
+        </div>
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm text-soop-forest font-semibold transition disabled:cursor-not-allowed disabled:opacity-70"
+          disabled={pending}
+          aria-busy={pending}
+        >
+          {pending ? '구독 중...' : '구독하기'}
+          {!pending && <Send className="w-4 h-4" />}
+        </button>
+      </div>
+      {message && (
+        <p
+          className={`text-xs ${status === 'success' ? 'text-white/80' : 'text-rose-100'}`}
+          role={status === 'error' ? 'alert' : undefined}
+          aria-live="polite"
+        >
+          {message}
+        </p>
+      )}
+    </form>
+  );
+}
 
 export default function HomePage() {
   return (
@@ -216,17 +319,7 @@ export default function HomePage() {
               식물 진단 리포트, 숲과 사람의 인터뷰, 그리고 기술이 만난 현장을 모아 매달 전해드립니다.
             </p>
           </div>
-          <form className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
-            <input
-              type="email"
-              placeholder="이메일 주소"
-              className="flex-1 rounded-full px-5 py-3 text-sm text-soop-ink focus:outline-none focus:ring-2 focus:ring-soop-leaf"
-            />
-            <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm text-soop-forest font-semibold">
-              구독하기
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
+          <NewsletterForm />
         </div>
       </section>
 
