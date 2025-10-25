@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { Leaf, PenLine, ArrowRight, Instagram, Send } from 'lucide-react';
 import { FormEvent, useState, useTransition } from 'react';
 
@@ -166,9 +167,9 @@ export default function HomePage() {
         </div>
 
         <nav className="flex flex-wrap items-center gap-4 text-sm text-soop-mist">
-          <a className="hover:text-soop-canopy transition-colors" href="#categories">
+          <Link className="hover:text-soop-canopy transition-colors" href="/wildflower-journal">
             야생화 일기
-          </a>
+          </Link>
           <a className="hover:text-soop-canopy transition-colors" href="#latest">
             나무의사 노트
           </a>
