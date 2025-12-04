@@ -375,8 +375,84 @@ export default function TreeDiagnoseDetail() {
           </button>
         </div>
 
+        {/* 댓글 섹션 */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-[#26422E] mb-6">댓글 8개</h2>
+
+          {/* 댓글 작성 폼 */}
+          <div className="bg-white rounded-xl p-6 mb-6 border border-gray-200">
+            <textarea
+              placeholder="댓글을 입력하세요..."
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none mb-3"
+            />
+            <div className="flex justify-end">
+              <button className="px-6 py-2 rounded-lg bg-amber-700 text-white font-semibold hover:bg-amber-800 transition-colors">
+                댓글 작성
+              </button>
+            </div>
+          </div>
+
+          {/* 댓글 목록 */}
+          <div className="space-y-4">
+            {/* 샘플 댓글 1 */}
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-amber-700 font-semibold">박</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-semibold text-gray-800">박수목</span>
+                    <span className="text-xs text-gray-500">2025-10-16</span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">
+                    전문적인 진단과 처방 내용이 정말 인상적입니다. 저희 동네 느티나무도 비슷한 증상이 있는데 도움이 많이 되었어요.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 샘플 댓글 2 */}
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-amber-700 font-semibold">최</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-semibold text-gray-800">최나무</span>
+                    <span className="text-xs text-gray-500">2025-10-15</span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">
+                    토양 개선으로 이렇게 빠른 회복이 가능하군요. 나무의사님의 세심한 처치 덕분이겠죠. 감사합니다!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 샘플 댓글 3 */}
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-amber-700 font-semibold">정</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-semibold text-gray-800">정산림</span>
+                    <span className="text-xs text-gray-500">2025-10-15</span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">
+                    나무진단 사례를 이렇게 자세히 공유해주셔서 감사합니다. 많은 분들에게 도움이 될 것 같아요.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* 하단 네비게이션 */}
-        <div className="border-t border-gray-200 pt-8">
+        <div className="border-t border-gray-200 pt-8 mt-12">
           <button
             onClick={() => router.push('/tree-diagnose')}
             className="w-full py-4 rounded-xl bg-white border-2 border-amber-700 text-amber-700 font-semibold hover:bg-amber-700 hover:text-white transition-colors"

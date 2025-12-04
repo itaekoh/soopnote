@@ -490,8 +490,84 @@ export default function ColumnDetail() {
           </button>
         </div>
 
+        {/* 댓글 섹션 */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-[#26422E] mb-6">댓글 15개</h2>
+
+          {/* 댓글 작성 폼 */}
+          <div className="bg-white rounded-xl p-6 mb-6 border border-gray-200">
+            <textarea
+              placeholder="댓글을 입력하세요..."
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none mb-3"
+            />
+            <div className="flex justify-end">
+              <button className="px-6 py-2 rounded-lg bg-purple-700 text-white font-semibold hover:bg-purple-800 transition-colors">
+                댓글 작성
+              </button>
+            </div>
+          </div>
+
+          {/* 댓글 목록 */}
+          <div className="space-y-4">
+            {/* 샘플 댓글 1 */}
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-purple-700 font-semibold">강</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-semibold text-gray-800">강도시</span>
+                    <span className="text-xs text-gray-500">2025-10-19</span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">
+                    회색 도시를 초록으로 바꾸는 작은 실천들이 모여 큰 변화를 만든다는 말에 공감합니다. 저도 베란다 정원부터 시작해볼게요!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 샘플 댓글 2 */}
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-purple-700 font-semibold">윤</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-semibold text-gray-800">윤숲길</span>
+                    <span className="text-xs text-gray-500">2025-10-18</span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">
+                    싱가포르와 밀라노 사례가 정말 인상적이네요. 우리나라 도시들도 더 많은 녹지를 확보했으면 좋겠어요.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 샘플 댓글 3 */}
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-purple-700 font-semibold">서</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-semibold text-gray-800">서환경</span>
+                    <span className="text-xs text-gray-500">2025-10-18</span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">
+                    좋은 글 감사합니다. 도시 숲의 중요성을 다시 한번 깨닫게 되네요. 우리 아파트 공동체 정원 프로젝트에 참여해봐야겠어요.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* 하단 네비게이션 */}
-        <div className="border-t border-gray-200 pt-8">
+        <div className="border-t border-gray-200 pt-8 mt-12">
           <button
             onClick={() => router.push('/column')}
             className="w-full py-4 rounded-xl bg-white border-2 border-purple-700 text-purple-700 font-semibold hover:bg-purple-700 hover:text-white transition-colors"

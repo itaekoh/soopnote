@@ -103,8 +103,84 @@ export default function WildflowerDetail() {
             </button>
           </div>
 
+          {/* 댓글 섹션 */}
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-[#26422E] mb-6">댓글 12개</h2>
+
+            {/* 댓글 작성 폼 */}
+            <div className="bg-white rounded-xl p-6 mb-6 border border-gray-200">
+              <textarea
+                placeholder="댓글을 입력하세요..."
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none mb-3"
+              />
+              <div className="flex justify-end">
+                <button className="px-6 py-2 rounded-lg bg-green-700 text-white font-semibold hover:bg-green-800 transition-colors">
+                  댓글 작성
+                </button>
+              </div>
+            </div>
+
+            {/* 댓글 목록 */}
+            <div className="space-y-4">
+              {/* 샘플 댓글 1 */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-green-700 font-semibold">홍</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold text-gray-800">홍길동</span>
+                      <span className="text-xs text-gray-500">2025-10-13</span>
+                    </div>
+                    <p className="text-gray-700 leading-relaxed">
+                      정말 아름다운 꽃이네요. 저도 이번 주말에 그곳에 가볼까 합니다. 혹시 찾아가기 어렵지 않나요?
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 샘플 댓글 2 */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-green-700 font-semibold">김</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold text-gray-800">김철수</span>
+                      <span className="text-xs text-gray-500">2025-10-13</span>
+                    </div>
+                    <p className="text-gray-700 leading-relaxed">
+                      현호색에 대한 자세한 설명 감사합니다. 계절에 맞지 않게 피어난 이유가 궁금했는데 도움이 되었어요!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 샘플 댓글 3 */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-green-700 font-semibold">이</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold text-gray-800">이영희</span>
+                      <span className="text-xs text-gray-500">2025-10-12</span>
+                    </div>
+                    <p className="text-gray-700 leading-relaxed">
+                      사진으로 보는 것보다 실제로 보면 더 예쁘겠어요. 좋은 기록 남겨주셔서 감사합니다 :)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* 하단 네비게이션 */}
-          <div className="border-t border-gray-200 pt-8">
+          <div className="border-t border-gray-200 pt-8 mt-12">
             <Link
               href="/wildflower"
               className="block w-full py-4 rounded-xl bg-white border-2 border-green-700 text-green-700 font-semibold hover:bg-green-700 hover:text-white transition-colors text-center"
