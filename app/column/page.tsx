@@ -1,79 +1,102 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BookOpen, Calendar, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { getCategoryBySlug } from '@/lib/api/categories';
+import { getPosts } from '@/lib/api/posts';
+import type { PostFull } from '@/lib/types/database.types';
 
 export default function ColumnList() {
-  const posts = [
-    {
-      id: 1,
-      title: '도시의 회색 숲을 초록으로 물들이는 방법',
-      excerpt: '아침 지하철을 타고 도심으로 향하는 길. 창밖으로 흘러가는 것은 무채색의 건물들과 콘크리트로 채워진 거리뿐이다.',
-      date: '2025-10-18',
-      readTime: '5분',
-      views: 512,
-      category: '도시숲',
-      emoji: '🌆',
-      gradient: 'from-slate-100 via-gray-100 to-green-100',
-    },
-    {
-      id: 2,
-      title: '기후변화 시대, 나무가 우리에게 말하는 것들',
-      excerpt: '봄이 점점 빨리 오고, 가을은 점점 늦게 찾아온다. 나무들이 들려주는 기후변화의 신호를 읽어본다.',
-      date: '2025-10-10',
-      readTime: '7분',
-      views: 687,
-      category: '환경',
-      emoji: '🌡️',
-      gradient: 'from-orange-100 via-red-100 to-purple-100',
-    },
-    {
-      id: 3,
-      title: '우리 동네 가로수가 중요한 진짜 이유',
-      excerpt: '매일 지나치는 가로수. 그저 풍경의 일부로만 생각했던 나무들이 실은 우리 삶에 얼마나 중요한 역할을 하는지.',
-      date: '2025-10-01',
-      readTime: '4분',
-      views: 423,
-      category: '일상',
-      emoji: '🌳',
-      gradient: 'from-green-100 via-lime-100 to-yellow-100',
-    },
-    {
-      id: 4,
-      title: '산림욕의 과학: 숲이 주는 치유의 힘',
-      excerpt: '숲에 들어가면 마음이 편안해지는 이유는 단순히 기분 탓이 아니다. 과학적으로 증명된 산림욕의 효과.',
-      date: '2025-09-24',
-      readTime: '6분',
-      views: 789,
-      category: '건강',
-      emoji: '🧘',
-      gradient: 'from-teal-100 via-cyan-100 to-sky-100',
-    },
-    {
-      id: 5,
-      title: '정원 가꾸기가 정신건강에 미치는 영향',
-      excerpt: '흙을 만지고 식물을 가꾸는 단순한 행위가 우울증과 불안을 줄이고 행복감을 높인다는 연구 결과들.',
-      date: '2025-09-15',
-      readTime: '5분',
-      views: 534,
-      category: '정원',
-      emoji: '🌱',
-      gradient: 'from-lime-100 via-green-100 to-emerald-100',
-    },
-    {
-      id: 6,
-      title: '나무의사라는 직업: 나무를 치료하는 사람들',
-      excerpt: '사람을 치료하는 의사가 있듯이, 나무를 전문적으로 진단하고 치료하는 나무의사라는 직업이 있다.',
-      date: '2025-09-08',
-      readTime: '8분',
-      views: 612,
-      category: '직업',
-      emoji: '👨‍⚕️',
-      gradient: 'from-blue-100 via-indigo-100 to-purple-100',
-    },
-  ];
+  const [posts, setPosts] = useState<PostFull[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+
+  useEffect(() => {
+    console.log('🔄 [STATE] loading:', loading, 'posts.length:', posts.length);
+  }, [loading, posts]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchData = async () => {
+      console.log('=== 칼럼 로딩 시작 ===');
+      try {
+        const category = await getCategoryBySlug('column');
+        console.log('카테고리 조회 결과:', category);
+
+        if (!category) {
+          console.error('✗ 칼럼 카테고리를 찾을 수 없습니다.');
+          if (!cancelled) {
+            console.log('📝 [BEFORE] setLoading(false) - no category');
+            setLoading(false);
+          }
+          return;
+        }
+
+        const result = await getPosts({
+          category_id: category.id,
+          status: 'published',
+          page: 1,
+          limit: 20,
+        });
+        console.log('게시글 조회 결과:', result);
+
+        if (!cancelled) {
+          console.log('📝 [BEFORE] setPosts:', result.data.length, '개');
+          console.log('📝 [BEFORE] setLoading(false)');
+          setPosts(result.data);
+          setTotalCount(result.total);
+          setLoading(false);
+          console.log('✓ 로딩 완료:', result.data.length, '개');
+        } else {
+          console.log('⚠️ 요청 취소됨 - 상태 업데이트 스킵');
+        }
+      } catch (error: any) {
+        console.error('✗ 게시글 로딩 실패:', error);
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      console.log('🧹 컴포넌트 cleanup');
+      cancelled = true;
+    };
+  }, []);
+
+  // 이미지가 있으면 이미지, 없으면 그라데이션 사용
+  const getPostBackground = (post: PostFull, index: number) => {
+    if (post.featured_image_url) {
+      return {
+        type: 'image' as const,
+        value: post.featured_image_url,
+      };
+    }
+
+    // 그라데이션 색상 배열
+    const gradients = [
+      'from-slate-100 via-gray-100 to-green-100',
+      'from-orange-100 via-red-100 to-purple-100',
+      'from-green-100 via-lime-100 to-yellow-100',
+      'from-teal-100 via-cyan-100 to-sky-100',
+      'from-lime-100 via-green-100 to-emerald-100',
+      'from-blue-100 via-indigo-100 to-purple-100',
+    ];
+
+    return {
+      type: 'gradient' as const,
+      value: gradients[index % gradients.length],
+    };
+  };
+
+  // 이모지 배열
+  const emojis = ['📝', '🌍', '🌳', '💚', '🌱', '✨', '📚', '🍃', '🌿', '💭'];
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#F5F3EE_0%,#F8FAF8_60%)] text-gray-800">
@@ -94,7 +117,7 @@ export default function ColumnList() {
         {/* 필터/정렬 */}
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
           <div className="text-sm text-gray-600">
-            총 <span className="font-semibold text-purple-700">{posts.length}</span>개의 칼럼
+            총 <span className="font-semibold text-purple-700">{totalCount}</span>개의 칼럼
           </div>
           <div className="flex gap-2">
             <button className="px-4 py-2 text-sm rounded-lg bg-purple-700 text-white">최신순</button>
@@ -103,65 +126,99 @@ export default function ColumnList() {
           </div>
         </div>
 
+        {/* 로딩 상태 */}
+        {loading && (
+          <div className="text-center py-20">
+            <div className="text-gray-600">게시글을 불러오는 중...</div>
+          </div>
+        )}
+
+        {/* 게시물 없음 */}
+        {!loading && posts.length === 0 && (
+          <div className="text-center py-20">
+            <div className="text-gray-600 mb-4">아직 칼럼이 없습니다.</div>
+            <p className="text-sm text-gray-500">첫 번째 칼럼을 작성해보세요!</p>
+          </div>
+        )}
+
         {/* 게시물 목록 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map((post) => (
-            <Link key={post.id} href={`/column/${post.id}`}>
-              <article className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer">
-                {/* 썸네일 */}
-                <div className={`h-48 bg-gradient-to-br ${post.gradient} flex items-center justify-center relative`}>
-                  <div className="text-center">
-                    <div className="text-6xl mb-2">{post.emoji}</div>
-                  </div>
-                  <div className="absolute top-3 right-3 px-3 py-1 text-xs rounded-full font-medium bg-white/80 backdrop-blur-sm text-gray-700">
-                    {post.readTime} 읽기
-                  </div>
-                </div>
+        {!loading && posts.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {posts.map((post, index) => {
+              const background = getPostBackground(post, index);
+              const emoji = emojis[index % emojis.length];
 
-                {/* 콘텐츠 */}
-                <div className="p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="px-2 py-1 text-xs rounded bg-purple-50 text-purple-700 font-medium">
-                      {post.category}
+              return (
+                <Link key={post.id} href={`/column/${post.id}`}>
+                  <article className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer">
+                    {/* 썸네일 */}
+                    {background.type === 'image' ? (
+                      <div
+                        className="h-48 bg-cover bg-center relative"
+                        style={{ backgroundImage: `url(${background.value})` }}
+                      >
+                        {post.read_time && (
+                          <div className="absolute top-3 right-3 px-3 py-1 text-xs rounded-full font-medium bg-white/80 backdrop-blur-sm text-gray-700">
+                            {post.read_time} 읽기
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className={`h-48 bg-gradient-to-br ${background.value} flex items-center justify-center relative`}>
+                        <div className="text-center">
+                          <div className="text-6xl mb-2">{emoji}</div>
+                        </div>
+                        {post.read_time && (
+                          <div className="absolute top-3 right-3 px-3 py-1 text-xs rounded-full font-medium bg-white/80 backdrop-blur-sm text-gray-700">
+                            {post.read_time} 읽기
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 콘텐츠 */}
+                    <div className="p-5">
+                      <h3 className="font-bold text-lg text-[#26422E] mb-2 line-clamp-2 leading-snug">
+                        {post.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
+                        {post.excerpt}
+                      </p>
+
+                      {/* 메타 정보 */}
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{post.published_date}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Eye className="w-3 h-3" />
+                          <span>{post.view_count}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <h3 className="font-bold text-lg text-[#26422E] mb-2 line-clamp-2 leading-snug">
-                    {post.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-                    {post.excerpt}
-                  </p>
 
-                  {/* 메타 정보 */}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>{post.date}</span>
+                    {/* 하단 태그 */}
+                    <div className="px-5 pb-4">
+                      <div className="inline-block px-3 py-1 text-xs rounded-full bg-purple-50 text-purple-700 font-medium">
+                        칼럼
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      <span>{post.views}</span>
-                    </div>
-                  </div>
-                </div>
+                  </article>
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
-                {/* 하단 태그 */}
-                <div className="px-5 pb-4">
-                  <div className="inline-block px-3 py-1 text-xs rounded-full bg-purple-50 text-purple-700 font-medium">
-                    칼럼
-                  </div>
-                </div>
-              </article>
-            </Link>
-          ))}
-        </div>
-
-        {/* 더보기 버튼 */}
-        <div className="mt-12 text-center">
-          <button className="px-8 py-3 rounded-lg bg-white border-2 border-purple-700 text-purple-700 font-semibold hover:bg-purple-700 hover:text-white transition-colors">
-            더 많은 칼럼 보기
-          </button>
-        </div>
+        {/* 더보기 버튼 - 추후 페이지네이션 구현 */}
+        {!loading && posts.length > 0 && totalCount > posts.length && (
+          <div className="mt-12 text-center">
+            <button className="px-8 py-3 rounded-lg bg-white border-2 border-purple-700 text-purple-700 font-semibold hover:bg-purple-700 hover:text-white transition-colors">
+              더 많은 칼럼 보기
+            </button>
+          </div>
+        )}
       </section>
 
       <Footer />

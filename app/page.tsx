@@ -1,28 +1,13 @@
 import { Leaf } from 'lucide-react';
 import Link from 'next/link';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#F5F3EE_0%,#F8FAF8_60%)] text-gray-800">
       {/* 상단 헤더 */}
-      <header className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-sm flex items-center justify-center shadow-sm">
-            <Leaf className="w-7 h-7 text-green-700" strokeWidth={1.8} />
-          </div>
-          <div>
-            <div className="text-lg font-semibold">soopnote</div>
-            <div className="text-xs text-gray-500 -mt-0.5">plant journal & tree doctor</div>
-          </div>
-        </Link>
-
-        <nav className="flex items-center gap-6">
-          <Link className="text-sm hover:text-green-700" href="/wildflower">야생화 일지</Link>
-          <Link className="text-sm hover:text-green-700" href="/tree-diagnose">나무진단</Link>
-          <Link className="text-sm hover:text-green-700" href="/column">칼럼</Link>
-          <button className="ml-2 py-2 px-4 rounded-lg bg-green-700 text-white text-sm shadow-sm hover:scale-[1.02] transition-transform">글쓰기</button>
-        </nav>
-      </header>
+      <Header />
 
       {/* 히어로 섹션 */}
       <section className="max-w-6xl mx-auto px-6 grid grid-cols-12 gap-8 items-center">
@@ -58,25 +43,7 @@ export default function Home() {
       </section>
 
       {/* 푸터 */}
-      <footer className="mt-16 border-t pt-8 pb-16">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start gap-6">
-          <div>
-            <div className="font-semibold">soopnote</div>
-            <div className="text-xs text-gray-500 mt-2">Plant journal · Tree doctor notes</div>
-          </div>
-
-          <div className="flex gap-6">
-            <div>
-              <div className="text-sm font-medium">Contact</div>
-              <div className="text-xs text-gray-500 mt-2">email@example.com</div>
-            </div>
-            <div>
-              <div className="text-sm font-medium">License</div>
-              <div className="text-xs text-gray-500 mt-2">CC BY-NC 4.0</div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
