@@ -7,12 +7,13 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { getCategoryBySlug } from '@/lib/api/categories';
 import { getPosts } from '@/lib/api/posts';
-import type { PostFull } from '@/lib/types/database.types';
+import type { PostFull, PostSortOption } from '@/lib/types/database.types';
 
 export default function ColumnList() {
   const [posts, setPosts] = useState<PostFull[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [sortBy, setSortBy] = useState<PostSortOption>('latest');
 
   useEffect(() => {
     console.log('🔄 [STATE] loading:', loading, 'posts.length:', posts.length);
@@ -22,15 +23,15 @@ export default function ColumnList() {
     let cancelled = false;
 
     const fetchData = async () => {
-      console.log('=== 칼럼 로딩 시작 ===');
       try {
+        setLoading(true);
+        console.log('=== 칼럼 로딩 시작 ===');
+
         const category = await getCategoryBySlug('column');
-        console.log('카테고리 조회 결과:', category);
 
         if (!category) {
-          console.error('✗ 칼럼 카테고리를 찾을 수 없습니다.');
+          console.error('✗ 카테고리를 찾을 수 없습니다.');
           if (!cancelled) {
-            console.log('📝 [BEFORE] setLoading(false) - no category');
             setLoading(false);
           }
           return;
@@ -41,21 +42,17 @@ export default function ColumnList() {
           status: 'published',
           page: 1,
           limit: 20,
+          sort: sortBy,
         });
-        console.log('게시글 조회 결과:', result);
 
         if (!cancelled) {
-          console.log('📝 [BEFORE] setPosts:', result.data.length, '개');
-          console.log('📝 [BEFORE] setLoading(false)');
           setPosts(result.data);
           setTotalCount(result.total);
-          setLoading(false);
           console.log('✓ 로딩 완료:', result.data.length, '개');
-        } else {
-          console.log('⚠️ 요청 취소됨 - 상태 업데이트 스킵');
         }
       } catch (error: any) {
         console.error('✗ 게시글 로딩 실패:', error);
+      } finally {
         if (!cancelled) {
           setLoading(false);
         }
@@ -65,10 +62,9 @@ export default function ColumnList() {
     fetchData();
 
     return () => {
-      console.log('🧹 컴포넌트 cleanup');
       cancelled = true;
     };
-  }, []);
+  }, [sortBy]);
 
   // 이미지가 있으면 이미지, 없으면 그라데이션 사용
   const getPostBackground = (post: PostFull, index: number) => {
@@ -120,9 +116,29 @@ export default function ColumnList() {
             총 <span className="font-semibold text-purple-700">{totalCount}</span>개의 칼럼
           </div>
           <div className="flex gap-2">
-            <button className="px-4 py-2 text-sm rounded-lg bg-purple-700 text-white">최신순</button>
-            <button className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">인기순</button>
-            <button className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">카테고리별</button>
+            <button
+              onClick={() => setSortBy('latest')}
+              className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                sortBy === 'latest'
+                  ? 'bg-purple-700 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              최신순
+            </button>
+            <button
+              onClick={() => setSortBy('popular')}
+              className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                sortBy === 'popular'
+                  ? 'bg-purple-700 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              인기순
+            </button>
+            <button className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">
+              카테고리별
+            </button>
           </div>
         </div>
 

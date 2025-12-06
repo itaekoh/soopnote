@@ -210,6 +210,7 @@ export async function getPosts(
     status = 'published',
     search,
     author_id,
+    sort = 'latest',
   } = filters;
 
   let query = supabase
@@ -235,13 +236,26 @@ export async function getPosts(
     query = query.contains('subcategory_ids', subcategory_ids);
   }
 
+  // 정렬 적용
+  switch (sort) {
+    case 'latest':
+      query = query.order('published_date', { ascending: false });
+      break;
+    case 'popular':
+      query = query.order('view_count', { ascending: false });
+      break;
+    case 'oldest':
+      query = query.order('published_date', { ascending: true });
+      break;
+    default:
+      query = query.order('published_date', { ascending: false });
+  }
+
   // 페이지네이션
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  query = query
-    .order('published_date', { ascending: false })
-    .range(from, to);
+  query = query.range(from, to);
 
   const { data, error, count } = await query;
 
@@ -306,21 +320,18 @@ export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
  * 조회수 증가
  */
 export async function incrementViewCount(postId: number): Promise<void> {
-  const { error } = await supabase.rpc('increment', {
-    table_name: 'sn_posts',
-    row_id: postId,
-    column_name: 'view_count',
-  });
-
-  if (error) {
-    // rpc 함수가 없을 수 있으므로 직접 업데이트
+  try {
+    // 현재 게시글 조회
     const post = await getPostById(postId);
     if (post) {
+      // 조회수 1 증가
       await supabase
         .from('sn_posts')
         .update({ view_count: post.view_count + 1 })
         .eq('id', postId);
     }
+  } catch (error) {
+    console.error('조회수 증가 중 오류:', error);
   }
 }
 

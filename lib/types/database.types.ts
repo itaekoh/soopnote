@@ -167,6 +167,9 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+// 정렬 옵션
+export type PostSortOption = 'latest' | 'popular' | 'oldest';
+
 // 필터 옵션
 export interface PostFilterParams extends Partial<PaginationParams> {
   category_id?: number;
@@ -174,4 +177,5 @@ export interface PostFilterParams extends Partial<PaginationParams> {
   status?: PostStatus;
   search?: string;
   author_id?: string;
+  sort?: PostSortOption;
 }

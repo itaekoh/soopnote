@@ -40,9 +40,8 @@ export async function addLike(postId: number): Promise<Like> {
       throw error;
     }
 
-    // 좋아요 수 증가
-    console.log('📊 [LIKE] incrementLikeCount 호출 - post_id:', postId);
-    await incrementLikeCount(postId);
+    // 좋아요 수는 TRIGGER에서 자동으로 증가됩니다 (supabase_schema.sql:241-244)
+    console.log('📊 [LIKE] 좋아요 추가 완료 (TRIGGER로 자동 카운트) - post_id:', postId);
 
     return data;
   } catch (error) {
@@ -75,9 +74,8 @@ export async function removeLike(postId: number): Promise<void> {
       throw error;
     }
 
-    // 좋아요 수 감소
-    console.log('📊 [LIKE] decrementLikeCount 호출 - post_id:', postId);
-    await decrementLikeCount(postId);
+    // 좋아요 수는 TRIGGER에서 자동으로 감소됩니다 (supabase_schema.sql:246-249)
+    console.log('📊 [LIKE] 좋아요 제거 완료 (TRIGGER로 자동 카운트) - post_id:', postId);
   } catch (error) {
     console.error('좋아요 제거 중 오류:', error);
     throw error;
@@ -135,36 +133,5 @@ export async function toggleLike(postId: number): Promise<boolean> {
   }
 }
 
-/**
- * 게시글의 좋아요 수 증가
- */
-async function incrementLikeCount(postId: number): Promise<void> {
-  try {
-    const { error } = await supabase.rpc('increment_like_count', {
-      post_id: postId,
-    });
-
-    if (error) {
-      console.error('좋아요 수 증가 실패:', error);
-    }
-  } catch (error) {
-    console.error('좋아요 수 증가 중 오류:', error);
-  }
-}
-
-/**
- * 게시글의 좋아요 수 감소
- */
-async function decrementLikeCount(postId: number): Promise<void> {
-  try {
-    const { error } = await supabase.rpc('decrement_like_count', {
-      post_id: postId,
-    });
-
-    if (error) {
-      console.error('좋아요 수 감소 실패:', error);
-    }
-  } catch (error) {
-    console.error('좋아요 수 감소 중 오류:', error);
-  }
-}
+// RPC 함수 제거: 좋아요 카운트는 DB TRIGGER에서 자동으로 처리됩니다
+// (supabase_schema.sql:225-249 참조)

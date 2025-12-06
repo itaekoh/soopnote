@@ -204,6 +204,11 @@ BEGIN
         UPDATE sn_posts
         SET comment_count = GREATEST(0, comment_count - 1)
         WHERE id = OLD.post_id;
+    ELSIF TG_OP = 'UPDATE' THEN
+        -- is_deleted가 false -> true로 변경될 때 카운트 감소
+        UPDATE sn_posts
+        SET comment_count = GREATEST(0, comment_count - 1)
+        WHERE id = NEW.post_id;
     END IF;
     RETURN NULL;
 END;
@@ -217,6 +222,12 @@ CREATE TRIGGER trigger_update_post_comment_count_insert
 CREATE TRIGGER trigger_update_post_comment_count_delete
     AFTER DELETE ON sn_comments
     FOR EACH ROW
+    EXECUTE FUNCTION update_post_comment_count();
+
+CREATE TRIGGER trigger_update_post_comment_count_update
+    AFTER UPDATE ON sn_comments
+    FOR EACH ROW
+    WHEN (OLD.is_deleted = false AND NEW.is_deleted = true)
     EXECUTE FUNCTION update_post_comment_count();
 
 -- ============================================
@@ -411,25 +422,16 @@ END $$;
 -- sn_users RLS 활성화
 ALTER TABLE sn_users ENABLE ROW LEVEL SECURITY;
 
--- 모든 사용자가 자신의 프로필을 볼 수 있음
-CREATE POLICY "Users can view own profile"
+-- 모든 사용자가 다른 사용자의 기본 프로필(이름, 아바타)을 볼 수 있음
+-- (댓글, 게시글 작성자 표시를 위해 필요)
+CREATE POLICY "Anyone can view user profiles"
     ON sn_users FOR SELECT
-    USING (auth.uid() = id);
+    USING (true);
 
 -- 사용자가 자신의 프로필을 업데이트할 수 있음
 CREATE POLICY "Users can update own profile"
     ON sn_users FOR UPDATE
     USING (auth.uid() = id);
-
--- super_admin만 모든 사용자 정보를 볼 수 있음
-CREATE POLICY "Super admins can view all users"
-    ON sn_users FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM sn_users
-            WHERE id = auth.uid() AND role = 'super_admin'
-        )
-    );
 
 -- ============================================
 -- sn_posts RLS

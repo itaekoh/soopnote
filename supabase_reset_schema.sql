@@ -6,9 +6,8 @@
 -- ============================================
 
 -- RLS 정책 삭제
-DROP POLICY IF EXISTS "Users can view own profile" ON sn_users;
+DROP POLICY IF EXISTS "Anyone can view user profiles" ON sn_users;
 DROP POLICY IF EXISTS "Users can update own profile" ON sn_users;
-DROP POLICY IF EXISTS "Super admins can view all users" ON sn_users;
 DROP POLICY IF EXISTS "Anyone can view published posts" ON sn_posts;
 DROP POLICY IF EXISTS "Writers and admins can create posts" ON sn_posts;
 DROP POLICY IF EXISTS "Authors can update own posts" ON sn_posts;
@@ -36,6 +35,7 @@ DROP TRIGGER IF EXISTS trigger_update_sn_posts_updated_at ON sn_posts;
 DROP TRIGGER IF EXISTS trigger_update_sn_comments_updated_at ON sn_comments;
 DROP TRIGGER IF EXISTS trigger_update_post_comment_count_insert ON sn_comments;
 DROP TRIGGER IF EXISTS trigger_update_post_comment_count_delete ON sn_comments;
+DROP TRIGGER IF EXISTS trigger_update_post_comment_count_update ON sn_comments;
 DROP TRIGGER IF EXISTS trigger_update_post_like_count_insert ON sn_likes;
 DROP TRIGGER IF EXISTS trigger_update_post_like_count_delete ON sn_likes;
 

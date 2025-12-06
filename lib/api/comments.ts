@@ -112,9 +112,8 @@ export async function deleteComment(commentId: number): Promise<void> {
       throw error;
     }
 
-    // 댓글 수 감소
-    console.log('📊 [COMMENT] decrementCommentCount 호출 - post_id:', comment.post_id);
-    await decrementCommentCount(comment.post_id);
+    // 댓글 수는 TRIGGER에서 자동으로 감소됩니다 (UPDATE TRIGGER 필요)
+    console.log('📊 [COMMENT] 댓글 삭제 완료 (TRIGGER로 자동 카운트) - post_id:', comment.post_id);
   } catch (error) {
     console.error('댓글 삭제 중 오류:', error);
     throw error;
@@ -167,38 +166,7 @@ export async function updateComment(commentId: number, content: string): Promise
   }
 }
 
-/**
- * 게시글의 댓글 수 증가
- */
-async function incrementCommentCount(postId: number): Promise<void> {
-  try {
-    const { error } = await supabase.rpc('increment_comment_count', {
-      post_id: postId,
-    });
-
-    if (error) {
-      console.error('댓글 수 증가 실패:', error);
-      // 카운트 증가 실패는 치명적이지 않으므로 에러를 던지지 않음
-    }
-  } catch (error) {
-    console.error('댓글 수 증가 중 오류:', error);
-  }
-}
-
-/**
- * 게시글의 댓글 수 감소
- */
-async function decrementCommentCount(postId: number): Promise<void> {
-  try {
-    const { error } = await supabase.rpc('decrement_comment_count', {
-      post_id: postId,
-    });
-
-    if (error) {
-      console.error('댓글 수 감소 실패:', error);
-      // 카운트 감소 실패는 치명적이지 않으므로 에러를 던지지 않음
-    }
-  } catch (error) {
-    console.error('댓글 수 감소 중 오류:', error);
-  }
-}
+// RPC 함수 제거: 댓글 카운트는 DB TRIGGER에서 자동으로 처리됩니다
+// - INSERT: supabase_schema.sql:212-215
+// - DELETE: supabase_schema.sql:217-220
+// - UPDATE (is_deleted): 새로 추가 필요
