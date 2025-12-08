@@ -49,6 +49,10 @@ export interface Post {
   content: string;
   published_date: string;
   featured_image_url: string | null;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_size: number | null;
+  attachment_type: string | null;
   location: string | null;
   read_time: string | null;
   view_count: number;
@@ -137,6 +141,10 @@ export interface CreatePostRequest {
   location?: string;
   read_time?: string;
   featured_image_url?: string;
+  attachment_url?: string;
+  attachment_name?: string;
+  attachment_size?: number;
+  attachment_type?: string;
   subcategory_ids?: number[];
   status?: PostStatus;
 }

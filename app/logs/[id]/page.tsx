@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Calendar, Eye, MapPin, Clock, ArrowLeft, User, Tag, Heart, Share2, MessageCircle, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Eye, MapPin, Clock, ArrowLeft, User, Tag, Heart, Share2, MessageCircle, Edit, Trash2, FileText, Download } from 'lucide-react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -314,6 +314,36 @@ export default function LogsDetailPage() {
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* 첨부파일 다운로드 */}
+        {post.attachment_url && post.attachment_name && (
+          <div className="mb-8 pt-8 border-t border-gray-200">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-600">첨부파일</span>
+            </div>
+            <a
+              href={post.attachment_url}
+              download={post.attachment_name}
+              className="flex items-center justify-between p-4 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors border border-purple-200 group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-purple-200 flex items-center justify-center group-hover:bg-purple-300 transition-colors">
+                  <FileText className="w-5 h-5 text-purple-700" />
+                </div>
+                <div>
+                  <div className="font-medium text-gray-800">{post.attachment_name}</div>
+                  {post.attachment_size && (
+                    <div className="text-sm text-gray-500">
+                      {(post.attachment_size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Download className="w-5 h-5 text-purple-700 group-hover:scale-110 transition-transform" />
+            </a>
           </div>
         )}
 
