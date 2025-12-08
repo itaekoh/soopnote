@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Editor } from '@tinymce/tinymce-react';
-import { Leaf, Stethoscope, BookOpen, Save, X, Calendar, Upload } from 'lucide-react';
+import { Leaf, Stethoscope, BookOpen, Save, X, Calendar, Upload, FileText } from 'lucide-react';
 import { getMenuCategories, getCategoryAttributesGrouped } from '@/lib/api/categories';
 import { createPost, getPostFullById } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase/client';
@@ -24,6 +24,10 @@ export default function EditPostPage() {
   const [editMode] = useState(true);
   const [existingPost, setExistingPost] = useState<PostFull | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  const [existingDocumentUrl, setExistingDocumentUrl] = useState<string | null>(null);
+  const [existingDocumentName, setExistingDocumentName] = useState<string | null>(null);
+  const [existingDocumentSize, setExistingDocumentSize] = useState<number | null>(null);
+  const [existingDocumentType, setExistingDocumentType] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,6 +44,7 @@ export default function EditPostPage() {
   const [location, setLocation] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
 
   // 선택된 서브카테고리 ID들
   const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<number[]>([]);
@@ -162,6 +167,10 @@ export default function EditPostPage() {
       setLocation(post.location || '');
       setReadTime(post.read_time || '');
       setExistingImageUrl(post.featured_image_url || null);
+      setExistingDocumentUrl(post.attachment_url || null);
+      setExistingDocumentName(post.attachment_name || null);
+      setExistingDocumentSize(post.attachment_size || null);
+      setExistingDocumentType(post.attachment_type || null);
 
       // 카테고리 설정
       setSelectedMenuId(post.category_id);
@@ -289,8 +298,41 @@ export default function EditPostPage() {
         console.log('2. 이미지 없음 - 기존 이미지 유지');
       }
 
+      // 문서 파일 업로드 (선택적)
+      let documentUrl = existingDocumentUrl; // 기존 문서 유지
+      let documentName = existingDocumentName;
+      let documentSize = existingDocumentSize;
+      let documentType = existingDocumentType;
+      if (documentFile) {
+        console.log('3. 문서 파일 업로드 중...');
+        const fileExt = documentFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `documents/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, documentFile);
+
+        if (uploadError) {
+          console.error('✗ 문서 업로드 실패:', uploadError);
+          alert(`문서 업로드 실패: ${uploadError.message}`);
+          return;
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('documents')
+            .getPublicUrl(filePath);
+          documentUrl = publicUrl;
+          documentName = documentFile.name;
+          documentSize = documentFile.size;
+          documentType = documentFile.type;
+          console.log('✓ 문서 업로드 완료:', documentUrl);
+        }
+      } else {
+        console.log('3. 문서 없음 - 기존 문서 유지');
+      }
+
       // 게시글 수정
-      console.log('3. 게시글 수정 중...');
+      console.log('4. 게시글 수정 중...');
       const postData: any = {
         title,
         excerpt,
@@ -300,6 +342,10 @@ export default function EditPostPage() {
         location: location || null,
         read_time: readTime || null,
         featured_image_url: imageUrl || null,
+        attachment_url: documentUrl || null,
+        attachment_name: documentName || null,
+        attachment_size: documentSize || null,
+        attachment_type: documentType || null,
         status: isDraft ? 'draft' : 'published',
       };
       console.log('게시글 데이터:', postData);
@@ -525,6 +571,11 @@ export default function EditPostPage() {
                   <div className="text-green-600 font-medium">{imageFile.name}</div>
                   <div className="text-sm text-gray-500">클릭하여 다른 이미지 선택</div>
                 </div>
+              ) : existingImageUrl ? (
+                <div className="space-y-2">
+                  <img src={existingImageUrl} alt="기존 이미지" className="max-h-40 mx-auto rounded-lg" />
+                  <div className="text-sm text-gray-500">클릭하여 이미지 변경</div>
+                </div>
               ) : (
                 <div className="space-y-2">
                   <Upload className="w-12 h-12 mx-auto text-gray-400" />
@@ -535,6 +586,67 @@ export default function EditPostPage() {
             </label>
           </div>
         </div>
+
+        {/* 문서 첨부 (로그만) */}
+        {selectedMenuSlug === 'logs' && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              문서 첨부 (선택)
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.hwp,.ppt,.pptx,.xls,.xlsx,.txt"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    // 파일 크기 체크 (20MB 제한)
+                    if (file.size > 20 * 1024 * 1024) {
+                      alert('파일 크기는 20MB를 초과할 수 없습니다.');
+                      e.target.value = '';
+                      return;
+                    }
+                    setDocumentFile(file);
+                  }
+                }}
+                className="hidden"
+                id="document-upload"
+              />
+              <label htmlFor="document-upload" className="cursor-pointer">
+                {documentFile ? (
+                  <div className="space-y-2">
+                    <FileText className="w-12 h-12 mx-auto text-purple-600" />
+                    <div className="text-purple-600 font-medium">{documentFile.name}</div>
+                    <div className="text-sm text-gray-500">
+                      {(documentFile.size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+                    <div className="text-sm text-gray-500">클릭하여 다른 파일 선택</div>
+                  </div>
+                ) : existingDocumentUrl && existingDocumentName ? (
+                  <div className="space-y-2">
+                    <FileText className="w-12 h-12 mx-auto text-purple-600" />
+                    <div className="text-purple-600 font-medium">{existingDocumentName}</div>
+                    {existingDocumentSize && (
+                      <div className="text-sm text-gray-500">
+                        {(existingDocumentSize / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    )}
+                    <div className="text-sm text-gray-500">클릭하여 파일 변경</div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <FileText className="w-12 h-12 mx-auto text-gray-400" />
+                    <div className="text-gray-600">클릭하여 문서 업로드</div>
+                    <div className="text-sm text-gray-400">
+                      PDF, DOC, HWP, PPT, XLS, TXT (최대 20MB)
+                    </div>
+                  </div>
+                )}
+              </label>
+            </div>
+          </div>
+        )}
 
         {/* TinyMCE 에디터 */}
         <div className="mb-6">
