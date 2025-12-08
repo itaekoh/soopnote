@@ -26,12 +26,16 @@ export function Header() {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
       setShowUserMenu(false);
       setShowMobileMenu(false);
-      router.push('/');
+      await signOut();
+      // router.push 대신 window.location 사용 (확실한 페이지 이동)
+      window.location.href = '/';
     } catch (error) {
       console.error('Sign out error:', error);
+      // 에러가 발생해도 강제로 홈으로 이동
+      alert('로그아웃 중 오류가 발생했습니다. 페이지를 새로고침합니다.');
+      window.location.href = '/';
     }
   };
 
