@@ -200,10 +200,8 @@ export default function WritePage() {
     console.log(`=== ${statusText} 시작 ===`);
 
     try {
-      // 현재 로그인한 사용자 가져오기
+      // 현재 로그인한 사용자 확인 (AuthContext에서 가져옴)
       console.log('1. 사용자 인증 확인 중...');
-      const { data: { user } } = await supabase.auth.getUser();
-
       if (!user) {
         alert('로그인이 필요합니다.');
         router.push('/login');
