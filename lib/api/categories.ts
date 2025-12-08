@@ -168,8 +168,8 @@ export async function getCategoryAttributesGrouped(
         const prefix = slugWithoutMenu.split('-')[0];
         groupKey = prefix; // pest, equipment, status
       }
-    } else if (menuSlug === 'column') {
-      // column-policy -> subcategory
+    } else if (menuSlug === 'logs') {
+      // logs-policy -> subcategory
       groupKey = 'subcategory';
     }
 

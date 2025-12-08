@@ -2,21 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Star, FolderTree } from 'lucide-react';
+import { Shield, Users, Star, FolderTree, FileText } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { checkAdminPermission } from '@/lib/api/admin';
+import { checkAdminPermission, checkSuperAdminPermission } from '@/lib/api/admin';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { FeaturedManagement } from '@/components/admin/FeaturedManagement';
 import { CategoryManagement } from '@/components/admin/CategoryManagement';
+import { PostManagement } from '@/components/admin/PostManagement';
+import { supabase } from '@/lib/supabase/client';
 
-type TabType = 'users' | 'featured' | 'categories';
+type TabType = 'posts' | 'users' | 'featured' | 'categories';
 
 export default function AdminPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabType>('users');
+  const [activeTab, setActiveTab] = useState<TabType>('posts');
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     checkPermission();
@@ -30,7 +33,13 @@ export default function AdminPage() {
       if (!hasPermission) {
         alert('관리자 권한이 필요합니다.');
         router.push('/');
+        return;
       }
+
+      // Super admin 권한도 체크
+      const isSuperAdminUser = await checkSuperAdminPermission();
+      setIsSuperAdmin(isSuperAdminUser);
+
     } catch (error) {
       console.error('권한 확인 실패:', error);
       router.push('/');
@@ -39,11 +48,20 @@ export default function AdminPage() {
     }
   }
 
-  const tabs = [
-    { id: 'users' as TabType, label: '회원 관리', icon: Users },
-    { id: 'featured' as TabType, label: '추천글 관리', icon: Star },
-    { id: 'categories' as TabType, label: '카테고리 관리', icon: FolderTree },
+  // 권한에 따라 다른 탭 표시
+  const allTabs = [
+    { id: 'posts' as TabType, label: '게시글 관리', icon: FileText, minRole: 'writer' },
+    { id: 'users' as TabType, label: '회원 관리', icon: Users, minRole: 'super_admin' },
+    { id: 'featured' as TabType, label: '추천글 관리', icon: Star, minRole: 'super_admin' },
+    { id: 'categories' as TabType, label: '카테고리 관리', icon: FolderTree, minRole: 'super_admin' },
   ];
+
+  const tabs = allTabs.filter(tab => {
+    if (tab.minRole === 'super_admin') {
+      return isSuperAdmin;
+    }
+    return true;
+  });
 
   if (loading) {
     return (
@@ -97,6 +115,7 @@ export default function AdminPage() {
 
           {/* 탭 콘텐츠 */}
           <div className="p-6">
+            {activeTab === 'posts' && <PostManagement />}
             {activeTab === 'users' && <UserManagement />}
             {activeTab === 'featured' && <FeaturedManagement />}
             {activeTab === 'categories' && <CategoryManagement />}

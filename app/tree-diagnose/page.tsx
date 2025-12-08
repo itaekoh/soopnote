@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Stethoscope, Calendar, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { SearchBar } from '@/components/SearchBar';
 import { getCategoryBySlug } from '@/lib/api/categories';
 import { getPosts } from '@/lib/api/posts';
 import type { PostFull, PostSortOption } from '@/lib/types/database.types';
@@ -12,20 +13,37 @@ import type { PostFull, PostSortOption } from '@/lib/types/database.types';
 export default function TreeDiagnoseList() {
   const [posts, setPosts] = useState<PostFull[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [sortBy, setSortBy] = useState<PostSortOption>('latest');
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const POSTS_PER_PAGE = 12;
 
   useEffect(() => {
     console.log('🔄 [STATE] loading:', loading, 'posts.length:', posts.length);
   }, [loading, posts]);
 
+  // sortBy 또는 searchQuery 변경 시 page를 1로 리셋
+  useEffect(() => {
+    setPage(1);
+    setPosts([]);
+  }, [sortBy, searchQuery]);
+
+  // 데이터 로드
   useEffect(() => {
     let cancelled = false;
 
     const fetchData = async () => {
       try {
-        setLoading(true);
-        console.log('=== 나무진단 로딩 시작 ===');
+        const isInitialLoad = page === 1;
+        if (isInitialLoad) {
+          setLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
+
+        console.log(`=== 나무진단 로딩 (페이지 ${page}) ===`);
 
         const category = await getCategoryBySlug('tree-diagnose');
 
@@ -33,6 +51,7 @@ export default function TreeDiagnoseList() {
           console.error('✗ 카테고리를 찾을 수 없습니다.');
           if (!cancelled) {
             setLoading(false);
+            setLoadingMore(false);
           }
           return;
         }
@@ -40,21 +59,27 @@ export default function TreeDiagnoseList() {
         const result = await getPosts({
           category_id: category.id,
           status: 'published',
-          page: 1,
-          limit: 20,
+          page: page,
+          limit: POSTS_PER_PAGE,
           sort: sortBy,
+          search: searchQuery || undefined,
         });
 
         if (!cancelled) {
-          setPosts(result.data);
+          if (isInitialLoad) {
+            setPosts(result.data);
+          } else {
+            setPosts(prev => [...prev, ...result.data]);
+          }
           setTotalCount(result.total);
-          console.log('✓ 로딩 완료:', result.data.length, '개');
+          console.log('✓ 로딩 완료:', result.data.length, '개 (총', result.total, '개)');
         }
       } catch (error: any) {
         console.error('✗ 게시글 로딩 실패:', error);
       } finally {
         if (!cancelled) {
           setLoading(false);
+          setLoadingMore(false);
         }
       }
     };
@@ -64,7 +89,7 @@ export default function TreeDiagnoseList() {
     return () => {
       cancelled = true;
     };
-  }, [sortBy]);
+  }, [sortBy, page, searchQuery]);
 
   // 이미지가 있으면 이미지, 없으면 그라데이션 사용
   const getPostBackground = (post: PostFull, index: number) => {
@@ -107,6 +132,10 @@ export default function TreeDiagnoseList() {
     }
   };
 
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#F5F3EE_0%,#F8FAF8_60%)] text-gray-800">
       <Header />
@@ -121,6 +150,14 @@ export default function TreeDiagnoseList() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             나무의사의 전문적인 진단과 치료 기록. 건강한 나무를 위한 세심한 관찰과 처방을 담았습니다.
           </p>
+        </div>
+
+        {/* 검색바 */}
+        <div className="mb-8">
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="나무 종류나 진단 내용으로 검색..."
+          />
         </div>
 
         {/* 필터/정렬 */}
@@ -139,11 +176,15 @@ export default function TreeDiagnoseList() {
             >
               최신순
             </button>
-            <button className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">
-              상태별
-            </button>
-            <button className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">
-              나무별
+            <button
+              onClick={() => setSortBy('popular')}
+              className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                sortBy === 'popular'
+                  ? 'bg-amber-700 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              인기순
             </button>
           </div>
         </div>
@@ -227,11 +268,22 @@ export default function TreeDiagnoseList() {
           </div>
         )}
 
-        {/* 더보기 버튼 - 추후 페이지네이션 구현 */}
+        {/* 더보기 버튼 */}
         {!loading && posts.length > 0 && totalCount > posts.length && (
           <div className="mt-12 text-center">
-            <button className="px-8 py-3 rounded-lg bg-white border-2 border-amber-700 text-amber-700 font-semibold hover:bg-amber-700 hover:text-white transition-colors">
-              더 많은 진단 기록 보기
+            <button
+              onClick={() => setPage(prev => prev + 1)}
+              disabled={loadingMore}
+              className="px-8 py-3 rounded-lg bg-white border-2 border-amber-700 text-amber-700 font-semibold hover:bg-amber-700 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+            >
+              {loadingMore ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-amber-700 border-t-transparent rounded-full animate-spin" />
+                  로딩 중...
+                </>
+              ) : (
+                <>더 많은 진단 기록 보기 ({posts.length} / {totalCount})</>
+              )}
             </button>
           </div>
         )}

@@ -13,11 +13,23 @@ export default function Home() {
   const [featuredPosts, setFeaturedPosts] = useState<PostFull[]>([]);
   const [wildflowerPosts, setWildflowerPosts] = useState<PostFull[]>([]);
   const [treePosts, setTreePosts] = useState<PostFull[]>([]);
-  const [columnPosts, setColumnPosts] = useState<PostFull[]>([]);
+  const [logsPosts, setLogsPosts] = useState<PostFull[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadAllPosts();
+    // 타임아웃 추가: 15초 후에도 로딩 중이면 강제로 로딩 해제
+    const loadTimeout = setTimeout(() => {
+      console.warn('⚠️ 콘텐츠 로딩 타임아웃 - 기본 상태로 전환');
+      setLoading(false);
+    }, 15000); // 15초 타임아웃
+
+    loadAllPosts().finally(() => {
+      clearTimeout(loadTimeout);
+    });
+
+    return () => {
+      clearTimeout(loadTimeout);
+    };
   }, []);
 
   async function loadAllPosts() {
@@ -37,7 +49,7 @@ export default function Home() {
       // 카테고리 ID 조회
       const wildflowerCat = await getCategoryBySlug('wildflower');
       const treeCat = await getCategoryBySlug('tree-diagnose');
-      const columnCat = await getCategoryBySlug('column');
+      const logsCat = await getCategoryBySlug('logs');
       console.log('✓ [MAIN] 카테고리 조회 완료');
 
       // 각 카테고리별 최신글 4개 - 병렬 처리 및 개별 에러 처리
@@ -65,14 +77,14 @@ export default function Home() {
         );
       }
 
-      if (columnCat) {
+      if (logsCat) {
         promises.push(
-          getLatestPostsByCategory(columnCat.id, 4)
+          getLatestPostsByCategory(logsCat.id, 4)
             .then((posts) => {
-              setColumnPosts(posts);
-              console.log('✓ [MAIN] 칼럼:', posts.length, '개');
+              setLogsPosts(posts);
+              console.log('✓ [MAIN] 로그:', posts.length, '개');
             })
-            .catch((error) => console.error('✗ [MAIN] 칼럼 로딩 실패:', error))
+            .catch((error) => console.error('✗ [MAIN] 로그 로딩 실패:', error))
         );
       }
 
@@ -103,12 +115,12 @@ export default function Home() {
       link: '/tree-diagnose',
       name: '나무진단',
     },
-    column: {
+    logs: {
       bg: 'from-purple-50 to-violet-100',
       badge: 'bg-purple-100 text-purple-700',
       icon: 'text-purple-700',
-      link: '/column',
-      name: '칼럼',
+      link: '/logs',
+      name: '로그',
     },
   };
 
@@ -225,25 +237,25 @@ export default function Home() {
             </section>
           )}
 
-          {/* 칼럼 */}
-          {columnPosts.length > 0 && (
+          {/* 로그 */}
+          {logsPosts.length > 0 && (
             <section className="max-w-6xl mx-auto px-6 mb-16">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#26422E]">✍️ 칼럼</h2>
-                <Link href="/column" className="flex items-center gap-1 text-sm text-purple-700 hover:underline">
+                <h2 className="text-2xl font-bold text-[#26422E]">✍️ 로그</h2>
+                <Link href="/logs" className="flex items-center gap-1 text-sm text-purple-700 hover:underline">
                   더보기 <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {columnPosts.map((post) => (
-                  <PostCard key={post.id} post={post} colors={categoryColors.column} />
+                {logsPosts.map((post) => (
+                  <PostCard key={post.id} post={post} colors={categoryColors.logs} />
                 ))}
               </div>
             </section>
           )}
 
           {/* 게시글이 없을 때 */}
-          {featuredPosts.length === 0 && wildflowerPosts.length === 0 && treePosts.length === 0 && columnPosts.length === 0 && (
+          {featuredPosts.length === 0 && wildflowerPosts.length === 0 && treePosts.length === 0 && logsPosts.length === 0 && (
             <section className="max-w-6xl mx-auto px-6 py-20 text-center">
               <div className="text-gray-600 mb-4">아직 게시글이 없습니다.</div>
               <p className="text-sm text-gray-500">첫 번째 기록을 작성해보세요!</p>

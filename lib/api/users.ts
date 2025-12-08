@@ -46,7 +46,7 @@ export async function getUserProfile(userId: string): Promise<User | null> {
     if (error.code === 'PGRST116') {
       return null; // Not found
     }
-    console.error('Error fetching user profile:', error);
+    console.error('프로필 조회 실패:', error);
     throw error;
   }
 

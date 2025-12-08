@@ -18,6 +18,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,16 +29,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 초기 세션 확인
     checkUser();
 
     // 인증 상태 변경 리스너
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Auth 상태 변경:', event);
+
       if (session?.user) {
         setUser(session.user);
-        await loadProfile(session.user.id);
+        try {
+          await loadProfile(session.user.id);
+        } catch (error) {
+          // 프로필 로딩 실패 시 (탈퇴된 사용자일 수 있음) 로그아웃 처리
+          console.error('프로필 로딩 실패, 세션 정리:', error);
+          await supabase.auth.signOut();
+          setUser(null);
+          setProfile(null);
+        }
       } else {
         setUser(null);
         setProfile(null);
@@ -72,7 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userProfile = await getUserProfile(userId);
       setProfile(userProfile);
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('프로필 로딩 실패:', error);
+      setProfile(null);
     }
   }
 
@@ -137,6 +148,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function deleteAccount() {
+    try {
+      // 현재 세션에서 access token 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error('인증 정보를 찾을 수 없습니다.');
+      }
+
+      const response = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '회원 탈퇴에 실패했습니다.');
+      }
+
+      // 탈퇴 성공 후 명시적으로 Supabase 세션 정리
+      await supabase.auth.signOut();
+
+      // 상태 초기화
+      setUser(null);
+      setProfile(null);
+
+      // 홈으로 리다이렉트
+      window.location.href = '/';
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      throw new Error(error.message || '회원 탈퇴에 실패했습니다.');
+    }
+  }
+
   const value = {
     user,
     profile,
@@ -145,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signOut,
     refreshProfile,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

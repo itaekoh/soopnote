@@ -1,23 +1,29 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Editor } from '@tinymce/tinymce-react';
 import { Leaf, Stethoscope, BookOpen, Save, X, Calendar, Upload } from 'lucide-react';
 import { getMenuCategories, getCategoryAttributesGrouped } from '@/lib/api/categories';
-import { createPost } from '@/lib/api/posts';
+import { createPost, getPostFullById } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import type { Category } from '@/lib/types/database.types';
+import type { Category, PostFull } from '@/lib/types/database.types';
 
 type CategorySlug = 'wildflower' | 'tree-diagnose' | 'logs';
 
-export default function WritePage() {
+export default function EditPostPage() {
   const router = useRouter();
+  const params = useParams();
+  const postId = Number(params.id);
   const editorRef = useRef<any>(null);
   const { user, profile, loading: authLoading } = useAuth();
+
+  const [editMode] = useState(true);
+  const [existingPost, setExistingPost] = useState<PostFull | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,10 +69,11 @@ export default function WritePage() {
         return;
       }
 
-      // 권한 있음 - 카테고리 로드
+      // 권한 있음 - 카테고리 로드 및 게시글 로드
       if (profile) {
-        console.log('✓ 권한 확인 완료 (role:', profile.role + ') - 카테고리 로드 시작');
+        console.log('✓ 권한 확인 완료 (role:', profile.role + ') - 데이터 로드 시작');
         loadCategories();
+        loadExistingPost();
       } else {
         console.log('⏳ 프로필 로딩 대기 중...');
       }
@@ -119,9 +126,54 @@ export default function WritePage() {
     try {
       const grouped = await getCategoryAttributesGrouped(menuSlug);
       setSubCategories(grouped);
-      setSelectedSubcategoryIds([]); // 메뉴 변경 시 선택 초기화
+      if (!editMode) {
+        setSelectedSubcategoryIds([]); // 메뉴 변경 시 선택 초기화 (새 글 작성시만)
+      }
     } catch (error) {
       console.error('Failed to load subcategories:', error);
+    }
+  }
+
+  // 기존 게시글 로드 (수정 모드)
+  async function loadExistingPost() {
+    try {
+      console.log('📝 게시글 로드 시작... ID:', postId);
+      const post = await getPostFullById(postId);
+
+      if (!post) {
+        alert('게시글을 찾을 수 없습니다.');
+        router.push('/');
+        return;
+      }
+
+      // 권한 체크: 본인 글이거나 super_admin이어야 함
+      if (post.author_id !== user?.id && profile?.role !== 'super_admin') {
+        alert('본인의 글만 수정할 수 있습니다.');
+        router.push('/');
+        return;
+      }
+
+      setExistingPost(post);
+
+      // 폼 필드에 기존 값 채우기
+      setTitle(post.title);
+      setExcerpt(post.excerpt || '');
+      setDate(post.published_date || new Date().toISOString().split('T')[0]);
+      setLocation(post.location || '');
+      setReadTime(post.read_time || '');
+      setExistingImageUrl(post.featured_image_url || null);
+
+      // 카테고리 설정
+      setSelectedMenuId(post.category_id);
+
+      // 서브카테고리 ID 설정 (필요한 경우)
+      // post에서 서브카테고리 정보를 가져올 수 있다면 여기서 설정
+
+      console.log('✓ 게시글 로드 완료:', post.title);
+    } catch (error: any) {
+      console.error('✗ 게시글 로드 실패:', error);
+      alert(`게시글을 불러오는데 실패했습니다: ${error.message}`);
+      router.push('/');
     }
   }
 
@@ -211,7 +263,7 @@ export default function WritePage() {
       console.log('✓ 사용자 인증 완료:', user.id);
 
       // 이미지 업로드 (선택적)
-      let imageUrl = null;
+      let imageUrl = existingImageUrl; // 기존 이미지 유지
       if (imageFile) {
         console.log('2. 이미지 업로드 중...');
         const fileExt = imageFile.name.split('.').pop();
@@ -234,30 +286,35 @@ export default function WritePage() {
           console.log('✓ 이미지 업로드 완료:', imageUrl);
         }
       } else {
-        console.log('2. 이미지 없음 - 스킵');
+        console.log('2. 이미지 없음 - 기존 이미지 유지');
       }
 
-      // 게시글 생성
-      console.log('3. 게시글 생성 중...');
-      const postData = {
+      // 게시글 수정
+      console.log('3. 게시글 수정 중...');
+      const postData: any = {
         title,
         excerpt,
         content,
         category_id: selectedMenuId,
         published_date: date,
-        location: location || undefined,
-        read_time: readTime || undefined,
-        featured_image_url: imageUrl || undefined,
-        subcategory_ids: selectedSubcategoryIds.length > 0 ? selectedSubcategoryIds : undefined,
+        location: location || null,
+        read_time: readTime || null,
+        featured_image_url: imageUrl || null,
         status: isDraft ? 'draft' : 'published',
       };
       console.log('게시글 데이터:', postData);
 
-      const post = await createPost(postData, user.id);
-      console.log('✓ 게시글 생성 완료:', post.id);
+      const { error: updateError } = await supabase
+        .from('sn_posts')
+        .update(postData)
+        .eq('id', postId);
+
+      if (updateError) throw updateError;
+
+      console.log('✓ 게시글 수정 완료:', postId);
 
       alert(isDraft ? '임시저장되었습니다!' : '글이 발행되었습니다!');
-      router.push(`/${selectedMenuSlug}`);
+      router.push(`/${selectedMenuSlug}/${postId}`);
     } catch (error: any) {
       console.error('✗ 저장 실패:', error);
       console.error('에러 상세:', {
@@ -298,8 +355,8 @@ export default function WritePage() {
       <main className="max-w-5xl mx-auto px-6 py-8">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#26422E] mb-2">글쓰기</h1>
-          <p className="text-gray-600">자연과의 만남을 기록해보세요</p>
+          <h1 className="text-3xl font-bold text-[#26422E] mb-2">글 수정</h1>
+          <p className="text-gray-600">게시글을 수정합니다</p>
         </div>
 
         {/* 카테고리 선택 */}
@@ -486,6 +543,7 @@ export default function WritePage() {
             <Editor
               apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
               onInit={(_evt: any, editor: any) => (editorRef.current = editor)}
+              initialValue={existingPost?.content || ''}
               init={{
                 height: 500,
                 menubar: true,

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { User, Post, Category, UserRole } from '@/lib/types/database.types';
 
 /**
- * 관리자 권한 확인
+ * 관리자 권한 확인 (writer + super_admin)
  */
 export async function checkAdminPermission(): Promise<boolean> {
   try {
@@ -26,9 +26,37 @@ export async function checkAdminPermission(): Promise<boolean> {
       return false;
     }
 
-    return data.role === 'super_admin';
+    return data.role === 'writer' || data.role === 'super_admin';
   } catch (error) {
     console.error('권한 확인 실패:', error);
+    return false;
+  }
+}
+
+/**
+ * Super Admin 권한 확인
+ */
+export async function checkSuperAdminPermission(): Promise<boolean> {
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return false;
+    }
+
+    const { data, error } = await supabase
+      .from('sn_users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (error || !data) {
+      return false;
+    }
+
+    return data.role === 'super_admin';
+  } catch (error) {
+    console.error('Super Admin 권한 확인 실패:', error);
     return false;
   }
 }
@@ -74,11 +102,11 @@ export async function updateUserRole(userId: string, role: UserRole): Promise<vo
 // ============================================
 
 /**
- * 모든 게시글 목록 조회 (관리자용)
+ * 모든 게시글 목록 조회 (관리자용 - 작성자 정보 포함)
  */
-export async function getAllPostsForAdmin(): Promise<Post[]> {
+export async function getAllPostsForAdmin(): Promise<any[]> {
   const { data, error } = await supabase
-    .from('sn_posts')
+    .from('sn_posts_full')
     .select('*')
     .order('created_at', { ascending: false });
 

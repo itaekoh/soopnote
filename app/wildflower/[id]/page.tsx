@@ -1,18 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { Calendar, Eye, MapPin, Clock, ArrowLeft, User, Tag, Heart, Share2, MessageCircle } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { Calendar, Eye, MapPin, Clock, ArrowLeft, User, Tag, Heart, Share2, MessageCircle, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Comments } from '@/components/Comments';
 import { getPostFullById, incrementViewCount } from '@/lib/api/posts';
 import { checkUserLike, toggleLike } from '@/lib/api/likes';
+import { supabase } from '@/lib/supabase/client';
 import type { PostFull } from '@/lib/types/database.types';
 
 export default function WildflowerDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const postId = Number(params.id);
 
   const [post, setPost] = useState<PostFull | null>(null);
@@ -22,10 +24,30 @@ export default function WildflowerDetailPage() {
   const [likeCount, setLikeCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
+    loadCurrentUser();
     loadPost();
   }, [postId]);
+
+  async function loadCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+
+      const { data } = await supabase
+        .from('sn_users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        setUserRole(data.role);
+      }
+    }
+  }
 
   async function loadPost() {
     try {
@@ -77,6 +99,47 @@ export default function WildflowerDetailPage() {
     }
   }
 
+  function canEdit(): boolean {
+    if (!post) return false;
+    if (userRole === 'super_admin') return true;
+    if (post.author_id === currentUserId) return true;
+    return false;
+  }
+
+  function handleEdit() {
+    if (!canEdit()) {
+      alert('본인의 글만 수정할 수 있습니다.');
+      return;
+    }
+    router.push(`/write/${postId}`);
+  }
+
+  async function handleDelete() {
+    if (!canEdit()) {
+      alert('본인의 글만 삭제할 수 있습니다.');
+      return;
+    }
+
+    if (!confirm('정말 이 게시글을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('sn_posts')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      alert('게시글이 삭제되었습니다.');
+      router.push('/wildflower');
+    } catch (error: any) {
+      console.error('삭제 실패:', error);
+      alert(`삭제에 실패했습니다: ${error.message}`);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[linear-gradient(180deg,#F5F3EE_0%,#F8FAF8_60%)]">
@@ -116,8 +179,8 @@ export default function WildflowerDetailPage() {
 
       {/* 게시글 상세 */}
       <article className="max-w-4xl mx-auto px-6 py-12">
-        {/* 상단: 뒤로가기 버튼 */}
-        <div className="mb-6">
+        {/* 상단: 뒤로가기 버튼 및 관리 버튼 */}
+        <div className="mb-6 flex items-center justify-between">
           <Link
             href="/wildflower"
             className="inline-flex items-center gap-2 text-green-700 hover:text-green-800 transition-colors"
@@ -125,6 +188,28 @@ export default function WildflowerDetailPage() {
             <ArrowLeft className="w-4 h-4" />
             <span>목록으로</span>
           </Link>
+
+          {/* 수정/삭제 버튼 (권한이 있는 경우만 표시) */}
+          {canEdit() && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleEdit}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                title="수정"
+              >
+                <Edit className="w-4 h-4" />
+                <span className="text-sm font-medium">수정</span>
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                title="삭제"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="text-sm font-medium">삭제</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 카테고리 배지 */}

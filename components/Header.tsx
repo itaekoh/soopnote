@@ -1,6 +1,6 @@
 'use client';
 
-import { Leaf, LogOut, User as UserIcon, Edit, Shield, Menu, X } from 'lucide-react';
+import { Leaf, LogOut, User as UserIcon, Edit, Shield, Menu, X, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -61,8 +61,8 @@ export function Header() {
           <Link className="text-sm hover:text-green-700 transition-colors" href="/tree-diagnose">
             나무진단
           </Link>
-          <Link className="text-sm hover:text-green-700 transition-colors" href="/column">
-            칼럼
+          <Link className="text-sm hover:text-green-700 transition-colors" href="/logs">
+            로그
           </Link>
 
           {/* 로그인된 경우 */}
@@ -112,6 +112,14 @@ export function Header() {
                         관리자 페이지
                       </Link>
                     )}
+                    <Link
+                      href="/account"
+                      onClick={() => setShowUserMenu(false)}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      계정 설정
+                    </Link>
                     <button
                       onClick={handleSignOut}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
@@ -172,11 +180,11 @@ export function Header() {
               나무진단
             </Link>
             <Link
-              href="/column"
+              href="/logs"
               onClick={() => setShowMobileMenu(false)}
               className="text-lg py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              칼럼
+              로그
             </Link>
 
             {user ? (
@@ -210,6 +218,15 @@ export function Header() {
                       관리자 페이지
                     </Link>
                   )}
+
+                  <Link
+                    href="/account"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="flex items-center gap-3 text-lg py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                  >
+                    <Settings className="w-5 h-5" />
+                    계정 설정
+                  </Link>
 
                   <button
                     onClick={handleSignOut}
