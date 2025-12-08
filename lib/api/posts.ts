@@ -46,6 +46,10 @@ export async function createPost(
       location: postData.location,
       read_time: postData.read_time,
       featured_image_url: postData.featured_image_url,
+      attachment_url: postData.attachment_url,
+      attachment_name: postData.attachment_name,
+      attachment_size: postData.attachment_size,
+      attachment_type: postData.attachment_type,
       status: postData.status || 'draft',
       published_at: postData.status === 'published' ? new Date().toISOString() : null,
     })
