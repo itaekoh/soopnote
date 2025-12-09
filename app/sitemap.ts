@@ -1,5 +1,8 @@
 import { MetadataRoute } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // 1시간마다 재생성
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.soopnote.com';
@@ -34,7 +37,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 게시글 동적 페이지 (published만)
   try {
-    const supabase = await createClient();
+    // cookies를 사용하지 않는 직접 클라이언트 생성
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
     const { data: posts } = await supabase
       .from('sn_posts')
       .select('id, updated_at, category_id')
