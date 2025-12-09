@@ -367,7 +367,7 @@ export default function LogsDetailPage() {
         {/* 본문 */}
         <div
           ref={contentRef}
-          className="prose prose-lg max-w-none mb-12"
+          className="prose prose-lg max-w-none mb-12 overflow-x-auto"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 

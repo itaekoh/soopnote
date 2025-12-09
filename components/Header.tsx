@@ -167,7 +167,7 @@ export function Header() {
 
       {/* 모바일 메뉴 */}
       {showMobileMenu && (
-        <div className="md:hidden fixed inset-x-0 top-[80px] bottom-0 bg-white z-50 overflow-y-auto">
+        <div className="md:hidden fixed inset-0 top-0 bg-white z-40 overflow-y-auto pt-20">
           <nav className="flex flex-col p-6 space-y-4">
             <Link
               href="/wildflower"
