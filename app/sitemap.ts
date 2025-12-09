@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.soopnote.com';
@@ -34,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 게시글 동적 페이지 (published만)
   try {
+    const supabase = await createClient();
     const { data: posts } = await supabase
       .from('sn_posts')
       .select('id, updated_at, category_id')
