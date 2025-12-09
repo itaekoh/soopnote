@@ -17,17 +17,28 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🎬 [MAIN] 컴포넌트 마운트됨 - useEffect 실행');
+
     // 타임아웃 추가: 15초 후에도 로딩 중이면 강제로 로딩 해제
     const loadTimeout = setTimeout(() => {
       console.warn('⚠️ 콘텐츠 로딩 타임아웃 - 기본 상태로 전환');
       setLoading(false);
     }, 15000); // 15초 타임아웃
 
-    loadAllPosts().finally(() => {
-      clearTimeout(loadTimeout);
-    });
+    loadAllPosts()
+      .then(() => {
+        console.log('✅ [MAIN] loadAllPosts 완료');
+      })
+      .catch((error) => {
+        console.error('❌ [MAIN] loadAllPosts 에러:', error);
+      })
+      .finally(() => {
+        clearTimeout(loadTimeout);
+        console.log('🏁 [MAIN] finally 블록 실행');
+      });
 
     return () => {
+      console.log('🔚 [MAIN] 컴포넌트 언마운트 - cleanup');
       clearTimeout(loadTimeout);
     };
   }, []);

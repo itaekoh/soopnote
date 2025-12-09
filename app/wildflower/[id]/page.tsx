@@ -293,22 +293,22 @@ export default function WildflowerDetailPage() {
         {/* 메타 정보 */}
         <div className="flex flex-wrap items-center gap-4 pb-6 mb-8 border-b border-gray-200 text-sm text-gray-600">
           {/* 작성자 */}
-          {post.author_name && (
-            <div className="flex items-center gap-2">
-              {post.author_avatar ? (
-                <img
-                  src={post.author_avatar}
-                  alt={post.author_name}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                  <User className="w-4 h-4 text-green-700" />
-                </div>
-              )}
-              <span className="font-medium text-gray-800">{post.author_name}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {post.author_avatar ? (
+              <img
+                src={post.author_avatar}
+                alt={post.author_name || '탈퇴한 사용자'}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <User className="w-4 h-4 text-green-700" />
+              </div>
+            )}
+            <span className={`font-medium ${post.author_name ? 'text-gray-800' : 'text-gray-400'}`}>
+              {post.author_name || '탈퇴한 사용자'}
+            </span>
+          </div>
 
           {/* 발행일 */}
           <div className="flex items-center gap-1">
