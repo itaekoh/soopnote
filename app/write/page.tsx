@@ -285,7 +285,7 @@ export default function WritePage() {
         attachment_size: documentSize || undefined,
         attachment_type: documentType || undefined,
         subcategory_ids: selectedSubcategoryIds.length > 0 ? selectedSubcategoryIds : undefined,
-        status: isDraft ? 'draft' : 'published',
+        status: (isDraft ? 'draft' : 'published') as 'draft' | 'published',
       };
       console.log('게시글 데이터:', postData);
 

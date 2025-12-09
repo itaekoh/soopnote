@@ -30,7 +30,7 @@ export async function getCommentsByPostId(postId: number): Promise<CommentWithUs
       throw error;
     }
 
-    return data || [];
+    return (data as any) || [];
   } catch (error) {
     console.error('댓글 조회 중 오류:', error);
     throw error;

@@ -110,7 +110,7 @@ export default function AccountPage() {
               <div>
                 <p className="text-sm text-gray-500 mb-1">역할</p>
                 <p className="text-gray-800 font-medium">
-                  {profile?.role === 'admin' ? '관리자' : '일반 회원'}
+                  {profile?.role === 'super_admin' ? '관리자' : profile?.role === 'writer' ? '작성자' : '일반 회원'}
                 </p>
               </div>
             </div>
