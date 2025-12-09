@@ -66,7 +66,7 @@ export function Header() {
             나무진단
           </Link>
           <Link className="text-sm hover:text-green-700 transition-colors" href="/logs">
-            로그
+            아카이브
           </Link>
 
           {/* 로그인된 경우 */}
@@ -188,7 +188,7 @@ export function Header() {
               onClick={() => setShowMobileMenu(false)}
               className="text-lg py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              로그
+              아카이브
             </Link>
 
             {user ? (

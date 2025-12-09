@@ -82,9 +82,9 @@ export default function Home() {
           getLatestPostsByCategory(logsCat.id, 4)
             .then((posts) => {
               setLogsPosts(posts);
-              console.log('✓ [MAIN] 로그:', posts.length, '개');
+              console.log('✓ [MAIN] 아카이브:', posts.length, '개');
             })
-            .catch((error) => console.error('✗ [MAIN] 로그 로딩 실패:', error))
+            .catch((error) => console.error('✗ [MAIN] 아카이브 로딩 실패:', error))
         );
       }
 
@@ -120,7 +120,7 @@ export default function Home() {
       badge: 'bg-purple-100 text-purple-700',
       icon: 'text-purple-700',
       link: '/logs',
-      name: '로그',
+      name: '아카이브',
     },
   };
 
@@ -237,11 +237,11 @@ export default function Home() {
             </section>
           )}
 
-          {/* 로그 */}
+          {/* 아카이브 */}
           {logsPosts.length > 0 && (
             <section className="max-w-6xl mx-auto px-6 mb-16">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#26422E]">✍️ 로그</h2>
+                <h2 className="text-2xl font-bold text-[#26422E]">✍️ 아카이브</h2>
                 <Link href="/logs" className="flex items-center gap-1 text-sm text-purple-700 hover:underline">
                   더보기 <ArrowRight className="w-4 h-4" />
                 </Link>

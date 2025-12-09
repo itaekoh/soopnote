@@ -43,7 +43,7 @@ export default function LogsList() {
           setLoadingMore(true);
         }
 
-        console.log(`=== 로그 로딩 (페이지 ${page}) ===`);
+        console.log(`=== 아카이브 로딩 (페이지 ${page}) ===`);
 
         const category = await getCategoryBySlug('logs');
 
@@ -133,7 +133,7 @@ export default function LogsList() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-100 mb-4">
             <BookOpen className="w-8 h-8 text-purple-700" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-[#26422E] mb-4">로그</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-[#26422E] mb-4">아카이브</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             기술, AI, 실무 팁과 다양한 생각들을 기록합니다.
           </p>
@@ -143,14 +143,14 @@ export default function LogsList() {
         <div className="mb-8">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="로그 제목이나 내용으로 검색..."
+            placeholder="아카이브 제목이나 내용으로 검색..."
           />
         </div>
 
         {/* 필터/정렬 */}
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
           <div className="text-sm text-gray-600">
-            총 <span className="font-semibold text-purple-700">{totalCount}</span>개의 로그
+            총 <span className="font-semibold text-purple-700">{totalCount}</span>개의 아카이브
           </div>
           <div className="flex gap-2">
             <button
@@ -186,8 +186,8 @@ export default function LogsList() {
         {/* 게시물 없음 */}
         {!loading && posts.length === 0 && (
           <div className="text-center py-20">
-            <div className="text-gray-600 mb-4">아직 로그가 없습니다.</div>
-            <p className="text-sm text-gray-500">첫 번째 로그를 작성해보세요!</p>
+            <div className="text-gray-600 mb-4">아직 아카이브가 없습니다.</div>
+            <p className="text-sm text-gray-500">첫 번째 아카이브를 작성해보세요!</p>
           </div>
         )}
 
@@ -251,7 +251,7 @@ export default function LogsList() {
                     {/* 하단 태그 */}
                     <div className="px-5 pb-4">
                       <div className="inline-block px-3 py-1 text-xs rounded-full bg-purple-50 text-purple-700 font-medium">
-                        로그
+                        아카이브
                       </div>
                     </div>
                   </article>
@@ -275,7 +275,7 @@ export default function LogsList() {
                   로딩 중...
                 </>
               ) : (
-                <>더 많은 로그 보기 ({posts.length} / {totalCount})</>
+                <>더 많은 아카이브 보기 ({posts.length} / {totalCount})</>
               )}
             </button>
           </div>

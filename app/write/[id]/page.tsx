@@ -102,12 +102,13 @@ export default function EditPostPage() {
 
       setMenuCategories(menus);
 
-      if (menus.length > 0) {
+      // 수정 모드가 아닐 때만 기본 카테고리 설정 (새 글 작성시)
+      if (!editMode && menus.length > 0) {
         const firstMenu = menus[0];
         setSelectedMenuId(firstMenu.id);
         setSelectedMenuSlug(firstMenu.slug as CategorySlug);
         console.log('✓ 기본 카테고리 설정:', firstMenu.name);
-      } else {
+      } else if (menus.length === 0) {
         console.warn('⚠️  카테고리가 없습니다!');
       }
 
@@ -174,11 +175,19 @@ export default function EditPostPage() {
 
       // 카테고리 설정
       setSelectedMenuId(post.category_id);
+      setSelectedMenuSlug(post.category_slug as CategorySlug);
 
       // 서브카테고리 ID 설정 (필요한 경우)
       // post에서 서브카테고리 정보를 가져올 수 있다면 여기서 설정
 
       console.log('✓ 게시글 로드 완료:', post.title);
+      console.log('✓ 카테고리 설정:', post.category_name, `(${post.category_slug})`);
+      console.log('✓ 첨부파일 정보:', {
+        url: post.attachment_url,
+        name: post.attachment_name,
+        size: post.attachment_size,
+        type: post.attachment_type,
+      });
     } catch (error: any) {
       console.error('✗ 게시글 로드 실패:', error);
       alert(`게시글을 불러오는데 실패했습니다: ${error.message}`);

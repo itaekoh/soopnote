@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Calendar, Eye, MapPin, Clock, ArrowLeft, User, Tag, Heart, Share2, MessageCircle, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Comments } from '@/components/Comments';
+import { ImageModal } from '@/components/ImageModal';
 import { getPostFullById, incrementViewCount } from '@/lib/api/posts';
 import { checkUserLike, toggleLike } from '@/lib/api/likes';
 import { supabase } from '@/lib/supabase/client';
@@ -26,11 +27,41 @@ export default function WildflowerDetailPage() {
   const [commentCount, setCommentCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadCurrentUser();
     loadPost();
   }, [postId]);
+
+  // 본문 이미지 클릭 시 확대 기능
+  useEffect(() => {
+    if (!contentRef.current) return;
+
+    const content = contentRef.current;
+    const images = content.querySelectorAll('img');
+
+    // 이미지에 커서 스타일 적용
+    images.forEach((img) => {
+      img.style.cursor = 'pointer';
+    });
+
+    // 이벤트 위임 방식으로 클릭 처리
+    const handleContentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG') {
+        const img = target as HTMLImageElement;
+        setSelectedImage(img.src);
+      }
+    };
+
+    content.addEventListener('click', handleContentClick);
+
+    return () => {
+      content.removeEventListener('click', handleContentClick);
+    };
+  }, [post]);
 
   async function loadCurrentUser() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -137,6 +168,34 @@ export default function WildflowerDetailPage() {
     } catch (error: any) {
       console.error('삭제 실패:', error);
       alert(`삭제에 실패했습니다: ${error.message}`);
+    }
+  }
+
+  async function handleShare() {
+    if (!post) return;
+
+    const shareData = {
+      title: post.title,
+      text: post.excerpt || post.title,
+      url: window.location.href,
+    };
+
+    try {
+      // Web Share API 지원 확인
+      if (navigator.share) {
+        await navigator.share(shareData);
+        console.log('공유 성공');
+      } else {
+        // Web Share API 미지원 시 클립보드 복사
+        await navigator.clipboard.writeText(window.location.href);
+        alert('링크가 클립보드에 복사되었습니다!');
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('공유 실패:', error);
+        // 클립보드 복사도 실패한 경우
+        alert('공유에 실패했습니다. 링크를 직접 복사해주세요:\n' + window.location.href);
+      }
     }
   }
 
@@ -293,6 +352,7 @@ export default function WildflowerDetailPage() {
 
         {/* 본문 */}
         <div
+          ref={contentRef}
           className="prose prose-lg max-w-none mb-12"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
@@ -337,7 +397,10 @@ export default function WildflowerDetailPage() {
               <span className="text-sm font-medium">{commentCount}</span>
             </button>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+          >
             <Share2 className="w-5 h-5" />
             <span className="text-sm font-medium">공유</span>
           </button>
@@ -364,6 +427,14 @@ export default function WildflowerDetailPage() {
       </article>
 
       <Footer />
+
+      {/* 이미지 확대 모달 */}
+      {selectedImage && (
+        <ImageModal
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
     </div>
   );
 }
