@@ -50,8 +50,10 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
   verification: {
-    google: '', // Google Search Console 인증 코드 (나중에 추가)
-    // naver: '', // 네이버 서치어드바이저 인증 코드 (나중에 추가)
+    google: 'kTycmKTjpExkbzMRsnOIBdyioFEqhFohavDoKvQLoNQ',
+    other: {
+      'naver-site-verification': 'd88056ec17a04863186884513e24b9b8509a6e56',
+    },
   },
   icons: {
     icon: '/icon',
