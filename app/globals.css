@@ -57,3 +57,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 게시글 본문 텍스트 넘침 방지 */
+@layer components {
+  .prose {
+    @apply max-w-none;
+  }
+
+  .prose * {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .prose pre,
+  .prose code {
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .prose table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .prose img {
+    max-width: 100%;
+    height: auto;
+  }
+}
