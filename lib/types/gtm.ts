@@ -45,17 +45,9 @@ export interface FilterEvent extends GTMEvent {
   subcategory: string;
 }
 
-// Window 객체에 dataLayer 추가
-declare global {
-  interface Window {
-    dataLayer: GTMEvent[];
-  }
-}
-
 // GTM 유틸리티 함수
 export const pushToDataLayer = (event: GTMEvent) => {
-  if (typeof window !== 'undefined') {
-    window.dataLayer = window.dataLayer || [];
+  if (typeof window !== 'undefined' && window.dataLayer) {
     window.dataLayer.push(event);
   }
 };
