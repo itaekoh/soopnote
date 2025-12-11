@@ -4,7 +4,20 @@
       "Bash(npm install:*)",
       "Bash(npm install)",
       "Bash(npx supabase status)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(find:*)",
+      "Bash(git diff:*)",
+      "Bash(npm run dev:*)",
+      "Bash(copy:*)",
+      "WebFetch(domain:www.soopnote.com)",
+      "Bash(psql:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx kill-port:*)"
     ],
     "deny": [],
     "ask": []

@@ -12,6 +12,7 @@ import { getPostFullById, incrementViewCount } from '@/lib/api/posts';
 import { checkUserLike, toggleLike } from '@/lib/api/likes';
 import { supabase } from '@/lib/supabase/client';
 import type { PostFull } from '@/lib/types/database.types';
+import { pushToDataLayer } from '@/lib/types/gtm';
 
 export default function TreeDiagnoseDetailClient({ postId }: { postId: number }) {
   const router = useRouter();
@@ -32,6 +33,30 @@ export default function TreeDiagnoseDetailClient({ postId }: { postId: number })
     loadCurrentUser();
     loadPost();
   }, [postId]);
+
+  // 로그인/로그아웃 상태 변경 감지
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        loadCurrentUser();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // 사용자 변경 시 좋아요 상태 다시 확인
+  useEffect(() => {
+    async function recheckLikeStatus() {
+      if (post) {
+        const liked = await checkUserLike(post.id);
+        setIsLiked(liked);
+      }
+    }
+    recheckLikeStatus();
+  }, [currentUserId, post?.id]);
 
   // 본문 이미지 클릭 시 확대 기능
   useEffect(() => {
@@ -75,6 +100,11 @@ export default function TreeDiagnoseDetailClient({ postId }: { postId: number })
       if (data) {
         setUserRole(data.role);
       }
+    } else {
+      // 로그아웃 상태
+      setCurrentUserId(null);
+      setUserRole(null);
+      setIsLiked(false);
     }
   }
 
@@ -102,6 +132,15 @@ export default function TreeDiagnoseDetailClient({ postId }: { postId: number })
       // 조회수 증가
       incrementViewCount(postId).catch(console.error);
 
+      // GTM 이벤트: 게시글 조회
+      pushToDataLayer({
+        event: 'view_post',
+        post_id: postData.id,
+        post_title: postData.title,
+        category: postData.category_name,
+        subcategories: postData.subcategory_names || [],
+      });
+
       // 좋아요 상태 확인
       const liked = await checkUserLike(postId);
       setIsLiked(liked);
@@ -120,6 +159,16 @@ export default function TreeDiagnoseDetailClient({ postId }: { postId: number })
       const newLikedState = await toggleLike(postId);
       setIsLiked(newLikedState);
       setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
+
+      // GTM 이벤트: 좋아요
+      if (post) {
+        pushToDataLayer({
+          event: 'like_post',
+          post_id: post.id,
+          post_title: post.title,
+          action: newLikedState ? 'add' : 'remove',
+        });
+      }
     } catch (error: any) {
       console.error('좋아요 토글 실패:', error);
       alert(error.message || '좋아요 처리에 실패했습니다.');

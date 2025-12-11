@@ -235,9 +235,9 @@ export async function getPosts(
     query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%`);
   }
 
-  // 서브카테고리 필터 (배열 포함 여부 체크)
+  // 서브카테고리 필터 (배열 겹침 체크)
   if (subcategory_ids && subcategory_ids.length > 0) {
-    query = query.contains('subcategory_ids', subcategory_ids);
+    query = query.overlaps('subcategory_ids', subcategory_ids);
   }
 
   // 정렬 적용

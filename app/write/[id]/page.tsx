@@ -7,7 +7,7 @@ import { Footer } from '@/components/Footer';
 import { Editor } from '@tinymce/tinymce-react';
 import { Leaf, Stethoscope, BookOpen, Save, X, Calendar, Upload, FileText } from 'lucide-react';
 import { getMenuCategories, getCategoryAttributesGrouped } from '@/lib/api/categories';
-import { createPost, getPostFullById } from '@/lib/api/posts';
+import { createPost, getPostFullById, updatePost } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import type { Category, PostFull } from '@/lib/types/database.types';
@@ -177,8 +177,11 @@ export default function EditPostPage() {
       setSelectedMenuId(post.category_id);
       setSelectedMenuSlug(post.category_slug as CategorySlug);
 
-      // 서브카테고리 ID 설정 (필요한 경우)
-      // post에서 서브카테고리 정보를 가져올 수 있다면 여기서 설정
+      // 서브카테고리 ID 설정
+      if (post.subcategory_ids && post.subcategory_ids.length > 0) {
+        setSelectedSubcategoryIds(post.subcategory_ids);
+        console.log('✓ 서브카테고리 설정:', post.subcategory_ids);
+      }
 
       console.log('✓ 게시글 로드 완료:', post.title);
       console.log('✓ 카테고리 설정:', post.category_name, `(${post.category_slug})`);
@@ -343,6 +346,7 @@ export default function EditPostPage() {
       // 게시글 수정
       console.log('4. 게시글 수정 중...');
       const postData: any = {
+        id: postId,
         title,
         excerpt,
         content,
@@ -356,15 +360,12 @@ export default function EditPostPage() {
         attachment_size: documentSize || null,
         attachment_type: documentType || null,
         status: isDraft ? 'draft' : 'published',
+        subcategory_ids: selectedSubcategoryIds,
       };
       console.log('게시글 데이터:', postData);
+      console.log('서브카테고리 IDs:', selectedSubcategoryIds);
 
-      const { error: updateError } = await supabase
-        .from('sn_posts')
-        .update(postData)
-        .eq('id', postId);
-
-      if (updateError) throw updateError;
+      await updatePost(postData);
 
       console.log('✓ 게시글 수정 완료:', postId);
 

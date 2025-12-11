@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next/third-parties": "^16.0.8",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
     "@tinymce/tinymce-react": "^6.3.0",
