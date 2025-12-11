@@ -8,7 +8,6 @@ import { Footer } from '@/components/Footer';
 import { getFeaturedPosts, getLatestPostsByCategory } from '@/lib/api/posts';
 import { getCategoryBySlug } from '@/lib/api/categories';
 import type { PostFull } from '@/lib/types/database.types';
-import { pushToDataLayer } from '@/lib/types/gtm';
 
 export default function Home() {
   const [featuredPosts, setFeaturedPosts] = useState<PostFull[]>([]);
@@ -19,13 +18,6 @@ export default function Home() {
 
   useEffect(() => {
     console.log('🎬 [MAIN] 컴포넌트 마운트됨 - useEffect 실행');
-
-    // GTM 이벤트: 홈페이지 방문
-    pushToDataLayer({
-      event: 'page_view',
-      page_title: 'Soopnote - 숲의 기록',
-      page_path: '/',
-    });
 
     // 타임아웃 추가: 15초 후에도 로딩 중이면 강제로 로딩 해제
     const loadTimeout = setTimeout(() => {
