@@ -3,6 +3,7 @@
 // ============================================
 
 import { supabase } from '@/lib/supabase/client';
+import { withRetryAndTimeout } from '@/lib/utils/retry';
 import type {
   Post,
   PostFull,
@@ -206,75 +207,84 @@ export async function getPostFullById(postId: number): Promise<PostFull | null> 
 export async function getPosts(
   filters: PostFilterParams = {}
 ): Promise<PaginatedResponse<PostFull>> {
-  const {
-    page = 1,
-    limit = 10,
-    category_id,
-    subcategory_ids,
-    status = 'published',
-    search,
-    author_id,
-    sort = 'latest',
-  } = filters;
+  return withRetryAndTimeout(
+    async () => {
+      const {
+        page = 1,
+        limit = 10,
+        category_id,
+        subcategory_ids,
+        status = 'published',
+        search,
+        author_id,
+        sort = 'latest',
+      } = filters;
 
-  let query = supabase
-    .from('sn_posts_full')
-    .select('*', { count: 'exact' })
-    .eq('status', status);
+      let query = supabase
+        .from('sn_posts_full')
+        .select('*', { count: 'exact' })
+        .eq('status', status);
 
-  // 필터 적용
-  if (category_id) {
-    query = query.eq('category_id', category_id);
-  }
+      // 필터 적용
+      if (category_id) {
+        query = query.eq('category_id', category_id);
+      }
 
-  if (author_id) {
-    query = query.eq('author_id', author_id);
-  }
+      if (author_id) {
+        query = query.eq('author_id', author_id);
+      }
 
-  if (search) {
-    query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%`);
-  }
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%`);
+      }
 
-  // 서브카테고리 필터 (배열 겹침 체크)
-  if (subcategory_ids && subcategory_ids.length > 0) {
-    query = query.overlaps('subcategory_ids', subcategory_ids);
-  }
+      // 서브카테고리 필터 (배열 겹침 체크)
+      if (subcategory_ids && subcategory_ids.length > 0) {
+        query = query.overlaps('subcategory_ids', subcategory_ids);
+      }
 
-  // 정렬 적용
-  switch (sort) {
-    case 'latest':
-      query = query.order('published_date', { ascending: false });
-      break;
-    case 'popular':
-      query = query.order('view_count', { ascending: false });
-      break;
-    case 'oldest':
-      query = query.order('published_date', { ascending: true });
-      break;
-    default:
-      query = query.order('published_date', { ascending: false });
-  }
+      // 정렬 적용
+      switch (sort) {
+        case 'latest':
+          query = query.order('published_date', { ascending: false });
+          break;
+        case 'popular':
+          query = query.order('view_count', { ascending: false });
+          break;
+        case 'oldest':
+          query = query.order('published_date', { ascending: true });
+          break;
+        default:
+          query = query.order('published_date', { ascending: false });
+      }
 
-  // 페이지네이션
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
+      // 페이지네이션
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
 
-  query = query.range(from, to);
+      query = query.range(from, to);
 
-  const { data, error, count } = await query;
+      const { data, error, count } = await query;
 
-  if (error) {
-    console.error('Error fetching posts:', error);
-    throw error;
-  }
+      if (error) {
+        console.error('Error fetching posts:', error);
+        throw error;
+      }
 
-  return {
-    data: data || [],
-    total: count || 0,
-    page,
-    limit,
-    totalPages: Math.ceil((count || 0) / limit),
-  };
+      return {
+        data: data || [],
+        total: count || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit),
+      };
+    },
+    {
+      maxRetries: 3,
+      delay: 1000,
+      timeoutMs: 30000,
+    }
+  );
 }
 
 /**
@@ -284,40 +294,58 @@ export async function getLatestPostsByCategory(
   categoryId: number,
   limit: number = 5
 ): Promise<PostFull[]> {
-  const { data, error } = await supabase
-    .from('sn_posts_full')
-    .select('*')
-    .eq('category_id', categoryId)
-    .eq('status', 'published')
-    .order('published_date', { ascending: false })
-    .limit(limit);
+  return withRetryAndTimeout(
+    async () => {
+      const { data, error } = await supabase
+        .from('sn_posts_full')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('status', 'published')
+        .order('published_date', { ascending: false })
+        .limit(limit);
 
-  if (error) {
-    console.error('Error fetching latest posts:', error);
-    throw error;
-  }
+      if (error) {
+        console.error('Error fetching latest posts:', error);
+        throw error;
+      }
 
-  return data || [];
+      return data || [];
+    },
+    {
+      maxRetries: 3,
+      delay: 1000,
+      timeoutMs: 25000,
+    }
+  );
 }
 
 /**
  * 추천 게시글 조회 (is_featured = true)
  */
 export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
-  const { data, error } = await supabase
-    .from('sn_posts_full')
-    .select('*')
-    .eq('status', 'published')
-    .eq('is_featured', true)
-    .order('published_date', { ascending: false })
-    .limit(limit);
+  return withRetryAndTimeout(
+    async () => {
+      const { data, error } = await supabase
+        .from('sn_posts_full')
+        .select('*')
+        .eq('status', 'published')
+        .eq('is_featured', true)
+        .order('published_date', { ascending: false })
+        .limit(limit);
 
-  if (error) {
-    console.error('Error fetching featured posts:', error);
-    throw error;
-  }
+      if (error) {
+        console.error('Error fetching featured posts:', error);
+        throw error;
+      }
 
-  return data || [];
+      return data || [];
+    },
+    {
+      maxRetries: 3,
+      delay: 1000,
+      timeoutMs: 25000,
+    }
+  );
 }
 
 /**

@@ -406,7 +406,7 @@ export default function LogsDetailClient({ postId }: { postId: number }) {
             <img
               src={post.featured_image_url}
               alt={post.title}
-              className="w-full h-auto"
+              className="w-full h-auto max-h-[420px] object-cover aspect-[16/9]"
             />
           </div>
         )}

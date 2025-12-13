@@ -3,6 +3,7 @@
 // ============================================
 
 import { supabase } from '@/lib/supabase/client';
+import { withRetryAndTimeout } from '@/lib/utils/retry';
 import type { Category, CategoryWithParent } from '@/lib/types/database.types';
 
 /**
@@ -66,21 +67,30 @@ export async function getCategoriesByParent(parentId: number): Promise<Category[
  * slug로 카테고리 조회
  */
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  const { data, error } = await supabase
-    .from('sn_categories')
-    .select('*')
-    .eq('slug', slug)
-    .single();
+  return withRetryAndTimeout(
+    async () => {
+      const { data, error } = await supabase
+        .from('sn_categories')
+        .select('*')
+        .eq('slug', slug)
+        .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null; // Not found
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Not found
+        }
+        console.error('Error fetching category by slug:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    {
+      maxRetries: 3,
+      delay: 1000,
+      timeoutMs: 20000,
     }
-    console.error('Error fetching category by slug:', error);
-    throw error;
-  }
-
-  return data;
+  );
 }
 
 /**

@@ -15,15 +15,16 @@ export default function Home() {
   const [treePosts, setTreePosts] = useState<PostFull[]>([]);
   const [logsPosts, setLogsPosts] = useState<PostFull[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('🎬 [MAIN] 컴포넌트 마운트됨 - useEffect 실행');
 
-    // 타임아웃 추가: 15초 후에도 로딩 중이면 강제로 로딩 해제
+    // 타임아웃 추가: 60초 후에도 로딩 중이면 강제로 로딩 해제
     const loadTimeout = setTimeout(() => {
       console.warn('⚠️ 콘텐츠 로딩 타임아웃 - 기본 상태로 전환');
       setLoading(false);
-    }, 15000); // 15초 타임아웃
+    }, 60000); // 60초 타임아웃
 
     loadAllPosts()
       .then(() => {
@@ -46,6 +47,7 @@ export default function Home() {
   async function loadAllPosts() {
     try {
       setLoading(true);
+      setError(null);
       console.log('🔄 [MAIN] 메인 페이지 로딩 시작');
 
       // Featured 게시글 (2개) - 실패해도 계속 진행
@@ -57,11 +59,17 @@ export default function Home() {
         console.error('✗ [MAIN] Featured 로딩 실패:', error);
       }
 
-      // 카테고리 ID 조회
-      const wildflowerCat = await getCategoryBySlug('wildflower');
-      const treeCat = await getCategoryBySlug('tree-diagnose');
-      const logsCat = await getCategoryBySlug('logs');
-      console.log('✓ [MAIN] 카테고리 조회 완료');
+      // 카테고리 ID 조회 - 실패해도 계속 진행
+      let wildflowerCat, treeCat, logsCat;
+      try {
+        wildflowerCat = await getCategoryBySlug('wildflower');
+        treeCat = await getCategoryBySlug('tree-diagnose');
+        logsCat = await getCategoryBySlug('logs');
+        console.log('✓ [MAIN] 카테고리 조회 완료');
+      } catch (error) {
+        console.error('✗ [MAIN] 카테고리 조회 실패:', error);
+        // 카테고리 조회 실패해도 계속 진행
+      }
 
       // 각 카테고리별 최신글 4개 - 병렬 처리 및 개별 에러 처리
       const promises = [];
@@ -102,8 +110,14 @@ export default function Home() {
       await Promise.allSettled(promises);
       console.log('✓ [MAIN] 모든 게시글 로딩 완료');
 
+      // 모든 데이터가 비어있으면 에러로 간주
+      if (featuredPosts.length === 0 && wildflowerPosts.length === 0 && treePosts.length === 0 && logsPosts.length === 0) {
+        console.warn('⚠️ [MAIN] 모든 게시글이 비어있음 - 네트워크나 API 문제 가능성');
+      }
+
     } catch (error) {
       console.error('✗ [MAIN] 메인 페이지 로딩 실패:', error);
+      setError('게시글을 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
       console.log('✓ [MAIN] 로딩 상태 해제');
@@ -157,6 +171,21 @@ export default function Home() {
       {loading ? (
         <div className="max-w-6xl mx-auto px-6 py-20 text-center text-gray-600">
           콘텐츠를 불러오는 중...
+        </div>
+      ) : error ? (
+        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-8 max-w-md mx-auto">
+            <div className="text-red-600 text-lg font-semibold mb-2">
+              ⚠️ 오류 발생
+            </div>
+            <p className="text-red-700 mb-4">{error}</p>
+            <button
+              onClick={() => loadAllPosts()}
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              다시 시도
+            </button>
+          </div>
         </div>
       ) : (
         <>
