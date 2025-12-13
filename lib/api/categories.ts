@@ -86,9 +86,9 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
       return data;
     },
     {
-      maxRetries: 2,
-      delay: 800,
-      timeoutMs: 8000,
+      maxRetries: 3,
+      delay: 1000,
+      timeoutMs: 15000,
     }
   );
 }

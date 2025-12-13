@@ -280,9 +280,9 @@ export async function getPosts(
       };
     },
     {
-      maxRetries: 2,
-      delay: 800,
-      timeoutMs: 12000,
+      maxRetries: 3,
+      delay: 1000,
+      timeoutMs: 20000,
     }
   );
 }
@@ -312,9 +312,9 @@ export async function getLatestPostsByCategory(
       return data || [];
     },
     {
-      maxRetries: 2,
-      delay: 800,
-      timeoutMs: 10000,
+      maxRetries: 3,
+      delay: 1000,
+      timeoutMs: 18000,
     }
   );
 }
@@ -341,9 +341,9 @@ export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
       return data || [];
     },
     {
-      maxRetries: 2,
-      delay: 800,
-      timeoutMs: 10000,
+      maxRetries: 3,
+      delay: 1000,
+      timeoutMs: 18000,
     }
   );
 }
