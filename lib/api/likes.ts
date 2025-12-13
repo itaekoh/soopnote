@@ -1,6 +1,13 @@
 import { supabase } from '../supabase/client';
 import type { Like } from '../types/database.types';
 
+// RPC 함수 반환 타입
+interface AnonymousLikeResponse {
+  success: boolean;
+  new_like_count: number;
+  message: string;
+}
+
 /**
  * 특정 게시글에 좋아요 추가
  */
@@ -149,27 +156,25 @@ export async function addAnonymousLike(postId: number): Promise<void> {
       throw new Error('이미 좋아요를 누른 게시글입니다.');
     }
 
-    // like_count 직접 증가
-    const { data: post, error: fetchError } = await supabase
-      .from('sn_posts')
-      .select('like_count')
-      .eq('id', postId)
-      .single();
+    // RPC 함수를 사용하여 like_count 증가 (RLS 우회)
+    const { data, error } = await supabase
+      .rpc('increment_anonymous_like_count', { p_post_id: postId })
+      .single<AnonymousLikeResponse>();
 
-    if (fetchError) throw fetchError;
+    if (error) {
+      console.error('RPC 호출 실패:', error);
+      throw error;
+    }
 
-    const { error } = await supabase
-      .from('sn_posts')
-      .update({ like_count: (post.like_count || 0) + 1 })
-      .eq('id', postId);
-
-    if (error) throw error;
+    if (!data || !data.success) {
+      throw new Error(data?.message || '좋아요 추가에 실패했습니다.');
+    }
 
     // localStorage에 저장
     likedPosts.push(postId);
     localStorage.setItem('anonymous_liked_posts', JSON.stringify(likedPosts));
 
-    console.log('📊 [ANONYMOUS_LIKE] 익명 좋아요 추가 완료 - post_id:', postId);
+    console.log('📊 [ANONYMOUS_LIKE] 익명 좋아요 추가 완료 - post_id:', postId, 'new_count:', data.new_like_count);
   } catch (error) {
     console.error('익명 좋아요 추가 중 오류:', error);
     throw error;
@@ -187,27 +192,25 @@ export async function removeAnonymousLike(postId: number): Promise<void> {
       throw new Error('좋아요를 누르지 않은 게시글입니다.');
     }
 
-    // like_count 직접 감소
-    const { data: post, error: fetchError } = await supabase
-      .from('sn_posts')
-      .select('like_count')
-      .eq('id', postId)
-      .single();
+    // RPC 함수를 사용하여 like_count 감소 (RLS 우회)
+    const { data, error } = await supabase
+      .rpc('decrement_anonymous_like_count', { p_post_id: postId })
+      .single<AnonymousLikeResponse>();
 
-    if (fetchError) throw fetchError;
+    if (error) {
+      console.error('RPC 호출 실패:', error);
+      throw error;
+    }
 
-    const { error } = await supabase
-      .from('sn_posts')
-      .update({ like_count: Math.max(0, (post.like_count || 0) - 1) })
-      .eq('id', postId);
-
-    if (error) throw error;
+    if (!data || !data.success) {
+      throw new Error(data?.message || '좋아요 제거에 실패했습니다.');
+    }
 
     // localStorage에서 제거
     const updatedLikes = likedPosts.filter(id => id !== postId);
     localStorage.setItem('anonymous_liked_posts', JSON.stringify(updatedLikes));
 
-    console.log('📊 [ANONYMOUS_LIKE] 익명 좋아요 제거 완료 - post_id:', postId);
+    console.log('📊 [ANONYMOUS_LIKE] 익명 좋아요 제거 완료 - post_id:', postId, 'new_count:', data.new_like_count);
   } catch (error) {
     console.error('익명 좋아요 제거 중 오류:', error);
     throw error;
