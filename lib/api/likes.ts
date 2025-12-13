@@ -219,9 +219,24 @@ export async function removeAnonymousLike(postId: number): Promise<void> {
  */
 function getAnonymousLikedPosts(): number[] {
   try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return [];
+    }
     const stored = localStorage.getItem('anonymous_liked_posts');
-    return stored ? JSON.parse(stored) : [];
-  } catch {
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    // 유효한 배열인지 확인
+    if (!Array.isArray(parsed)) {
+      localStorage.removeItem('anonymous_liked_posts');
+      return [];
+    }
+    return parsed;
+  } catch (error) {
+    console.error('localStorage 읽기 실패:', error);
+    // 손상된 데이터 제거
+    try {
+      localStorage.removeItem('anonymous_liked_posts');
+    } catch {}
     return [];
   }
 }

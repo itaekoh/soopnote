@@ -100,11 +100,24 @@ export default function Home() {
       // 모든 데이터가 비어있으면 에러로 간주
       if (featuredPosts.length === 0 && wildflowerPosts.length === 0 && treePosts.length === 0 && logsPosts.length === 0) {
         console.warn('⚠️ [MAIN] 모든 게시글이 비어있음 - 네트워크나 API 문제 가능성');
+        console.warn('⚠️ [MAIN] 결과 상태:', {
+          featured: results[0].status,
+          wildflower: results[1].status,
+          tree: results[2].status,
+          logs: results[3].status
+        });
+
+        // 모든 요청이 실패했다면 에러 표시
+        const allFailed = results.every(r => r.status === 'rejected');
+        if (allFailed) {
+          console.error('❌ [MAIN] 모든 API 요청 실패!');
+          setError('서버와 연결할 수 없습니다. 인터넷 연결을 확인하거나 잠시 후 다시 시도해주세요.');
+        }
       }
 
     } catch (error) {
       console.error('✗ [MAIN] 메인 페이지 로딩 실패:', error);
-      setError('게시글을 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      setError('게시글을 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 캐시를 삭제해주세요.');
     } finally {
       setLoading(false);
       console.log('✓ [MAIN] 로딩 상태 해제');
