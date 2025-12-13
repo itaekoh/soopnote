@@ -20,11 +20,11 @@ export default function Home() {
   useEffect(() => {
     console.log('🎬 [MAIN] 컴포넌트 마운트됨 - useEffect 실행');
 
-    // 타임아웃 추가: 60초 후에도 로딩 중이면 강제로 로딩 해제
+    // 타임아웃 추가: 20초 후에도 로딩 중이면 강제로 로딩 해제
     const loadTimeout = setTimeout(() => {
       console.warn('⚠️ 콘텐츠 로딩 타임아웃 - 기본 상태로 전환');
       setLoading(false);
-    }, 60000); // 60초 타임아웃
+    }, 20000); // 20초 타임아웃
 
     loadAllPosts()
       .then(() => {
@@ -50,64 +50,51 @@ export default function Home() {
       setError(null);
       console.log('🔄 [MAIN] 메인 페이지 로딩 시작');
 
-      // Featured 게시글 (2개) - 실패해도 계속 진행
-      try {
-        const featured = await getFeaturedPosts(2);
-        setFeaturedPosts(featured);
-        console.log('✓ [MAIN] Featured 게시글:', featured.length, '개');
-      } catch (error) {
-        console.error('✗ [MAIN] Featured 로딩 실패:', error);
+      // 모든 데이터를 완전 병렬로 로드 (카테고리 ID + 게시글)
+      const results = await Promise.allSettled([
+        // Featured 게시글
+        getFeaturedPosts(2),
+        // 카테고리별 슬러그로 직접 조회 + 게시글
+        getCategoryBySlug('wildflower').then(cat =>
+          cat ? getLatestPostsByCategory(cat.id, 4) : []
+        ),
+        getCategoryBySlug('tree-diagnose').then(cat =>
+          cat ? getLatestPostsByCategory(cat.id, 4) : []
+        ),
+        getCategoryBySlug('logs').then(cat =>
+          cat ? getLatestPostsByCategory(cat.id, 4) : []
+        ),
+      ]);
+
+      // 결과 처리
+      if (results[0].status === 'fulfilled') {
+        setFeaturedPosts(results[0].value);
+        console.log('✓ [MAIN] Featured 게시글:', results[0].value.length, '개');
+      } else {
+        console.error('✗ [MAIN] Featured 로딩 실패:', results[0].reason);
       }
 
-      // 카테고리 ID 조회 - 실패해도 계속 진행
-      let wildflowerCat, treeCat, logsCat;
-      try {
-        wildflowerCat = await getCategoryBySlug('wildflower');
-        treeCat = await getCategoryBySlug('tree-diagnose');
-        logsCat = await getCategoryBySlug('logs');
-        console.log('✓ [MAIN] 카테고리 조회 완료');
-      } catch (error) {
-        console.error('✗ [MAIN] 카테고리 조회 실패:', error);
-        // 카테고리 조회 실패해도 계속 진행
+      if (results[1].status === 'fulfilled') {
+        setWildflowerPosts(results[1].value);
+        console.log('✓ [MAIN] 야생화 일지:', results[1].value.length, '개');
+      } else {
+        console.error('✗ [MAIN] 야생화 일지 로딩 실패:', results[1].reason);
       }
 
-      // 각 카테고리별 최신글 4개 - 병렬 처리 및 개별 에러 처리
-      const promises = [];
-
-      if (wildflowerCat) {
-        promises.push(
-          getLatestPostsByCategory(wildflowerCat.id, 4)
-            .then((posts) => {
-              setWildflowerPosts(posts);
-              console.log('✓ [MAIN] 야생화 일지:', posts.length, '개');
-            })
-            .catch((error) => console.error('✗ [MAIN] 야생화 일지 로딩 실패:', error))
-        );
+      if (results[2].status === 'fulfilled') {
+        setTreePosts(results[2].value);
+        console.log('✓ [MAIN] 나무진단:', results[2].value.length, '개');
+      } else {
+        console.error('✗ [MAIN] 나무진단 로딩 실패:', results[2].reason);
       }
 
-      if (treeCat) {
-        promises.push(
-          getLatestPostsByCategory(treeCat.id, 4)
-            .then((posts) => {
-              setTreePosts(posts);
-              console.log('✓ [MAIN] 나무진단:', posts.length, '개');
-            })
-            .catch((error) => console.error('✗ [MAIN] 나무진단 로딩 실패:', error))
-        );
+      if (results[3].status === 'fulfilled') {
+        setLogsPosts(results[3].value);
+        console.log('✓ [MAIN] 아카이브:', results[3].value.length, '개');
+      } else {
+        console.error('✗ [MAIN] 아카이브 로딩 실패:', results[3].reason);
       }
 
-      if (logsCat) {
-        promises.push(
-          getLatestPostsByCategory(logsCat.id, 4)
-            .then((posts) => {
-              setLogsPosts(posts);
-              console.log('✓ [MAIN] 아카이브:', posts.length, '개');
-            })
-            .catch((error) => console.error('✗ [MAIN] 아카이브 로딩 실패:', error))
-        );
-      }
-
-      await Promise.allSettled(promises);
       console.log('✓ [MAIN] 모든 게시글 로딩 완료');
 
       // 모든 데이터가 비어있으면 에러로 간주
