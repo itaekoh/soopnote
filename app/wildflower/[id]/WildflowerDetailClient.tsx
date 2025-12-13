@@ -9,7 +9,7 @@ import { Footer } from '@/components/Footer';
 import { Comments } from '@/components/Comments';
 import { ImageModal } from '@/components/ImageModal';
 import { getPostFullById, incrementViewCount } from '@/lib/api/posts';
-import { checkUserLike, toggleLike } from '@/lib/api/likes';
+import { checkLikeUniversal, toggleLikeUniversal } from '@/lib/api/likes';
 import { supabase } from '@/lib/supabase/client';
 import type { PostFull } from '@/lib/types/database.types';
 import { pushToDataLayer } from '@/lib/types/gtm';
@@ -53,7 +53,7 @@ export default function WildflowerDetailClient({ postId }: { postId: number }) {
     async function recheckLikeStatus() {
       if (post) {
         console.log('❤️ [recheckLikeStatus] currentUserId:', currentUserId, 'postId:', post.id);
-        const liked = await checkUserLike(post.id);
+        const liked = await checkLikeUniversal(post.id);
         console.log('❤️ [recheckLikeStatus] liked:', liked);
         setIsLiked(liked);
       }
@@ -146,8 +146,8 @@ export default function WildflowerDetailClient({ postId }: { postId: number }) {
         subcategories: postData.subcategory_names || [],
       });
 
-      // 좋아요 상태 확인
-      const liked = await checkUserLike(postId);
+      // 좋아요 상태 확인 (로그인/비로그인 모두 지원)
+      const liked = await checkLikeUniversal(postId);
       setIsLiked(liked);
     } catch (error) {
       console.error('게시글 로딩 실패:', error);
@@ -161,7 +161,7 @@ export default function WildflowerDetailClient({ postId }: { postId: number }) {
 
     try {
       setIsLiking(true);
-      const newLikedState = await toggleLike(postId);
+      const newLikedState = await toggleLikeUniversal(postId);
       setIsLiked(newLikedState);
       setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
 

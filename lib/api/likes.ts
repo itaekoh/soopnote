@@ -135,3 +135,153 @@ export async function toggleLike(postId: number): Promise<boolean> {
 
 // RPC 함수 제거: 좋아요 카운트는 DB TRIGGER에서 자동으로 처리됩니다
 // (supabase_schema.sql:225-249 참조)
+
+/**
+ * 익명 사용자 좋아요 추가 (로그인 불필요)
+ * localStorage에 좋아요 여부 저장
+ */
+export async function addAnonymousLike(postId: number): Promise<void> {
+  try {
+    // localStorage에서 좋아요한 게시글 목록 가져오기
+    const likedPosts = getAnonymousLikedPosts();
+
+    if (likedPosts.includes(postId)) {
+      throw new Error('이미 좋아요를 누른 게시글입니다.');
+    }
+
+    // like_count 직접 증가
+    const { data: post, error: fetchError } = await supabase
+      .from('sn_posts')
+      .select('like_count')
+      .eq('id', postId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const { error } = await supabase
+      .from('sn_posts')
+      .update({ like_count: (post.like_count || 0) + 1 })
+      .eq('id', postId);
+
+    if (error) throw error;
+
+    // localStorage에 저장
+    likedPosts.push(postId);
+    localStorage.setItem('anonymous_liked_posts', JSON.stringify(likedPosts));
+
+    console.log('📊 [ANONYMOUS_LIKE] 익명 좋아요 추가 완료 - post_id:', postId);
+  } catch (error) {
+    console.error('익명 좋아요 추가 중 오류:', error);
+    throw error;
+  }
+}
+
+/**
+ * 익명 사용자 좋아요 제거
+ */
+export async function removeAnonymousLike(postId: number): Promise<void> {
+  try {
+    const likedPosts = getAnonymousLikedPosts();
+
+    if (!likedPosts.includes(postId)) {
+      throw new Error('좋아요를 누르지 않은 게시글입니다.');
+    }
+
+    // like_count 직접 감소
+    const { data: post, error: fetchError } = await supabase
+      .from('sn_posts')
+      .select('like_count')
+      .eq('id', postId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const { error } = await supabase
+      .from('sn_posts')
+      .update({ like_count: Math.max(0, (post.like_count || 0) - 1) })
+      .eq('id', postId);
+
+    if (error) throw error;
+
+    // localStorage에서 제거
+    const updatedLikes = likedPosts.filter(id => id !== postId);
+    localStorage.setItem('anonymous_liked_posts', JSON.stringify(updatedLikes));
+
+    console.log('📊 [ANONYMOUS_LIKE] 익명 좋아요 제거 완료 - post_id:', postId);
+  } catch (error) {
+    console.error('익명 좋아요 제거 중 오류:', error);
+    throw error;
+  }
+}
+
+/**
+ * 익명 사용자가 좋아요한 게시글 목록 가져오기
+ */
+function getAnonymousLikedPosts(): number[] {
+  try {
+    const stored = localStorage.getItem('anonymous_liked_posts');
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 익명 사용자 좋아요 여부 확인
+ */
+export function checkAnonymousLike(postId: number): boolean {
+  const likedPosts = getAnonymousLikedPosts();
+  return likedPosts.includes(postId);
+}
+
+/**
+ * 좋아요 토글 (로그인/비로그인 모두 지원)
+ */
+export async function toggleLikeUniversal(postId: number): Promise<boolean> {
+  try {
+    // 로그인 확인
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      // 로그인한 사용자: 기존 방식
+      const isLiked = await checkUserLike(postId);
+      if (isLiked) {
+        await removeLike(postId);
+        return false;
+      } else {
+        await addLike(postId);
+        return true;
+      }
+    } else {
+      // 비로그인 사용자: localStorage 사용
+      const isLiked = checkAnonymousLike(postId);
+      if (isLiked) {
+        await removeAnonymousLike(postId);
+        return false;
+      } else {
+        await addAnonymousLike(postId);
+        return true;
+      }
+    }
+  } catch (error) {
+    console.error('좋아요 토글 중 오류:', error);
+    throw error;
+  }
+}
+
+/**
+ * 좋아요 상태 확인 (로그인/비로그인 모두 지원)
+ */
+export async function checkLikeUniversal(postId: number): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      return await checkUserLike(postId);
+    } else {
+      return checkAnonymousLike(postId);
+    }
+  } catch {
+    return false;
+  }
+}

@@ -9,7 +9,7 @@ import { Footer } from '@/components/Footer';
 import { Comments } from '@/components/Comments';
 import { ImageModal } from '@/components/ImageModal';
 import { getPostFullById, incrementViewCount } from '@/lib/api/posts';
-import { checkUserLike, toggleLike } from '@/lib/api/likes';
+import { checkLikeUniversal, toggleLikeUniversal } from '@/lib/api/likes';
 import { supabase } from '@/lib/supabase/client';
 import type { PostFull } from '@/lib/types/database.types';
 import { pushToDataLayer } from '@/lib/types/gtm';
@@ -51,7 +51,7 @@ export default function LogsDetailClient({ postId }: { postId: number }) {
   useEffect(() => {
     async function recheckLikeStatus() {
       if (post) {
-        const liked = await checkUserLike(post.id);
+        const liked = await checkLikeUniversal(post.id);
         setIsLiked(liked);
       }
     }
@@ -156,7 +156,7 @@ export default function LogsDetailClient({ postId }: { postId: number }) {
       });
 
       // 좋아요 상태 확인
-      const liked = await checkUserLike(postId);
+      const liked = await checkLikeUniversal(postId);
       setIsLiked(liked);
     } catch (error) {
       console.error('게시글 로딩 실패:', error);
@@ -170,7 +170,7 @@ export default function LogsDetailClient({ postId }: { postId: number }) {
 
     try {
       setIsLiking(true);
-      const newLikedState = await toggleLike(postId);
+      const newLikedState = await toggleLikeUniversal(postId);
       setIsLiked(newLikedState);
       setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
 
