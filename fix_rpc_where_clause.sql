@@ -1,24 +1,14 @@
 -- ============================================
--- 게시물 조회 성능 최적화 스크립트 (v4 - 로직 분리)
+-- RPC 함수 WHERE 조건 버그 수정
 -- ============================================
--- v4: get_paginated_posts 함수를 count와 data 조회로 분리하고, N+1 쿼리 문제를 해결하여 성능을 대폭 개선
+-- 문제: OR 연산자 우선순위로 인해 이전 AND 조건들이 무시됨
+-- 증상:
+--   1. 나무진단 목록이 안 나옴
+--   2. 아카이브 서브카테고리 필터 안 됨
+-- 해결: 괄호로 OR 조건을 감싸서 우선순위 명확화
 -- ============================================
 
--- 1. Trigram 확장 활성화 (ILIKE 검색 성능 향상용)
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
--- 2. 필수 인덱스 생성 (이미 생성되었다면 실행되지 않음)
-CREATE INDEX IF NOT EXISTS idx_sn_posts_status ON sn_posts(status);
-CREATE INDEX IF NOT EXISTS idx_sn_posts_category_id ON sn_posts(category_id);
-CREATE INDEX IF NOT EXISTS idx_sn_posts_author_id ON sn_posts(author_id);
-CREATE INDEX IF NOT EXISTS idx_sn_posts_published_date ON sn_posts(published_date DESC);
-CREATE INDEX IF NOT EXISTS idx_sn_posts_view_count ON sn_posts(view_count DESC);
-CREATE INDEX IF NOT EXISTS idx_sn_posts_search_trgm ON sn_posts USING gin ((title || ' ' || excerpt) gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_sn_post_categories_post_id_category_id ON sn_post_categories(post_id, category_id);
-
--- ============================================
--- 3. 게시물 총 개수 조회용 RPC 함수 생성
--- ============================================
+-- 1. get_posts_count 함수 수정
 DROP FUNCTION IF EXISTS get_posts_count(integer, integer[], uuid, text, text, boolean);
 
 CREATE OR REPLACE FUNCTION get_posts_count(
@@ -36,14 +26,14 @@ BEGIN
     SELECT COUNT(DISTINCT p.id)
     INTO total_rows
     FROM sn_posts p
-    LEFT JOIN sn_post_categories pc ON p.id = pc.post_id -- JOIN for subcategory filtering
+    LEFT JOIN sn_post_categories pc ON p.id = pc.post_id
     WHERE
         p.status = in_status
         AND (in_author_id IS NULL OR p.author_id = in_author_id)
         AND (in_is_featured IS NULL OR p.is_featured = in_is_featured)
         AND (in_search IS NULL OR (p.title || ' ' || p.excerpt) ILIKE '%' || in_search || '%')
         AND (
-            -- ✅ 괄호로 OR 조건 전체를 감쌈 (연산자 우선순위 버그 수정)
+            -- ✅ 괄호로 OR 조건 전체를 감쌈
             (
                 in_subcategory_ids IS NULL
                 AND (in_category_id IS NULL OR p.category_id = in_category_id)
@@ -55,12 +45,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ============================================
--- 4. 게시물 목록 조회용 RPC 함수 생성 (데이터만)
--- ============================================
-
--- 기존 함수 삭제 (파라미터 시그니처가 변경되었으므로 반드시 먼저 삭제해야 합니다.)
-DROP FUNCTION IF EXISTS get_paginated_posts(integer, integer[], uuid, text, text, text, integer, integer);
+-- 2. get_paginated_posts 함수 수정
 DROP FUNCTION IF EXISTS get_paginated_posts(integer, integer[], uuid, text, text, text, integer, integer, boolean);
 
 CREATE OR REPLACE FUNCTION get_paginated_posts(
@@ -81,15 +66,14 @@ RETURNS TABLE (
     title TEXT,
     slug TEXT,
     excerpt TEXT,
-    -- content 필드 제외 (목록에서 불필요, 상세보기에서만 필요)
     status TEXT,
     published_date TEXT,
     view_count INT,
     like_count INT,
     comment_count INT,
     featured_image_url TEXT,
-    read_time TEXT,  -- INT -> TEXT로 수정 (DB 스키마와 일치)
-    location TEXT,   -- 추가 (야생화일지, 나무진단에서 필요)
+    read_time TEXT,
+    location TEXT,
     is_featured BOOLEAN,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,
@@ -107,14 +91,14 @@ BEGIN
     WITH filtered_posts AS (
       SELECT p.id as post_id
       FROM sn_posts p
-      LEFT JOIN sn_post_categories pc ON p.id = pc.post_id -- JOIN for subcategory filtering
+      LEFT JOIN sn_post_categories pc ON p.id = pc.post_id
       WHERE
         p.status = in_status
         AND (in_author_id IS NULL OR p.author_id = in_author_id)
         AND (in_is_featured IS NULL OR p.is_featured = in_is_featured)
         AND (in_search IS NULL OR (p.title || ' ' || p.excerpt) ILIKE '%' || in_search || '%')
         AND (
-            -- ✅ 괄호로 OR 조건 전체를 감쌈 (연산자 우선순위 버그 수정)
+            -- ✅ 괄호로 OR 조건 전체를 감쌈
             (
                 in_subcategory_ids IS NULL
                 AND (in_category_id IS NULL OR p.category_id = in_category_id)
@@ -132,7 +116,6 @@ BEGIN
     )
     SELECT
         p.id, p.author_id, p.category_id, p.title, p.slug, p.excerpt,
-        -- content 제외 (성능 개선)
         p.status,
         TO_CHAR(p.published_date, 'YYYY-MM-DD') as published_date,
         p.view_count, p.like_count, p.comment_count,
@@ -154,9 +137,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ============================================
--- 5. 권한 설정
--- ============================================
+-- 3. 권한 설정
 GRANT EXECUTE ON FUNCTION get_posts_count(integer, integer[], uuid, text, text, boolean) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION get_paginated_posts(integer, integer[], uuid, text, text, text, integer, integer, boolean) TO anon, authenticated;
 
+-- ============================================
+-- 테스트 쿼리 (실행 후 확인)
+-- ============================================
+
+-- 테스트 1: 나무진단 카테고리 (category_id만 사용)
+-- SELECT * FROM get_paginated_posts(
+--     2,        -- tree-diagnose category_id (실제 ID로 변경)
+--     NULL,     -- subcategory_ids
+--     NULL,     -- author_id
+--     'published',
+--     NULL,     -- search
+--     'latest',
+--     1,
+--     10,
+--     NULL      -- is_featured
+-- );
+
+-- 테스트 2: 아카이브 서브카테고리 필터 (subcategory_ids 사용)
+-- SELECT * FROM get_paginated_posts(
+--     3,        -- logs category_id (실제 ID로 변경)
+--     ARRAY[10, 11], -- Tech, Tree & Field subcategory IDs (실제 ID로 변경)
+--     NULL,
+--     'published',
+--     NULL,
+--     'latest',
+--     1,
+--     10,
+--     NULL
+-- );

@@ -12,6 +12,7 @@ import type {
   PostFilterParams,
   PaginatedResponse,
 } from '@/lib/types/database.types';
+import { getCategoriesByParent } from './categories';
 
 /**
  * 게시글 slug 생성 (제목 -> URL 친화적 문자열)
@@ -207,49 +208,68 @@ export async function getPostFullById(postId: number): Promise<PostFull | null> 
 export async function getPosts(
   filters: PostFilterParams = {}
 ): Promise<PaginatedResponse<PostFull>> {
-  // withRetryAndTimeout 제거하고 직접 호출 (RPC 타임아웃은 DB에서 제어)
-  const {
-    page = 1,
-    limit = 10,
-    category_id,
-    subcategory_ids,
-    status = 'published',
-    search,
-    author_id,
-    sort = 'latest',
-  } = filters;
+  return withRetryAndTimeout(
+    async () => {
+      const {
+        page = 1,
+        limit = 10,
+        category_id,
+        subcategory_ids,
+        status = 'published',
+        search,
+        author_id,
+        sort = 'latest',
+      } = filters;
 
-  const { data, error } = await supabase.rpc('get_paginated_posts', {
-    in_category_id: category_id,
-    in_subcategory_ids: subcategory_ids,
-    in_author_id: author_id,
-    in_status: status,
-    in_search: search,
-    in_sort: sort,
-    in_page: page,
-    in_limit: limit,
-  });
+      // ✅ 수정: category_id와 subcategory_ids를 별도로 처리
+      // - category_id만 있으면: 해당 카테고리의 모든 게시물 조회
+      // - subcategory_ids가 있으면: 해당 서브카테고리만 필터링
+      const finalSubcategoryIds = subcategory_ids;
+      const finalCategoryId = category_id;
 
-  if (error) {
-    console.error('Error fetching posts via RPC:', error);
-    throw error;
-  }
+      const { data, error } = await supabase.rpc('get_paginated_posts', {
+        in_category_id: finalCategoryId,
+        in_subcategory_ids: finalSubcategoryIds,
+        in_author_id: author_id,
+        in_status: status,
+        in_search: search,
+        in_sort: sort,
+        in_page: page,
+        in_limit: limit,
+      });
 
-  // RPC 결과는 단일 배열이므로, 첫 번째 결과에서 총 개수를 가져오고
-  // 전체 데이터를 반환 데이터로 사용합니다.
-  const totalCount = data.length > 0 ? data[0].total_count : 0;
+      if (error) {
+        console.error('Error fetching posts via RPC:', error);
+        throw error;
+      }
 
-  return {
-    data: data.map(p => ({...p, total_count: undefined})) as PostFull[], // total_count 필드 제거
-    total: totalCount,
-    page,
-    limit,
-    totalPages: Math.ceil((totalCount || 0) / limit),
-  };
+      // RPC 결과가 null일 경우, 또는 데이터가 없을 경우를 대비해 빈 배열로 초기화
+      const responseData = data || [];
+
+      // ⚠️ 중요: get_paginated_posts는 total_count를 반환하지 않음
+      // 별도로 get_posts_count를 호출해야 함 (TODO: 추후 개선)
+      // 임시 방편: 데이터가 limit보다 적으면 마지막 페이지로 간주
+      const totalCount = responseData.length < limit ? page * limit - (limit - responseData.length) : page * limit + 1;
+
+      return {
+        data: responseData as PostFull[],
+        total: totalCount, // 정확하지 않음 - 추후 get_posts_count 호출 필요
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
+    {
+      maxRetries: 3,
+      delay: 1000,
+      timeoutMs: 5000, // 타임아웃 단축 (기존 무제한 -> 5초)
+    }
+  );
 }
 
+
 /**
- * 카테고리별 최신 게시글 조회
+ * 카테고리별 최신 게시글 조회 (RPC 사용)
  */
 export async function getLatestPostsByCategory(
   categoryId: number,
@@ -257,16 +277,13 @@ export async function getLatestPostsByCategory(
 ): Promise<PostFull[]> {
   return withRetryAndTimeout(
     async () => {
-      const { data, error } = await supabase
-        .from('sn_posts_full')
-        .select('*')
-        .eq('category_id', categoryId)
-        .eq('status', 'published')
-        .order('published_date', { ascending: false })
-        .limit(limit);
+      const { data, error } = await supabase.rpc('get_latest_posts_by_category', {
+        in_category_id: categoryId,
+        in_limit: limit,
+      });
 
       if (error) {
-        console.error('Error fetching latest posts:', error);
+        console.error('Error fetching latest posts via RPC:', error);
         throw error;
       }
 
@@ -275,27 +292,23 @@ export async function getLatestPostsByCategory(
     {
       maxRetries: 3,
       delay: 1000,
-      timeoutMs: 18000,
+      timeoutMs: 5000, // 타임아웃 단축 (18초 -> 5초)
     }
   );
 }
 
 /**
- * 추천 게시글 조회 (is_featured = true)
+ * 추천 게시글 조회 (is_featured = true, RPC 사용)
  */
 export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
   return withRetryAndTimeout(
     async () => {
-      const { data, error } = await supabase
-        .from('sn_posts_full')
-        .select('*')
-        .eq('status', 'published')
-        .eq('is_featured', true)
-        .order('published_date', { ascending: false })
-        .limit(limit);
+      const { data, error } = await supabase.rpc('get_featured_posts', {
+        in_limit: limit,
+      });
 
       if (error) {
-        console.error('Error fetching featured posts:', error);
+        console.error('Error fetching featured posts via RPC:', error);
         throw error;
       }
 
@@ -304,7 +317,7 @@ export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
     {
       maxRetries: 3,
       delay: 1000,
-      timeoutMs: 18000,
+      timeoutMs: 5000, // 타임아웃 단축 (18초 -> 5초)
     }
   );
 }

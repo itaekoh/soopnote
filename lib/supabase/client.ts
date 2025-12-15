@@ -5,7 +5,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // 타임아웃이 포함된 커스텀 fetch 함수
 const fetchWithTimeout = async (url: RequestInfo | URL, options: RequestInit = {}) => {
-  const timeout = 20000; // 20초 타임아웃
+  const timeout = 5000; // 5초 타임아웃 (정상 API는 1-3초 내 응답)
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
 

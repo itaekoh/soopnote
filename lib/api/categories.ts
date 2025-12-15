@@ -88,7 +88,7 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
     {
       maxRetries: 3,
       delay: 1000,
-      timeoutMs: 15000,
+      timeoutMs: 5000, // 타임아웃 단축 (15초 -> 5초)
     }
   );
 }
