@@ -202,89 +202,50 @@ export async function getPostFullById(postId: number): Promise<PostFull | null> 
 }
 
 /**
- * 게시글 목록 조회 (필터링 및 페이지네이션)
+ * 게시글 목록 조회 (RPC 함수 사용)
  */
 export async function getPosts(
   filters: PostFilterParams = {}
 ): Promise<PaginatedResponse<PostFull>> {
-  return withRetryAndTimeout(
-    async () => {
-      const {
-        page = 1,
-        limit = 10,
-        category_id,
-        subcategory_ids,
-        status = 'published',
-        search,
-        author_id,
-        sort = 'latest',
-      } = filters;
+  // withRetryAndTimeout 제거하고 직접 호출 (RPC 타임아웃은 DB에서 제어)
+  const {
+    page = 1,
+    limit = 10,
+    category_id,
+    subcategory_ids,
+    status = 'published',
+    search,
+    author_id,
+    sort = 'latest',
+  } = filters;
 
-      let query = supabase
-        .from('sn_posts_full')
-        .select('*', { count: 'exact' })
-        .eq('status', status);
+  const { data, error } = await supabase.rpc('get_paginated_posts', {
+    in_category_id: category_id,
+    in_subcategory_ids: subcategory_ids,
+    in_author_id: author_id,
+    in_status: status,
+    in_search: search,
+    in_sort: sort,
+    in_page: page,
+    in_limit: limit,
+  });
 
-      // 필터 적용
-      if (category_id) {
-        query = query.eq('category_id', category_id);
-      }
+  if (error) {
+    console.error('Error fetching posts via RPC:', error);
+    throw error;
+  }
 
-      if (author_id) {
-        query = query.eq('author_id', author_id);
-      }
+  // RPC 결과는 단일 배열이므로, 첫 번째 결과에서 총 개수를 가져오고
+  // 전체 데이터를 반환 데이터로 사용합니다.
+  const totalCount = data.length > 0 ? data[0].total_count : 0;
 
-      if (search) {
-        query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%`);
-      }
-
-      // 서브카테고리 필터 (배열 겹침 체크)
-      if (subcategory_ids && subcategory_ids.length > 0) {
-        query = query.overlaps('subcategory_ids', subcategory_ids);
-      }
-
-      // 정렬 적용
-      switch (sort) {
-        case 'latest':
-          query = query.order('published_date', { ascending: false });
-          break;
-        case 'popular':
-          query = query.order('view_count', { ascending: false });
-          break;
-        case 'oldest':
-          query = query.order('published_date', { ascending: true });
-          break;
-        default:
-          query = query.order('published_date', { ascending: false });
-      }
-
-      // 페이지네이션
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
-
-      query = query.range(from, to);
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        console.error('Error fetching posts:', error);
-        throw error;
-      }
-
-      return {
-        data: data || [],
-        total: count || 0,
-        page,
-        limit,
-        totalPages: Math.ceil((count || 0) / limit),
-      };
-    },
-    {
-      maxRetries: 3,
-      delay: 1000,
-      timeoutMs: 20000,
-    }
-  );
+  return {
+    data: data.map(p => ({...p, total_count: undefined})) as PostFull[], // total_count 필드 제거
+    total: totalCount,
+    page,
+    limit,
+    totalPages: Math.ceil((totalCount || 0) / limit),
+  };
 }
 
 /**
