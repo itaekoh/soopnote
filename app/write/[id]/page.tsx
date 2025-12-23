@@ -681,6 +681,58 @@ export default function EditPostPage() {
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                 language: 'ko-KR',
                 placeholder: '내용을 입력하세요...',
+                automatic_uploads: true,
+                paste_data_images: true,
+                images_file_types: 'jpeg,jpg,png,gif,webp,svg',
+                images_reuse_filename: false,
+                file_picker_types: 'image',
+                convert_urls: false,
+                images_upload_handler: async (blobInfo: any) => {
+                  console.log('🖼️ 이미지 업로드 시작:', blobInfo.filename());
+                  const originalFilename = blobInfo.filename();
+                  const file = blobInfo.blob();
+
+                  // 파일명 정리: 공백 제거, 특수문자 처리
+                  const sanitizedFilename = originalFilename
+                    .replace(/\s+/g, '_')  // 공백을 언더스코어로 변경
+                    .replace(/[^\w\-.]/g, ''); // 알파벳, 숫자, 점, 하이픈, 언더스코어만 허용
+
+                  const formData = new FormData();
+                  formData.append('file', file, sanitizedFilename);
+
+                  try {
+                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                    if (sessionError || !session) {
+                      console.error('❌ 인증 오류:', sessionError);
+                      throw new Error('Authentication error: Could not get session.');
+                    }
+                    const accessToken = session.access_token;
+
+                    console.log('📤 API 업로드 요청 중...');
+                    const response = await fetch('/api/upload', {
+                      method: 'POST',
+                      body: formData,
+                      headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                      },
+                    });
+
+                    if (!response.ok) {
+                      const errorData = await response.json();
+                      console.error('❌ API 응답 오류:', errorData);
+                      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('✅ 이미지 업로드 성공:', result.location);
+                    return result.location;
+                  } catch (error: unknown) {
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    console.error('❌ 이미지 업로드 실패:', errorMessage);
+                    alert(`이미지 업로드 실패: ${errorMessage}\n\n에디터에 이미지를 삽입할 수 없습니다.`);
+                    throw new Error(`Image upload failed: ${errorMessage}`);
+                  }
+                },
               }}
             />
           </div>
