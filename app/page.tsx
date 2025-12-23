@@ -97,8 +97,13 @@ export default function Home() {
 
       console.log('✓ [MAIN] 모든 게시글 로딩 완료');
 
-      // 모든 데이터가 비어있으면 에러로 간주
-      if (featuredPosts.length === 0 && wildflowerPosts.length === 0 && treePosts.length === 0 && logsPosts.length === 0) {
+      // 모든 데이터가 비어있는지 체크 (results에서 직접 확인)
+      const featuredCount = results[0].status === 'fulfilled' ? results[0].value.length : 0;
+      const wildflowerCount = results[1].status === 'fulfilled' ? results[1].value.length : 0;
+      const treeCount = results[2].status === 'fulfilled' ? results[2].value.length : 0;
+      const logsCount = results[3].status === 'fulfilled' ? results[3].value.length : 0;
+
+      if (featuredCount === 0 && wildflowerCount === 0 && treeCount === 0 && logsCount === 0) {
         console.warn('⚠️ [MAIN] 모든 게시글이 비어있음 - 네트워크나 API 문제 가능성');
         console.warn('⚠️ [MAIN] 결과 상태:', {
           featured: results[0].status,
