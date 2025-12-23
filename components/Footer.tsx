@@ -10,11 +10,11 @@ export function Footer() {
         <div className="flex gap-6">
           <div>
             <div className="text-sm font-medium">Contact</div>
-            <div className="text-xs text-gray-500 mt-2">email@example.com</div>
+            <div className="text-xs text-gray-500 mt-2">treedoctor@kakao.com</div>
           </div>
           <div>
             <div className="text-sm font-medium">License</div>
-            <div className="text-xs text-gray-500 mt-2">CC BY-NC 4.0</div>
+            <div className="text-xs text-gray-500 mt-2">© 2025 SoopNote. All rights reserved.</div>
           </div>
         </div>
       </div>
