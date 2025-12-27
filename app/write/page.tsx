@@ -11,6 +11,7 @@ import { createPost } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import type { Category } from '@/lib/types/database.types';
+import imageCompression from 'browser-image-compression';
 
 type CategorySlug = 'wildflower' | 'tree-diagnose' | 'logs';
 
@@ -489,10 +490,26 @@ export default function WritePage() {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  setImageFile(file);
+                  try {
+                    // 이미지 압축 (4MB 이하, Edge Runtime 제한 고려)
+                    const options = {
+                      maxSizeMB: 4,
+                      maxWidthOrHeight: 2048,
+                      useWebWorker: true,
+                      fileType: file.type,
+                    };
+                    console.log('🖼️ 대표 이미지 압축 중...', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+                    const compressedFile = await imageCompression(file, options);
+                    console.log('✅ 압축 완료:', `${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+                    setImageFile(compressedFile);
+                  } catch (error) {
+                    console.error('❌ 이미지 압축 실패:', error);
+                    alert('이미지 처리 중 오류가 발생했습니다.');
+                    e.target.value = '';
+                  }
                 }
               }}
               className="hidden"
@@ -596,17 +613,57 @@ export default function WritePage() {
                 images_upload_handler: async (blobInfo: any) => {
                   console.log('🖼️ 이미지 업로드 시작:', blobInfo.filename());
                   const originalFilename = blobInfo.filename();
-                  const file = blobInfo.blob();
-
-                  // 파일명 정리: 공백 제거, 특수문자 처리
-                  const sanitizedFilename = originalFilename
-                    .replace(/\s+/g, '_')  // 공백을 언더스코어로 변경
-                    .replace(/[^\w\-.]/g, ''); // 알파벳, 숫자, 점, 하이픈, 언더스코어만 허용
-
-                  const formData = new FormData();
-                  formData.append('file', file, sanitizedFilename);
+                  const blob = blobInfo.blob();
 
                   try {
+                    // Blob을 File로 변환 (imageCompression은 File 객체를 기대함)
+                    const originalFile = new File([blob], originalFilename || 'image.png', {
+                      type: blob.type,
+                      lastModified: Date.now(),
+                    });
+
+                    // 이미지 압축 (4MB 이하, Edge Runtime 제한 고려)
+                    const options = {
+                      maxSizeMB: 4,
+                      maxWidthOrHeight: 2048,
+                      useWebWorker: true,
+                    };
+                    console.log('🔄 이미지 최적화 중...', `(${(originalFile.size / 1024 / 1024).toFixed(2)}MB)`);
+                    const compressedBlob = await imageCompression(originalFile, options);
+                    console.log('✅ 최적화 완료:', `${(compressedBlob.size / 1024 / 1024).toFixed(2)}MB`);
+
+                    // MIME 타입에서 확장자 추출
+                    const mimeToExt: Record<string, string> = {
+                      'image/jpeg': 'jpg',
+                      'image/jpg': 'jpg',
+                      'image/png': 'png',
+                      'image/gif': 'gif',
+                      'image/webp': 'webp',
+                      'image/svg+xml': 'svg',
+                    };
+                    const ext = mimeToExt[compressedBlob.type] || 'jpg';
+
+                    // 파일명 정리: 공백 제거, 특수문자 처리
+                    let sanitizedFilename = originalFilename
+                      .replace(/\s+/g, '_')  // 공백을 언더스코어로 변경
+                      .replace(/[^\w\-.]/g, ''); // 알파벳, 숫자, 점, 하이픈, 언더스코어만 허용
+
+                    // 파일명이 없거나 확장자가 없으면 기본값 사용
+                    if (!sanitizedFilename || sanitizedFilename.length === 0) {
+                      sanitizedFilename = `image_${Date.now()}.${ext}`;
+                    } else if (!sanitizedFilename.includes('.')) {
+                      sanitizedFilename = `${sanitizedFilename}.${ext}`;
+                    }
+
+                    // Blob을 File 객체로 변환
+                    const compressedFile = new File([compressedBlob], sanitizedFilename, {
+                      type: compressedBlob.type,
+                      lastModified: Date.now(),
+                    });
+
+                    const formData = new FormData();
+                    formData.append('file', compressedFile);
+
                     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
                     if (sessionError || !session) {
                       console.error('❌ 인증 오류:', sessionError);
