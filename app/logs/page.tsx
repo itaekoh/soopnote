@@ -296,7 +296,7 @@ export default function LogsList() {
                     {/* 썸네일 */}
                     {background.type === 'image' ? (
                       <div
-                        className="h-48 bg-cover bg-center relative"
+                        className="h-48 aspect-[4/3] bg-cover bg-center relative"
                         style={{ backgroundImage: `url(${background.value})` }}
                       >
                         {post.read_time && (
@@ -306,7 +306,7 @@ export default function LogsList() {
                         )}
                       </div>
                     ) : (
-                      <div className={`h-48 bg-gradient-to-br ${background.value} flex items-center justify-center relative`}>
+                      <div className={`h-48 aspect-[4/3] bg-gradient-to-br ${background.value} flex items-center justify-center relative`}>
                         <div className="text-center">
                           <div className="text-6xl mb-2">{emoji}</div>
                         </div>

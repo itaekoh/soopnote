@@ -397,6 +397,8 @@ export default function WildflowerDetailClient({ postId }: { postId: number }) {
             <img
               src={post.featured_image_url}
               alt={post.title}
+              width={1200}
+              height={675}
               className="w-full h-auto max-h-[420px] object-cover aspect-[16/9]"
             />
           </div>

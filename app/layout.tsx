@@ -5,7 +5,7 @@ import { AuthProvider } from '@/lib/contexts/AuthContext';
 import { GoogleTagManager } from '@next/third-parties/google';
 import { Analytics } from '@/components/Analytics';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.soopnote.com'),

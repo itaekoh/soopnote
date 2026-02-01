@@ -174,7 +174,7 @@ export default function Home() {
       </section>
 
       {loading ? (
-        <div className="max-w-6xl mx-auto px-6 py-20 text-center text-gray-600">
+        <div className="max-w-6xl mx-auto px-6 py-20 min-h-[400px] text-center text-gray-600">
           콘텐츠를 불러오는 중...
         </div>
       ) : error ? (
@@ -205,11 +205,11 @@ export default function Home() {
                       {/* 썸네일 */}
                       {post.featured_image_url ? (
                         <div
-                          className="h-64 bg-cover bg-center"
+                          className="h-64 aspect-[16/9] bg-cover bg-center"
                           style={{ backgroundImage: `url(${post.featured_image_url})` }}
                         />
                       ) : (
-                        <div className={`h-64 bg-gradient-to-br ${categoryColors[post.category_slug as keyof typeof categoryColors]?.bg || 'from-gray-100 to-gray-200'} flex items-center justify-center`}>
+                        <div className={`h-64 aspect-[16/9] bg-gradient-to-br ${categoryColors[post.category_slug as keyof typeof categoryColors]?.bg || 'from-gray-100 to-gray-200'} flex items-center justify-center`}>
                           <Leaf className="w-20 h-20 text-green-700 opacity-20" />
                         </div>
                       )}
@@ -322,11 +322,11 @@ function PostCard({ post, colors }: { post: PostFull; colors: { bg: string; badg
         {/* 썸네일 */}
         {post.featured_image_url ? (
           <div
-            className="h-40 bg-cover bg-center"
+            className="h-40 aspect-[4/3] bg-cover bg-center"
             style={{ backgroundImage: `url(${post.featured_image_url})` }}
           />
         ) : (
-          <div className={`h-40 bg-gradient-to-br ${colors.bg} flex items-center justify-center`}>
+          <div className={`h-40 aspect-[4/3] bg-gradient-to-br ${colors.bg} flex items-center justify-center`}>
             <Leaf className={`w-12 h-12 ${colors.icon} opacity-30`} />
           </div>
         )}
