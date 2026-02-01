@@ -262,7 +262,7 @@ export async function getPosts(
     {
       maxRetries: 3,
       delay: 1000,
-      timeoutMs: 5000, // 타임아웃 단축 (기존 무제한 -> 5초)
+      timeoutMs: 15000, // 타임아웃 15초
     }
   );
 }
@@ -292,7 +292,7 @@ export async function getLatestPostsByCategory(
     {
       maxRetries: 3,
       delay: 1000,
-      timeoutMs: 5000, // 타임아웃 단축 (18초 -> 5초)
+      timeoutMs: 15000, // 타임아웃 15초
     }
   );
 }
@@ -317,7 +317,7 @@ export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
     {
       maxRetries: 3,
       delay: 1000,
-      timeoutMs: 5000, // 타임아웃 단축 (18초 -> 5초)
+      timeoutMs: 15000, // 타임아웃 15초
     }
   );
 }

@@ -81,7 +81,7 @@ export async function withRetryAndTimeout<T>(
     retryOn?: (error: any) => boolean;
   } = {}
 ): Promise<T> {
-  const { timeoutMs = 10000, ...retryOptions } = options;
+  const { timeoutMs = 30000, ...retryOptions } = options; // 10초 → 30초로 증가
 
   return withRetry(
     () => withTimeout(fn(), timeoutMs),

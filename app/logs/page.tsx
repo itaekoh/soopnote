@@ -20,6 +20,7 @@ export default function LogsList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<number[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const POSTS_PER_PAGE = 12;
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function LogsList() {
         const isInitialLoad = page === 1;
         if (isInitialLoad) {
           setLoading(true);
+          setError(null); // 에러 초기화
         } else {
           setLoadingMore(true);
         }
@@ -96,6 +98,9 @@ export default function LogsList() {
         }
       } catch (error: any) {
         console.error('✗ 게시글 로딩 실패:', error);
+        if (!cancelled && page === 1) {
+          setError(`게시글을 불러오는데 실패했습니다: ${error.message || '알 수 없는 오류'}`);
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -248,8 +253,30 @@ export default function LogsList() {
           </div>
         )}
 
+        {/* 에러 상태 */}
+        {!loading && error && (
+          <div className="text-center py-20">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-8 max-w-md mx-auto">
+              <div className="text-red-600 text-lg font-semibold mb-2">
+                ⚠️ 오류 발생
+              </div>
+              <p className="text-red-700 mb-4">{error}</p>
+              <button
+                onClick={() => {
+                  setPage(1);
+                  setPosts([]);
+                  setError(null);
+                }}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                다시 시도
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 게시물 없음 */}
-        {!loading && posts.length === 0 && (
+        {!loading && !error && posts.length === 0 && (
           <div className="text-center py-20">
             <div className="text-gray-600 mb-4">아직 아카이브가 없습니다.</div>
             <p className="text-sm text-gray-500">첫 번째 아카이브를 작성해보세요!</p>

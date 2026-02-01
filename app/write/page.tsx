@@ -22,6 +22,7 @@ export default function WritePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingStatus, setSavingStatus] = useState<string>('');
 
   // 카테고리 데이터
   const [menuCategories, setMenuCategories] = useState<Category[]>([]);
@@ -201,8 +202,8 @@ export default function WritePage() {
     console.log(`=== ${statusText} 시작 ===`);
 
     try {
-      // 현재 로그인한 사용자 확인 (AuthContext에서 가져옴)
-      console.log('1. 사용자 인증 확인 중...');
+      // 현재 로그인한 사용자 확인 (AuthContext에서 이미 가져옴)
+      console.log('1. 사용자 인증 확인...');
       if (!user) {
         alert('로그인이 필요합니다.');
         router.push('/login');
@@ -213,6 +214,14 @@ export default function WritePage() {
       // 이미지 업로드 (선택적)
       let imageUrl = null;
       if (imageFile) {
+        // 파일 크기 제한 (5MB)
+        const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+        if (imageFile.size > MAX_IMAGE_SIZE) {
+          alert('이미지 파일은 5MB 이하만 업로드 가능합니다.');
+          return;
+        }
+
+        setSavingStatus(`이미지 업로드 중... (${(imageFile.size / 1024 / 1024).toFixed(2)}MB)`);
         console.log('2. 이미지 업로드 중...');
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
@@ -243,6 +252,14 @@ export default function WritePage() {
       let documentSize = null;
       let documentType = null;
       if (documentFile) {
+        // 파일 크기 제한 (10MB)
+        const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
+        if (documentFile.size > MAX_DOCUMENT_SIZE) {
+          alert('문서 파일은 10MB 이하만 업로드 가능합니다.');
+          return;
+        }
+
+        setSavingStatus(`문서 업로드 중... (${(documentFile.size / 1024 / 1024).toFixed(2)}MB)`);
         console.log('3. 문서 파일 업로드 중...');
         const fileExt = documentFile.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
@@ -271,6 +288,7 @@ export default function WritePage() {
       }
 
       // 게시글 생성
+      setSavingStatus('게시글 저장 중...');
       console.log('4. 게시글 생성 중...');
       const postData = {
         title,
@@ -290,9 +308,16 @@ export default function WritePage() {
       };
       console.log('게시글 데이터:', postData);
 
-      const post = await createPost(postData, user.id);
+      // 30초 타임아웃 적용
+      const createPromise = createPost(postData, user.id);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('게시글 저장 시간 초과 (30초). Supabase 프로젝트 상태를 확인해주세요.')), 30000)
+      );
+
+      const post = await Promise.race([createPromise, timeoutPromise]) as any;
       console.log('✓ 게시글 생성 완료:', post.id);
 
+      setSavingStatus('완료!');
       alert(isDraft ? '임시저장되었습니다!' : '글이 발행되었습니다!');
       router.push(`/${selectedMenuSlug}`);
     } catch (error: any) {
@@ -306,6 +331,7 @@ export default function WritePage() {
       alert(`글 저장에 실패했습니다.\n\n에러: ${error.message || '알 수 없는 오류'}\n\n브라우저 콘솔을 확인해주세요.`);
     } finally {
       setSaving(false);
+      setSavingStatus('');
       console.log('=== 저장 종료 ===');
     }
   };
@@ -717,7 +743,7 @@ export default function WritePage() {
             className="px-6 py-3 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-5 h-5" />
-            {saving ? '저장중...' : '임시저장'}
+            {saving ? (savingStatus || '저장중...') : '임시저장'}
           </button>
           <button
             onClick={() => handleSave(false)}
@@ -731,7 +757,7 @@ export default function WritePage() {
             }}
           >
             <Save className="w-5 h-5" />
-            {saving ? '발행중...' : '발행하기'}
+            {saving ? (savingStatus || '발행중...') : '발행하기'}
           </button>
         </div>
       </main>
