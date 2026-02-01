@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
-import { GoogleTagManager } from '@next/third-parties/google';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import { Analytics } from '@/components/Analytics';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
   verification: {
-    google: 'kTycmKTjpExkbzMRsnOIBdyioFEqhFohavDoKvQLoNQ',
+    google: 'pTIhAQdt9o9jOGha3lAxrOBG7GjrGPW0x1oC_LTcvQk',
     other: {
       'naver-site-verification': 'd88056ec17a04863186884513e24b9b8509a6e56',
     },
@@ -96,7 +96,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Analytics />
         <AuthProvider>{children}</AuthProvider>
-        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID!} />
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-// Google Tag Manager 타입 정의
+// Google Analytics (gtag.js) 타입 정의
 
 export interface GTMEvent {
   event: string;
@@ -52,12 +52,10 @@ declare global {
   }
 }
 
-// GTM 유틸리티 함수
+// GA 유틸리티 함수
 export const pushToDataLayer = (event: GTMEvent) => {
   if (typeof window !== 'undefined') {
     window.dataLayer = window.dataLayer || [];
-    console.log('📊 [GTM] Pushing event:', event);
     window.dataLayer.push(event);
-    console.log('📊 [GTM] dataLayer after push:', window.dataLayer);
   }
 };

@@ -12,8 +12,6 @@ function AnalyticsContent() {
     // URL이 변경될 때마다 페이지뷰 이벤트 전송
     const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
 
-    console.log('🔄 [Analytics] 페이지 변경 감지:', url);
-
     pushToDataLayer({
       event: 'page_view',
       page_path: url,
