@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
-import { GoogleAnalytics } from '@next/third-parties/google';
+import { GoogleTagManager } from '@next/third-parties/google';
 import { Analytics } from '@/components/Analytics';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -96,7 +96,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Analytics />
         <AuthProvider>{children}</AuthProvider>
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
+        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID!} />
       </body>
     </html>
   );
