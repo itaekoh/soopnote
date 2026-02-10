@@ -22,7 +22,9 @@
       "Bash(cat:*)",
       "Bash(vercel env:*)",
       "Bash(git rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(del:*)",
+      "Bash(Remove-Item -Path \"image copy.png\",\"image.png\" -ErrorAction SilentlyContinue)"
     ],
     "deny": [],
     "ask": []

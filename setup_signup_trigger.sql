@@ -8,13 +8,13 @@ RETURNS TRIGGER AS $$
 DECLARE
   user_display_name TEXT;
 BEGIN
-  -- display_name 추출 (빈 문자열도 NULL로 처리)
-  user_display_name := NULLIF(TRIM(NEW.raw_user_meta_data->>'display_name'), '');
-
-  -- display_name이 없으면 이메일의 @ 앞부분 사용
-  IF user_display_name IS NULL THEN
-    user_display_name := SPLIT_PART(NEW.email, '@', 1);
-  END IF;
+  -- display_name 추출: 이메일 가입(display_name), Google(full_name), Kakao(name) 순서로 시도
+  user_display_name := COALESCE(
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'display_name'), ''),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'full_name'), ''),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'name'), ''),
+    SPLIT_PART(NEW.email, '@', 1)
+  );
 
   INSERT INTO public.sn_users (id, email, display_name, role)
   VALUES (
