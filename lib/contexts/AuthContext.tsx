@@ -31,13 +31,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkUser();
+    // getSession()으로 초기 세션 확인 (로컬 쿠키 읽기, 네트워크 호출 없음)
+    // getUser()는 네트워크 호출이라 Supabase 클라이언트를 블로킹하여
+    // 다른 데이터 fetch를 방해할 수 있음
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        loadProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    }).catch((error) => {
+      console.error('Error checking session:', error);
+      setLoading(false);
+    });
 
     // 인증 상태 변경 리스너
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Auth 상태 변경:', event);
+
+      // INITIAL_SESSION은 위의 getSession()에서 이미 처리
+      if (event === 'INITIAL_SESSION') return;
 
       if (session?.user) {
         setUser(session.user);
@@ -46,30 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setProfile(null);
       }
-      setLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
     };
   }, []);
-
-  async function checkUser() {
-    try {
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      if (currentUser) {
-        setUser(currentUser);
-        await loadProfile(currentUser.id);
-      }
-    } catch (error) {
-      console.error('Error checking user:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function loadProfile(userId: string) {
     try {
@@ -78,6 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('프로필 로딩 실패:', error);
       setProfile(null);
+    } finally {
+      setLoading(false);
     }
   }
 
