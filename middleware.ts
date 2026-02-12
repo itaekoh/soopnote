@@ -2,10 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  let supabaseResponse = NextResponse.next({
+    request,
   })
 
   const supabase = createServerClient(
@@ -17,18 +15,24 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({
+            request,
           })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
         },
       },
     }
   )
 
-  // Refresh session cookie
-  await supabase.auth.getSession()
+  // 서버에서 JWT를 검증하여 세션 갱신 (getSession은 검증하지 않음)
+  await supabase.auth.getUser()
 
-  return response
+  return supabaseResponse
 }
 
 export const config = {

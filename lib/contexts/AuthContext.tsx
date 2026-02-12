@@ -41,14 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (session?.user) {
         setUser(session.user);
-        try {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await loadProfile(session.user.id);
-        } catch (error) {
-          // 프로필 로딩 실패 시 (탈퇴된 사용자일 수 있음) 로그아웃 처리
-          console.error('프로필 로딩 실패, 세션 정리:', error);
-          await supabase.auth.signOut();
-          setUser(null);
-          setProfile(null);
         }
       } else {
         setUser(null);
@@ -70,7 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (currentUser) {
         setUser(currentUser);
-        await loadProfile(currentUser.id);
+        // checkUser에서는 재시도 없이 단순 조회 (이미 존재하는 유저)
+        try {
+          const userProfile = await getUserProfile(currentUser.id);
+          setProfile(userProfile);
+        } catch (error) {
+          console.error('프로필 로딩 실패:', error);
+          setProfile(null);
+        }
       }
     } catch (error) {
       console.error('Error checking user:', error);
@@ -80,13 +81,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function loadProfile(userId: string) {
-    try {
-      const userProfile = await getUserProfile(userId);
-      setProfile(userProfile);
-    } catch (error) {
-      console.error('프로필 로딩 실패:', error);
-      setProfile(null);
+    // DB 트리거 딜레이 대비 재시도 (최대 3회, 500ms 간격)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const userProfile = await getUserProfile(userId);
+        if (userProfile) {
+          setProfile(userProfile);
+          return;
+        }
+      } catch (error) {
+        console.error('프로필 로딩 실패:', error);
+      }
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
     }
+
+    // 3회 시도 후에도 프로필이 없으면 자동 생성 (OAuth 신규 유저)
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const displayName =
+          authUser.user_metadata?.display_name ||
+          authUser.user_metadata?.full_name ||
+          authUser.user_metadata?.name ||
+          authUser.email?.split('@')[0] ||
+          'User';
+        const newProfile = await createUserProfile(
+          authUser.id,
+          authUser.email || '',
+          displayName
+        );
+        setProfile(newProfile);
+        return;
+      }
+    } catch (createError) {
+      console.error('프로필 자동 생성 실패:', createError);
+    }
+
+    setProfile(null);
   }
 
   async function signUp(email: string, password: string, displayName?: string) {
