@@ -4,7 +4,7 @@
 // Authentication Context
 // ============================================
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { getUserProfile, createUserProfile } from '@/lib/api/users';
 import type { User as AuthUser } from '@supabase/supabase-js';
@@ -29,38 +29,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const initialSessionHandled = useRef(false);
 
   useEffect(() => {
-    // getSession()으로 초기 세션 확인 (로컬 쿠키 읽기, 네트워크 호출 없음)
-    // getUser()는 네트워크 호출이라 Supabase 클라이언트를 블로킹하여
-    // 다른 데이터 fetch를 방해할 수 있음
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        loadProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    }).catch((error) => {
-      console.error('Error checking session:', error);
-      setLoading(false);
-    });
-
-    // 인증 상태 변경 리스너
+    // onAuthStateChange 하나로 모든 인증 상태를 관리
+    //
+    // 중요: SIGNED_IN 이벤트는 GoTrue 초기화 중(initializePromise 완료 전)에 발생할 수 있음.
+    // 이 콜백에서 await으로 Supabase DB 쿼리를 하면 내부적으로 getSession() →
+    // initializePromise 대기 → 콜백 완료 대기 → 순환 대기(deadlock)가 발생함.
+    // 따라서 SIGNED_IN에서는 loadProfile을 await하지 않음.
+    //
+    // INITIAL_SESSION은 initializePromise 완료 후에 발생하므로 안전하게 await 가능.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Auth 상태 변경:', event);
 
-      // INITIAL_SESSION은 위의 getSession()에서 이미 처리
-      if (event === 'INITIAL_SESSION') return;
+      if (event === 'INITIAL_SESSION') {
+        initialSessionHandled.current = true;
+        if (session?.user) {
+          setUser(session.user);
+          // INITIAL_SESSION은 initializePromise 완료 후이므로 안전하게 await 가능
+          await loadProfile(session.user.id);
+        } else {
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+        }
+        return;
+      }
 
-      if (session?.user) {
-        setUser(session.user);
-        await loadProfile(session.user.id);
-      } else {
+      if (event === 'SIGNED_IN') {
+        if (session?.user) {
+          setUser(session.user);
+          // SIGNED_IN은 초기화 중에 발생할 수 있으므로 await하면 deadlock 위험
+          // fire-and-forget으로 호출 (INITIAL_SESSION에서 정식으로 처리됨)
+          if (initialSessionHandled.current) {
+            // 이미 INITIAL_SESSION이 처리된 후의 SIGNED_IN (탭 간 동기화 등)
+            loadProfile(session.user.id);
+          }
+          // 초기화 중 SIGNED_IN은 INITIAL_SESSION이 곧 따라오므로 프로필 로딩 생략
+        }
+        return;
+      }
+
+      if (event === 'TOKEN_REFRESHED') {
+        // 토큰 갱신 시 프로필 다시 로드할 필요 없음
+        if (session?.user) {
+          setUser(session.user);
+        }
+        return;
+      }
+
+      if (event === 'SIGNED_OUT') {
         setUser(null);
         setProfile(null);
+        setLoading(false);
+        return;
       }
     });
 
@@ -71,8 +96,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function loadProfile(userId: string) {
     try {
-      const userProfile = await getUserProfile(userId);
-      setProfile(userProfile);
+      // 재시도 로직: DB 트리거 딜레이 또는 일시적 네트워크 문제 대비
+      let userProfile: User | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          userProfile = await getUserProfile(userId);
+          if (userProfile) break;
+        } catch (error) {
+          console.warn(`프로필 로딩 시도 ${attempt + 1}/3 실패:`, error);
+        }
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      }
+
+      if (userProfile) {
+        setProfile(userProfile);
+      } else {
+        // OAuth 신규 유저: DB 트리거로 프로필이 아직 생성되지 않았을 수 있음
+        try {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser) {
+            const displayName =
+              authUser.user_metadata?.display_name ||
+              authUser.user_metadata?.full_name ||
+              authUser.user_metadata?.name ||
+              authUser.email?.split('@')[0] ||
+              'User';
+            const newProfile = await createUserProfile(
+              authUser.id,
+              authUser.email || '',
+              displayName
+            );
+            setProfile(newProfile);
+            return;
+          }
+        } catch (createError) {
+          console.error('프로필 자동 생성 실패:', createError);
+        }
+        setProfile(null);
+      }
     } catch (error) {
       console.error('프로필 로딩 실패:', error);
       setProfile(null);

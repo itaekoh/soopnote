@@ -10,10 +10,23 @@ const fetchWithTimeout = async (url: RequestInfo | URL, options: RequestInit = {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
 
+  // 기존 signal과 타임아웃 signal 모두 존중
+  // AbortSignal.any()가 없는 환경을 위한 폴백
+  let signal: AbortSignal = controller.signal;
+  if (options.signal) {
+    if (typeof AbortSignal !== 'undefined' && 'any' in AbortSignal) {
+      signal = (AbortSignal as any).any([options.signal, controller.signal]);
+    } else {
+      // AbortSignal.any 미지원 시: 기존 signal이 abort되면 우리 controller도 abort
+      options.signal.addEventListener('abort', () => controller.abort(), { once: true });
+      signal = controller.signal;
+    }
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
-      signal: options.signal || controller.signal,
+      signal,
     });
     clearTimeout(id);
     return response;
