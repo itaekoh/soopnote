@@ -60,6 +60,10 @@ export default function PrivacyPage() {
               Google AdSense는 쿠키를 사용하여 이용자의 관심사에 기반한 광고를 표시합니다.
               제3자 광고 네트워크가 쿠키를 사용하여 이전 방문 기록을 기반으로 광고를 게재할 수 있습니다.
             </p>
+            <p>
+              Google 및 제3자 공급업체는 쿠키를 사용하여 사용자의 이전 방문 기록을 기반으로 광고를 게재합니다.
+              Google의 광고 쿠키를 통해 Google과 파트너는 본 사이트 및 다른 사이트 방문 기록을 기반으로 광고를 표시할 수 있습니다.
+            </p>
           </section>
 
           <section>
@@ -114,7 +118,40 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#26422E]">6. 개인정보 보호 관련 문의</h2>
+            <h2 className="text-2xl font-semibold text-[#26422E]">6. 개인정보의 보유 및 파기</h2>
+            <p>
+              수집된 이용 통계 및 쿠키 정보는 수집 목적 달성 후 지체 없이 파기하며,
+              Google Analytics를 통해 수집된 데이터는 최대 14개월간 보관 후 자동 삭제됩니다.
+              이용자가 직접 쿠키를 삭제하거나 브라우저 설정을 통해 즉시 제거할 수도 있습니다.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-[#26422E]">7. 이용자의 권리</h2>
+            <p>
+              이용자는 언제든지 자신의 개인정보에 대해 다음과 같은 권리를 행사할 수 있습니다:
+            </p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>개인정보 열람 요청권</li>
+              <li>개인정보 정정·삭제 요청권</li>
+              <li>개인정보 처리정지 요청권</li>
+            </ul>
+            <p>
+              위 권리 행사를 원하시면 아래 연락처로 문의해 주시면 지체 없이 조치하겠습니다.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-[#26422E]">8. 개인정보의 제3자 제공</h2>
+            <p>
+              본 사이트는 이용자의 개인정보를 제3자에게 제공하지 않습니다.
+              다만, Google Analytics 및 Google AdSense 사용에 따라 Google에 이용 통계 및
+              쿠키 정보가 전달될 수 있으며, 이에 대한 내용은 위 해당 섹션에 안내되어 있습니다.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-[#26422E]">9. 개인정보 보호 관련 문의</h2>
             <p>
               개인정보 처리에 관한 문의사항은 아래 연락처로 문의해 주세요.
             </p>
@@ -124,12 +161,12 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#26422E]">7. 방침 변경</h2>
+            <h2 className="text-2xl font-semibold text-[#26422E]">10. 방침 변경</h2>
             <p>
               본 개인정보처리방침은 법령 또는 서비스 변경에 따라 수정될 수 있으며,
               변경 시 본 페이지를 통해 공지합니다.
             </p>
-            <p className="text-sm text-gray-500">최종 수정일: 2025년 2월 1일</p>
+            <p className="text-sm text-gray-500">최종 수정일: 2026년 2월 20일</p>
           </section>
         </div>
       </main>
