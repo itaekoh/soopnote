@@ -1,19 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { Image, TreePine, GitBranch, BarChart3 } from 'lucide-react';
+import { Image, TreePine, GitBranch, BarChart3, HardDrive } from 'lucide-react';
 import { ItemManagement } from './ItemManagement';
 import { SpeciesManagement } from './SpeciesManagement';
 import { GroupManagement } from './GroupManagement';
 import { QuizStats } from './QuizStats';
+import { StorageCleanup } from './StorageCleanup';
 
-type SubTab = 'items' | 'species' | 'groups' | 'stats';
+type SubTab = 'items' | 'species' | 'groups' | 'stats' | 'storage';
 
 const subTabs = [
   { id: 'items' as SubTab, label: '문항 관리', icon: Image },
   { id: 'species' as SubTab, label: '수종 관리', icon: TreePine },
   { id: 'groups' as SubTab, label: '혼동그룹', icon: GitBranch },
   { id: 'stats' as SubTab, label: '통계', icon: BarChart3 },
+  { id: 'storage' as SubTab, label: '스토리지', icon: HardDrive },
 ];
 
 export function QuizManagement() {
@@ -47,6 +49,7 @@ export function QuizManagement() {
       {activeSubTab === 'species' && <SpeciesManagement />}
       {activeSubTab === 'groups' && <GroupManagement />}
       {activeSubTab === 'stats' && <QuizStats />}
+      {activeSubTab === 'storage' && <StorageCleanup />}
     </div>
   );
 }

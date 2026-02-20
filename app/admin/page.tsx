@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Star, FolderTree, FileText, Gamepad2 } from 'lucide-react';
+import { Shield, Users, Star, FolderTree, FileText, Gamepad2, HardDrive } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { checkAdminPermission, checkSuperAdminPermission } from '@/lib/api/admin';
@@ -11,9 +11,10 @@ import { FeaturedManagement } from '@/components/admin/FeaturedManagement';
 import { CategoryManagement } from '@/components/admin/CategoryManagement';
 import { PostManagement } from '@/components/admin/PostManagement';
 import { QuizManagement } from '@/components/admin/quiz/QuizManagement';
+import { StorageManager } from '@/components/admin/StorageManager';
 import { supabase } from '@/lib/supabase/client';
 
-type TabType = 'posts' | 'users' | 'featured' | 'categories' | 'quiz';
+type TabType = 'posts' | 'users' | 'featured' | 'categories' | 'quiz' | 'storage';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -56,6 +57,7 @@ export default function AdminPage() {
     { id: 'featured' as TabType, label: '추천글 관리', icon: Star, minRole: 'super_admin' },
     { id: 'categories' as TabType, label: '카테고리 관리', icon: FolderTree, minRole: 'super_admin' },
     { id: 'quiz' as TabType, label: '퀴즈 관리', icon: Gamepad2, minRole: 'super_admin' },
+    { id: 'storage' as TabType, label: '스토리지', icon: HardDrive, minRole: 'super_admin' },
   ];
 
   const tabs = allTabs.filter(tab => {
@@ -122,6 +124,7 @@ export default function AdminPage() {
             {activeTab === 'featured' && <FeaturedManagement />}
             {activeTab === 'categories' && <CategoryManagement />}
             {activeTab === 'quiz' && <QuizManagement />}
+            {activeTab === 'storage' && <StorageManager />}
           </div>
         </div>
       </div>
