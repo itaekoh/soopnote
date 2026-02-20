@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
 import { GoogleTagManager } from '@next/third-parties/google';
@@ -94,6 +95,12 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8188428194984994"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <Analytics />
         <AuthProvider>{children}</AuthProvider>
         <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID!} />

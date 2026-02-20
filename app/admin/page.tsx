@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Star, FolderTree, FileText } from 'lucide-react';
+import { Shield, Users, Star, FolderTree, FileText, Gamepad2 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { checkAdminPermission, checkSuperAdminPermission } from '@/lib/api/admin';
@@ -10,9 +10,10 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { FeaturedManagement } from '@/components/admin/FeaturedManagement';
 import { CategoryManagement } from '@/components/admin/CategoryManagement';
 import { PostManagement } from '@/components/admin/PostManagement';
+import { QuizManagement } from '@/components/admin/quiz/QuizManagement';
 import { supabase } from '@/lib/supabase/client';
 
-type TabType = 'posts' | 'users' | 'featured' | 'categories';
+type TabType = 'posts' | 'users' | 'featured' | 'categories' | 'quiz';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -54,6 +55,7 @@ export default function AdminPage() {
     { id: 'users' as TabType, label: '회원 관리', icon: Users, minRole: 'super_admin' },
     { id: 'featured' as TabType, label: '추천글 관리', icon: Star, minRole: 'super_admin' },
     { id: 'categories' as TabType, label: '카테고리 관리', icon: FolderTree, minRole: 'super_admin' },
+    { id: 'quiz' as TabType, label: '퀴즈 관리', icon: Gamepad2, minRole: 'super_admin' },
   ];
 
   const tabs = allTabs.filter(tab => {
@@ -119,6 +121,7 @@ export default function AdminPage() {
             {activeTab === 'users' && <UserManagement />}
             {activeTab === 'featured' && <FeaturedManagement />}
             {activeTab === 'categories' && <CategoryManagement />}
+            {activeTab === 'quiz' && <QuizManagement />}
           </div>
         </div>
       </div>

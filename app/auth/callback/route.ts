@@ -33,6 +33,15 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // DB 사전 준비: Supabase 무료 플랜 DB가 비활성 상태일 수 있음
+      // Auth 서비스와 DB는 별개 → exchangeCodeForSession은 DB를 깨우지 않음
+      // 여기서 간단한 쿼리로 DB를 깨워서, 홈 페이지 로드 시 즉시 응답하도록 함
+      try {
+        await supabase.from('sn_categories').select('id').limit(1);
+      } catch {
+        // warmup 실패해도 무시
+      }
+
       const response = NextResponse.redirect(`${origin}/`);
 
       // 핵심: 캡처한 쿠키를 리다이렉트 응답에 명시적으로 설정
