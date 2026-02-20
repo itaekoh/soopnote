@@ -10,6 +10,7 @@ import {
   createItem,
   updateItem,
   deleteItem,
+  deleteStorageFile,
   bulkUpdateStatus,
   getQuizImageUrl,
   type QuizItemWithSpecies,
@@ -117,8 +118,8 @@ export function ItemManagement() {
 
       const formData = new FormData();
       formData.append('file', compressed, file.name);
-      if (formSpeciesId) {
-        formData.append('species_id', formSpeciesId);
+      if (editingItem) {
+        formData.append('item_id', editingItem.id);
       }
 
       const res = await fetch('/api/quiz/upload', {
@@ -161,15 +162,18 @@ export function ItemManagement() {
     try {
       setSaving(true);
       if (editingItem) {
+        const imageChanged = formImagePath && formImagePath !== editingItem.image_path;
         await updateItem(editingItem.id, {
           species_id: formSpeciesId,
           photo_type: formPhotoType,
           caption: formCaption || null,
           status: formStatus,
-          ...(formImagePath && formImagePath !== editingItem.image_path
-            ? { image_path: formImagePath }
-            : {}),
+          ...(imageChanged ? { image_path: formImagePath } : {}),
         });
+        // 이미지가 교체된 경우 기존 Storage 파일 삭제
+        if (imageChanged) {
+          deleteStorageFile(editingItem.image_path);
+        }
         alert('문항이 수정되었습니다.');
       } else {
         await createItem({

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
-    const speciesId = formData.get('species_id') as string | null;
+    const itemId = formData.get('item_id') as string | null;
 
     if (!file) {
       return new NextResponse(JSON.stringify({ error: 'No file provided' }), {
@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
 
     const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${nanoid()}.${fileExtension}`;
-    const filePath = speciesId
-      ? `${speciesId}/${fileName}`
-      : `general/${fileName}`;
+    const filePath = itemId
+      ? `quiz/${itemId}/${fileName}`
+      : `pending/${fileName}`;
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from('quiz_public')

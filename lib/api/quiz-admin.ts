@@ -248,7 +248,22 @@ export async function bulkUpdateStatus(
   }
 }
 
+export async function deleteStorageFile(filePath: string): Promise<void> {
+  const { error } = await supabase.storage.from('quiz_public').remove([filePath]);
+  if (error) {
+    console.error('Storage 파일 삭제 실패:', error);
+  }
+}
+
 export async function deleteItem(itemId: string): Promise<void> {
+  // 1. 먼저 image_path 조회
+  const { data } = await supabase
+    .from('quiz_items')
+    .select('image_path')
+    .eq('id', itemId)
+    .single();
+
+  // 2. DB 레코드 삭제
   const { error } = await supabase
     .from('quiz_items')
     .delete()
@@ -257,6 +272,11 @@ export async function deleteItem(itemId: string): Promise<void> {
   if (error) {
     console.error('문항 삭제 실패:', error);
     throw error;
+  }
+
+  // 3. Storage 파일 삭제 (fire-and-forget)
+  if (data?.image_path) {
+    deleteStorageFile(data.image_path);
   }
 }
 
