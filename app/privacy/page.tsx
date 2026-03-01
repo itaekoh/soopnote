@@ -17,18 +17,29 @@ export default function PrivacyPage() {
 
         <div className="prose prose-lg max-w-none text-gray-700 space-y-8">
           <p>
-            Soopnote(이하 &quot;본 사이트&quot;)는 이용자의 개인정보를 중요하게 생각하며,
+            숲노트(Soopnote, 이하 &quot;본 서비스&quot;)는 이용자의 개인정보를 중요하게 생각하며,
             관련 법령에 따라 개인정보를 보호하고 있습니다.
+            본 방침은 soopnote.com 웹사이트 및 숲노트 퀴즈 모바일 앱에 적용됩니다.
           </p>
 
           <section>
             <h2 className="text-2xl font-semibold text-[#26422E]">1. 수집하는 정보</h2>
-            <p>본 사이트는 다음과 같은 정보를 자동으로 수집할 수 있습니다:</p>
+            <h3 className="text-xl font-semibold text-[#26422E] mt-4">웹사이트 (soopnote.com)</h3>
+            <p>본 웹사이트는 다음과 같은 정보를 자동으로 수집할 수 있습니다:</p>
             <ul className="list-disc pl-6 space-y-1">
               <li>방문 페이지, 방문 시간, 체류 시간 등 이용 통계</li>
               <li>브라우저 종류, 운영체제, 기기 정보</li>
               <li>IP 주소 (익명 처리될 수 있음)</li>
               <li>쿠키 및 유사 기술을 통한 식별 정보</li>
+            </ul>
+            <h3 className="text-xl font-semibold text-[#26422E] mt-4">모바일 앱 (숲노트 퀴즈)</h3>
+            <p>모바일 앱 이용 시 다음과 같은 정보를 수집할 수 있습니다:</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>이메일 주소 (회원가입 시)</li>
+              <li>소셜 계정 정보 (Google, Kakao 로그인 시 제공되는 이름, 프로필 사진)</li>
+              <li>퀴즈 학습 기록 및 통계 데이터</li>
+              <li>인앱 구매 정보 (구매 상태)</li>
+              <li>기기 정보 및 광고 식별자 (Google AdMob 광고 표시용)</li>
             </ul>
           </section>
 
@@ -54,15 +65,20 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#26422E]">3. Google AdSense 및 광고</h2>
+            <h2 className="text-2xl font-semibold text-[#26422E]">3. 광고</h2>
             <p>
-              본 사이트는 Google AdSense를 통해 광고를 게재할 수 있습니다.
+              본 웹사이트는 Google AdSense를 통해 광고를 게재할 수 있습니다.
               Google AdSense는 쿠키를 사용하여 이용자의 관심사에 기반한 광고를 표시합니다.
               제3자 광고 네트워크가 쿠키를 사용하여 이전 방문 기록을 기반으로 광고를 게재할 수 있습니다.
             </p>
             <p>
               Google 및 제3자 공급업체는 쿠키를 사용하여 사용자의 이전 방문 기록을 기반으로 광고를 게재합니다.
               Google의 광고 쿠키를 통해 Google과 파트너는 본 사이트 및 다른 사이트 방문 기록을 기반으로 광고를 표시할 수 있습니다.
+            </p>
+            <p>
+              모바일 앱에서는 Google AdMob을 통해 배너 광고를 표시합니다.
+              AdMob은 광고 식별자를 사용하여 맞춤형 광고를 제공할 수 있습니다.
+              광고 제거 상품을 구매하시면 광고 표시 및 광고 ID 수집이 중단됩니다.
             </p>
           </section>
 
@@ -144,10 +160,16 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-semibold text-[#26422E]">8. 개인정보의 제3자 제공</h2>
             <p>
-              본 사이트는 이용자의 개인정보를 제3자에게 제공하지 않습니다.
-              다만, Google Analytics 및 Google AdSense 사용에 따라 Google에 이용 통계 및
-              쿠키 정보가 전달될 수 있으며, 이에 대한 내용은 위 해당 섹션에 안내되어 있습니다.
+              본 서비스는 이용자의 개인정보를 제3자에게 제공하지 않습니다.
+              다만, 서비스 운영을 위해 다음의 제3자 서비스를 이용하고 있으며,
+              이에 따라 일부 정보가 전달될 수 있습니다:
             </p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>Google Analytics — 웹사이트 이용 통계 분석 (미국)</li>
+              <li>Google AdSense — 웹사이트 광고 게재 (미국)</li>
+              <li>Google AdMob — 모바일 앱 광고 게재 (미국)</li>
+              <li>Supabase — 인증 및 데이터 저장 (미국)</li>
+            </ul>
           </section>
 
           <section>
@@ -166,7 +188,7 @@ export default function PrivacyPage() {
               본 개인정보처리방침은 법령 또는 서비스 변경에 따라 수정될 수 있으며,
               변경 시 본 페이지를 통해 공지합니다.
             </p>
-            <p className="text-sm text-gray-500">최종 수정일: 2026년 2월 20일</p>
+            <p className="text-sm text-gray-500">최종 수정일: 2026년 3월 1일</p>
           </section>
         </div>
       </main>
