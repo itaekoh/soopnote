@@ -64,12 +64,39 @@ export default function RefundPage() {
             </p>
             <ul className="list-disc pl-6 space-y-1">
               <li>구매 후 48시간이 초과된 경우</li>
-              <li>서비스를 상당 기간 이용한 경우</li>
+              <li>구매 후 7일 이상 서비스를 정상적으로 이용한 경우</li>
+              <li>Google Play 정책에 따라 환불 요건을 충족하지 못하는 경우</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#26422E]">6. 직접 문의</h2>
+            <h2 className="text-2xl font-semibold text-[#26422E]">6. 서비스 종료 시 환불</h2>
+            <p>
+              서비스가 종료되는 경우 다음과 같이 처리됩니다:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                서비스 종료 30일 전 공지를 원칙으로 하며, 공지 기간 내에
+                아래 이메일로 환불을 요청하실 수 있습니다.
+              </li>
+              <li>
+                단, 인앱 결제 환불은 Google Play의 자체 정책(구매 후 48시간 이내)에 따르며,
+                이를 초과한 경우 Google Play를 통한 환불이 불가할 수 있습니다.
+              </li>
+              <li>
+                Google Play 환불이 불가한 경우에도, 운영자는 합리적인 범위 내에서
+                직접 환불을 검토할 수 있습니다. 구매 내역과 함께 이메일로 문의해 주세요.
+              </li>
+            </ul>
+            <p className="mt-2 text-sm text-gray-500">
+              ※ 인앱 결제 상품은 &quot;서비스가 운영되는 기간 동안&quot; 유효하며,
+              앱스토어/Google Play의 영구 구매는 서비스 운영 지속을 보장하지 않습니다.
+              이 점을 충분히 인지한 후 구매해 주세요.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-[#26422E]">7. 직접 문의</h2>
             <p>
               Google Play를 통한 환불이 어려운 경우 아래 이메일로 직접 문의해 주세요.
               구매 내역과 환불 사유를 함께 알려주시면 빠르게 처리해 드리겠습니다.

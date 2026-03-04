@@ -65,8 +65,13 @@ export default function TermsPage() {
               현재 제공되는 유료 상품은 다음과 같습니다:
             </p>
             <ul className="list-disc pl-6 space-y-1">
-              <li>광고 제거: 1회 구매, 영구 적용</li>
+              <li>광고 제거: 1회 구매, 서비스 운영 기간 동안 적용</li>
             </ul>
+            <p>
+              &quot;영구 적용&quot;은 본 서비스가 정상적으로 운영되는 기간에 한하여 유효합니다.
+              서비스 종료 시에는 인앱 결제 혜택이 함께 종료될 수 있으며,
+              이 경우 환불은 Google Play 정책 및 본 약관 제8조에 따라 처리됩니다.
+            </p>
             <p>
               결제 및 환불에 관한 자세한 사항은{' '}
               <a href="/refund" className="text-green-700 underline">환불 정책</a>을 참고해 주세요.
@@ -96,8 +101,25 @@ export default function TermsPage() {
             <h2 className="text-2xl font-semibold text-[#26422E]">8. 서비스 변경 및 중단</h2>
             <p>
               운영자는 서비스 개선, 운영상의 이유 등으로 서비스의 전부 또는 일부를
-              변경하거나 중단할 수 있습니다. 이 경우 사전에 앱 또는 웹사이트를 통해 공지합니다.
+              변경하거나 중단할 수 있습니다.
             </p>
+            <ul className="list-disc pl-6 space-y-2 mt-2">
+              <li>
+                <strong>사전 공지</strong>: 서비스 종료 시 최소 30일 전에 앱 내 공지 또는
+                가입 이메일을 통해 안내합니다. 단, 천재지변, 법적 의무, 기술적 긴급 상황 등
+                불가항력적인 경우에는 사전 공지 없이 서비스가 중단될 수 있습니다.
+              </li>
+              <li>
+                <strong>인앱 결제 처리</strong>: 서비스 종료 공지 후 종료일까지의 기간 동안
+                구매한 이력이 있는 이용자는 <a href="/refund" className="text-green-700 underline">환불 정책</a>에
+                따라 환불을 요청할 수 있습니다. 단, Google Play 정책상 구매 후 48시간을 초과한
+                경우 환불이 제한될 수 있습니다.
+              </li>
+              <li>
+                <strong>책임 제한</strong>: 서비스 중단으로 인한 이용자의 손해에 대해 운영자는
+                고의 또는 중대한 과실이 없는 한 책임을 지지 않습니다.
+              </li>
+            </ul>
           </section>
 
           <section>
