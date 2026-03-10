@@ -167,6 +167,15 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* 약관 동의 안내 */}
+          <p className="mt-4 text-center text-xs text-gray-400 leading-relaxed">
+            로그인 시{' '}
+            <Link href="/terms" className="text-green-700 underline">이용약관</Link>
+            {' '}및{' '}
+            <Link href="/privacy" className="text-green-700 underline">개인정보처리방침</Link>
+            에 동의하는 것으로 간주됩니다.
+          </p>
+
           {/* 회원가입 링크 */}
           <div className="mt-6 text-center text-sm text-gray-600">
             계정이 없으신가요?{' '}
