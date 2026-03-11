@@ -7,7 +7,8 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const MIN_QUIZ_SESSIONS = 10;
+const MIN_QUIZ_SESSIONS = 5;
+const MIN_ACTIVE_DAYS = 3;
 
 export async function POST(request: Request) {
   try {
@@ -43,34 +44,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '앱에서 해당 이메일로 로그인한 기록이 없습니다.' }, { status: 404 });
     }
 
-    // 3. 퀴즈 세션 수 재확인 (서버에서 검증)
-    const { count: quizSessions } = await supabaseAdmin
+    // 3. 퀴즈 세션 수 + 접속 일수 재확인 (서버에서 검증)
+    const { data: attempts } = await supabaseAdmin
       .from('quiz_attempts')
-      .select('quiz_run_id', { count: 'exact', head: false })
+      .select('quiz_run_id, created_at')
       .eq('user_id', user.id)
       .eq('attempt_no', 1);
 
-    if ((quizSessions ?? 0) < MIN_QUIZ_SESSIONS) {
+    const quizSessions = attempts?.length ?? 0;
+    const activeDays = new Set(
+      attempts?.map(a => new Date(a.created_at).toISOString().slice(0, 10)) ?? []
+    ).size;
+
+    if (quizSessions < MIN_QUIZ_SESSIONS || activeDays < MIN_ACTIVE_DAYS) {
       return NextResponse.json({
-        error: `퀴즈 ${MIN_QUIZ_SESSIONS}세션 이상 참여 후 신청 가능합니다. (현재: ${quizSessions ?? 0}세션)`,
+        error: `자격 조건 미충족. (세션: ${quizSessions}/${MIN_QUIZ_SESSIONS}, 접속일: ${activeDays}/${MIN_ACTIVE_DAYS})`,
       }, { status: 403 });
     }
 
-    // 4. 선착순 자리 확인 및 혜택 개월 수 결정
+    // 4. 자리 확인
     const { count: grantedCount } = await supabaseAdmin
       .from('beta_applicants')
       .select('*', { count: 'exact', head: true })
       .eq('benefit_granted', true);
 
     const granted = grantedCount ?? 0;
-    if (granted >= 20) {
+    if (granted >= 15) {
       return NextResponse.json({ error: '모든 혜택 자리가 마감되었습니다.' }, { status: 409 });
     }
 
-    const benefitMonths = granted < 10 ? 12 : 6;
+    const benefitMonths = 12; // 모두 1년
     const adsFreUntil = new Date();
     adsFreUntil.setMonth(adsFreUntil.getMonth() + benefitMonths);
-    const adminNote = `beta_tester_2025_${benefitMonths}m`;
+    const adminNote = `beta_tester_2025_12m`;
 
     // 5. sn_users 업데이트
     const { error: updateUserError } = await supabaseAdmin

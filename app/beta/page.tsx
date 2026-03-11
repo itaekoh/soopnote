@@ -93,10 +93,11 @@ function ApplySection() {
 type CheckResult = {
   applicant: { name: string; applied_at: string; benefit_granted: boolean; benefit_months?: number };
   quizSessions: number;
+  activeDays: number;
   qualified: boolean;
   appLinked: boolean;
   benefitMonthsIfGranted?: number;
-  slotsRemaining?: { year: number; half: number };
+  slotsRemaining?: number;
   message?: string;
 };
 
@@ -192,19 +193,21 @@ function CheckSection() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">퀴즈 참여 횟수</span>
+              <span className="font-semibold text-gray-800">{checkData.quizSessions}세션</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">접속 일수</span>
               <span className="font-semibold text-gray-800">
-                {checkData.quizSessions}세션
+                {checkData.activeDays}일
                 <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${checkData.qualified ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}>
-                  {checkData.qualified ? '조건 충족 ✓' : '10세션 미만'}
+                  {checkData.qualified ? '조건 충족 ✓' : '조건 미충족'}
                 </span>
               </span>
             </div>
-            {checkData.slotsRemaining && (
+            {checkData.slotsRemaining !== undefined && (
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">남은 혜택 자리</span>
-                <span className="text-sm text-gray-700">
-                  1년권 {checkData.slotsRemaining.year}자리 · 6개월권 {checkData.slotsRemaining.half}자리
-                </span>
+                <span className="text-sm text-gray-700">1년권 {checkData.slotsRemaining}자리</span>
               </div>
             )}
           </div>
@@ -248,7 +251,8 @@ function CheckSection() {
             </p>
           ) : (
             <p className="text-sm text-gray-600 bg-gray-50 px-4 py-3 rounded-lg">
-              퀴즈를 10세션 이상 참여하시면 혜택 신청이 가능합니다. (현재: {checkData.quizSessions}세션)
+              자격 조건: 퀴즈 5세션 이상 + 3일 이상 접속<br />
+              현재: {checkData.quizSessions}세션 / {checkData.activeDays}일 접속
             </p>
           )}
         </div>
@@ -287,7 +291,10 @@ function FeedbackSection() {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
       <h2 className="text-xl font-bold text-[#26422E] mb-2">💬 사용 후기 & 개선 의견</h2>
-      <p className="text-sm text-gray-500 mb-6">솔직한 의견이 앱 개선에 큰 도움이 됩니다.</p>
+      <p className="text-sm text-gray-500 mb-2">솔직한 의견이 앱 개선에 큰 도움이 됩니다.</p>
+      <p className="text-sm text-[#3d5c3e] bg-[#f0f7f0] px-4 py-3 rounded-lg mb-6">
+        베타 테스터 여부와 관계없이 누구나 의견을 남겨주실 수 있습니다. 불편했던 점, 개선됐으면 하는 기능, 사용 소감 등 자유롭게 작성해 주세요. 하나하나 꼼꼼히 읽고 반영하겠습니다. 🙏
+      </p>
 
       {result?.ok ? (
         <div className="text-center py-6">
@@ -345,7 +352,7 @@ export default function BetaPage() {
         {/* 히어로 */}
         <div className="text-center space-y-4">
           <div className="inline-flex items-center gap-2 bg-[#e8f0e8] text-[#3d5c3e] text-sm font-semibold px-4 py-1.5 rounded-full">
-            🌲 선착순 20명 모집
+            🌲 선착순 15명 모집
           </div>
           <h1 className="text-3xl font-bold text-[#26422E]">
             트리오! 베타 테스터 모집
@@ -361,15 +368,16 @@ export default function BetaPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <p className="text-sm font-semibold text-gray-500 mb-2">참여 조건</p>
             <p className="text-sm text-gray-700 leading-relaxed">
-              2주 내 퀴즈 <strong>10세션 이상</strong> 참여<br />
+              2주 내 퀴즈 <strong>5세션 이상</strong> 참여<br />
+              <strong>3일 이상</strong> 접속<br />
               Google 계정으로 앱 로그인 필수
             </p>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <p className="text-sm font-semibold text-gray-500 mb-2">혜택</p>
             <p className="text-sm text-gray-700 leading-relaxed">
-              🥇 선착순 10명 — <strong>1년</strong> 광고 제거<br />
-              🥈 11~20번째 — <strong>6개월</strong> 광고 제거
+              🎁 선착순 15명 전원<br />
+              <strong>1년</strong> 광고 제거 혜택
             </p>
           </div>
         </div>
@@ -381,7 +389,7 @@ export default function BetaPage() {
             {[
               { step: '01', text: '아래 신청 폼에 이름과 이메일(Gmail)을 입력해 신청합니다.' },
               { step: '02', text: 'Google Play에서 트리오! 앱을 설치하고, 신청한 Gmail로 Google 로그인합니다.' },
-              { step: '03', text: '2주간 자유롭게 퀴즈를 풀어보세요. (10세션 이상 참여)' },
+              { step: '03', text: '2주간 자유롭게 퀴즈를 풀어보세요. (5세션 이상, 3일 이상 접속)' },
               { step: '04', text: '결과 확인 섹션에서 이메일로 활동 내역을 확인하고 혜택을 신청합니다.' },
             ].map(({ step, text }) => (
               <li key={step} className="flex gap-4 items-start">

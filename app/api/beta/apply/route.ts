@@ -7,7 +7,7 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const MAX_APPLICANTS = 20;
+const MAX_APPLICANTS = 15;
 
 export async function POST(request: Request) {
   try {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     if (countError) throw countError;
     if ((count ?? 0) >= MAX_APPLICANTS) {
-      return NextResponse.json({ error: '신청이 마감되었습니다. (20명 선착순 완료)' }, { status: 409 });
+      return NextResponse.json({ error: '신청이 마감되었습니다. (15명 선착순 완료)' }, { status: 409 });
     }
 
     // 2. 중복 신청 확인

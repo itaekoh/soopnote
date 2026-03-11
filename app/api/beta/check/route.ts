@@ -7,7 +7,8 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const MIN_QUIZ_SESSIONS = 10; // 퀴즈 세션 최소 횟수
+const MIN_QUIZ_SESSIONS = 5;  // 퀴즈 세션 최소 횟수
+const MIN_ACTIVE_DAYS = 3;   // 최소 접속 일수
 
 export async function GET(request: Request) {
   try {
@@ -47,29 +48,35 @@ export async function GET(request: Request) {
       });
     }
 
-    // 3. quiz_attempts: distinct quiz_run_id 수 = 퀴즈 세션 횟수
-    const { count: quizSessions } = await supabaseAdmin
+    // 3. quiz_attempts: 세션 수 + 접속 일수
+    const { data: attempts } = await supabaseAdmin
       .from('quiz_attempts')
-      .select('quiz_run_id', { count: 'exact', head: false })
+      .select('quiz_run_id, created_at')
       .eq('user_id', user.id)
-      .eq('attempt_no', 1); // 1차 시도만 카운트 (중복 제거 효과)
+      .eq('attempt_no', 1);
 
-    // 4. 현재 혜택 부여된 수 (선착순 판단용)
+    const quizSessions = attempts?.length ?? 0;
+    const activeDays = new Set(
+      attempts?.map(a => new Date(a.created_at).toISOString().slice(0, 10)) ?? []
+    ).size;
+
+    // 4. 현재 혜택 부여된 수
     const { count: grantedCount } = await supabaseAdmin
       .from('beta_applicants')
       .select('*', { count: 'exact', head: true })
       .eq('benefit_granted', true);
 
-    const sessions = quizSessions ?? 0;
     const granted = grantedCount ?? 0;
+    const qualified = quizSessions >= MIN_QUIZ_SESSIONS && activeDays >= MIN_ACTIVE_DAYS;
 
     return NextResponse.json({
       applicant,
-      quizSessions: sessions,
-      qualified: sessions >= MIN_QUIZ_SESSIONS,
+      quizSessions,
+      activeDays,
+      qualified,
       appLinked: true,
-      benefitMonthsIfGranted: granted < 10 ? 12 : 6, // 선착순 10명 1년, 나머지 6개월
-      slotsRemaining: { year: Math.max(0, 10 - granted), half: Math.max(0, 20 - granted) },
+      benefitMonthsIfGranted: 12, // 모두 1년
+      slotsRemaining: Math.max(0, 15 - granted),
     });
   } catch (error: any) {
     console.error('[beta/check]', error);
