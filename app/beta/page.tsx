@@ -376,8 +376,8 @@ export default function BetaPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <p className="text-sm font-semibold text-gray-500 mb-2">혜택</p>
             <p className="text-sm text-gray-700 leading-relaxed">
-              🎁 선착순 15명 전원<br />
-              <strong>1년</strong> 광고 제거 혜택
+              🎁 선착순 15명 전원 <strong>1년 광고 제거</strong><br />
+              <span className="text-xs text-gray-500">요건 충족 후 결과 확인 섹션에서<br />직접 신청하셔야 합니다.</span>
             </p>
           </div>
         </div>
