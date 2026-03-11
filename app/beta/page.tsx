@@ -32,32 +32,32 @@ function ApplySection() {
   };
 
   return (
-    <div id="apply" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-      <h2 className="text-xl font-bold text-[#26422E] mb-6">📝 베타 테스터 신청</h2>
+    <div id="apply" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10">
+      <h2 className="text-2xl font-bold text-[#26422E] mb-6">📝 베타 테스터 신청</h2>
 
       {result?.ok ? (
         <div className="text-center py-6">
-          <div className="text-4xl mb-3">🎉</div>
-          <p className="text-lg font-semibold text-[#3d5c3e]">신청이 완료되었습니다!</p>
-          <p className="text-sm text-gray-500 mt-2">
+          <div className="text-5xl mb-3">🎉</div>
+          <p className="text-xl font-semibold text-[#3d5c3e]">신청이 완료되었습니다!</p>
+          <p className="text-base text-gray-500 mt-2">
             2주간 앱을 사용해 보시고 결과 확인 섹션에서 혜택을 신청해 주세요.
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+            <label className="block text-base font-medium text-gray-700 mb-1.5">이름</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="홍길동"
               required
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#3d5c3e]"
+              className="w-full px-4 py-4 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[#3d5c3e]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1.5">
               이메일 <span className="text-[#3d5c3e] font-semibold">(Google Play 계정 Gmail)</span>
             </label>
             <input
@@ -66,20 +66,20 @@ function ApplySection() {
               onChange={e => setEmail(e.target.value)}
               placeholder="yourname@gmail.com"
               required
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#3d5c3e]"
+              className="w-full px-4 py-4 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[#3d5c3e]"
             />
-            <p className="text-xs text-amber-600 mt-1.5 bg-amber-50 px-3 py-2 rounded-lg">
+            <p className="text-sm text-amber-600 mt-2 bg-amber-50 px-4 py-3 rounded-lg">
               ⚠️ 앱에서 반드시 이 이메일과 동일한 Google 계정으로 <strong>Google로 시작하기</strong>를 해주세요.
               다른 계정으로 로그인하면 활동 내역이 연결되지 않습니다.
             </p>
           </div>
           {result && !result.ok && (
-            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{result.message}</p>
+            <p className="text-base text-red-600 bg-red-50 px-4 py-3 rounded-lg">{result.message}</p>
           )}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#3d5c3e] text-white font-semibold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50"
+            className="w-full py-4 bg-[#3d5c3e] text-white text-base font-semibold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50"
           >
             {loading ? '신청 중...' : '베타 테스터 신청하기'}
           </button>
@@ -139,7 +139,6 @@ function CheckSection() {
       const data = await res.json();
       setGrantResult({ ok: res.ok, message: data.message || data.error });
       if (res.ok) {
-        // 결과 갱신
         const refetch = await fetch(`/api/beta/check?email=${encodeURIComponent(email.trim())}`);
         if (refetch.ok) setCheckData(await refetch.json());
       }
@@ -151,9 +150,9 @@ function CheckSection() {
   };
 
   return (
-    <div id="check" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-      <h2 className="text-xl font-bold text-[#26422E] mb-2">🏆 결과 확인 & 혜택 신청</h2>
-      <p className="text-sm text-gray-500 mb-6">2주 테스트 후, 신청하신 이메일로 활동 내역을 확인해 주세요.</p>
+    <div id="check" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10">
+      <h2 className="text-2xl font-bold text-[#26422E] mb-2">🏆 결과 확인 & 혜택 신청</h2>
+      <p className="text-base text-gray-500 mb-6">2주 테스트 후, 신청하신 이메일로 활동 내역을 확인해 주세요.</p>
 
       <form onSubmit={handleCheck} className="flex gap-2 mb-6">
         <input
@@ -162,83 +161,83 @@ function CheckSection() {
           onChange={e => setEmail(e.target.value)}
           placeholder="신청 시 사용한 이메일"
           required
-          className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#3d5c3e]"
+          className="flex-1 px-4 py-4 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[#3d5c3e]"
         />
         <button
           type="submit"
           disabled={loading}
-          className="px-5 py-3 bg-[#3d5c3e] text-white text-sm font-semibold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50 whitespace-nowrap"
+          className="px-6 py-4 bg-[#3d5c3e] text-white text-base font-semibold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? '확인 중...' : '확인하기'}
         </button>
       </form>
 
       {checkError && (
-        <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{checkError}</p>
+        <p className="text-base text-red-600 bg-red-50 px-4 py-3 rounded-lg">{checkError}</p>
       )}
 
       {checkData && (
         <div className="space-y-4">
           {/* 활동 내역 카드 */}
-          <div className="bg-gray-50 rounded-xl p-5 space-y-3">
+          <div className="bg-gray-50 rounded-xl p-6 space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">신청자</span>
-              <span className="font-semibold text-gray-800">{checkData.applicant.name}</span>
+              <span className="text-base text-gray-600">신청자</span>
+              <span className="text-base font-semibold text-gray-800">{checkData.applicant.name}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">앱 연결 상태</span>
-              <span className={`font-semibold ${checkData.appLinked ? 'text-[#3d5c3e]' : 'text-red-500'}`}>
+              <span className="text-base text-gray-600">앱 연결 상태</span>
+              <span className={`text-base font-semibold ${checkData.appLinked ? 'text-[#3d5c3e]' : 'text-red-500'}`}>
                 {checkData.appLinked ? '✅ 연결됨' : '❌ 미연결 (앱 로그인 필요)'}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">퀴즈 참여 횟수</span>
-              <span className="font-semibold text-gray-800">{checkData.quizSessions}세션</span>
+              <span className="text-base text-gray-600">퀴즈 참여 횟수</span>
+              <span className="text-base font-semibold text-gray-800">{checkData.quizSessions}세션</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">접속 일수</span>
-              <span className="font-semibold text-gray-800">
+              <span className="text-base text-gray-600">접속 일수</span>
+              <span className="text-base font-semibold text-gray-800">
                 {checkData.activeDays}일
-                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${checkData.qualified ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}>
+                <span className={`ml-2 text-sm px-2 py-0.5 rounded-full ${checkData.qualified ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}>
                   {checkData.qualified ? '조건 충족 ✓' : '조건 미충족'}
                 </span>
               </span>
             </div>
             {checkData.slotsRemaining !== undefined && (
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">남은 혜택 자리</span>
-                <span className="text-sm text-gray-700">1년권 {checkData.slotsRemaining}자리</span>
+                <span className="text-base text-gray-600">남은 혜택 자리</span>
+                <span className="text-base text-gray-700">1년권 {checkData.slotsRemaining}자리</span>
               </div>
             )}
           </div>
 
           {/* 혜택 상태 */}
           {checkData.applicant.benefit_granted ? (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
-              <p className="text-lg font-bold text-green-700">🎊 혜택 적용 완료!</p>
-              <p className="text-sm text-green-600 mt-1">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+              <p className="text-xl font-bold text-green-700">🎊 혜택 적용 완료!</p>
+              <p className="text-base text-green-600 mt-2">
                 {checkData.applicant.benefit_months}개월 광고 제거가 앱에 적용되었습니다.
               </p>
             </div>
           ) : checkData.qualified && checkData.appLinked ? (
             <div className="space-y-3">
               {grantResult ? (
-                <div className={`rounded-xl p-4 text-center ${grantResult.ok ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                  <p className={`font-semibold ${grantResult.ok ? 'text-green-700' : 'text-red-600'}`}>
+                <div className={`rounded-xl p-5 text-center ${grantResult.ok ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  <p className={`text-base font-semibold ${grantResult.ok ? 'text-green-700' : 'text-red-600'}`}>
                     {grantResult.ok ? '🎊 ' : '❌ '}{grantResult.message}
                   </p>
                 </div>
               ) : (
                 <>
-                  <div className="bg-[#f0f7f0] border border-[#c8e6c9] rounded-xl p-4 text-center">
-                    <p className="font-semibold text-[#2d4a2e]">
+                  <div className="bg-[#f0f7f0] border border-[#c8e6c9] rounded-xl p-5 text-center">
+                    <p className="text-base font-semibold text-[#2d4a2e]">
                       🎉 조건을 충족하셨습니다! ({checkData.benefitMonthsIfGranted}개월권 신청 가능)
                     </p>
                   </div>
                   <button
                     onClick={handleGrant}
                     disabled={grantLoading}
-                    className="w-full py-3 bg-[#3d5c3e] text-white font-bold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50 text-base"
+                    className="w-full py-4 bg-[#3d5c3e] text-white font-bold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50 text-lg"
                   >
                     {grantLoading ? '처리 중...' : `${checkData.benefitMonthsIfGranted}개월 광고 제거 혜택 받기`}
                   </button>
@@ -246,11 +245,11 @@ function CheckSection() {
               )}
             </div>
           ) : !checkData.appLinked ? (
-            <p className="text-sm text-amber-700 bg-amber-50 px-4 py-3 rounded-lg">
+            <p className="text-base text-amber-700 bg-amber-50 px-4 py-4 rounded-lg">
               앱에서 <strong>이 이메일과 동일한 Google 계정</strong>으로 로그인 후 다시 확인해 주세요.
             </p>
           ) : (
-            <p className="text-sm text-gray-600 bg-gray-50 px-4 py-3 rounded-lg">
+            <p className="text-base text-gray-600 bg-gray-50 px-4 py-4 rounded-lg">
               자격 조건: 퀴즈 5세션 이상 + 3일 이상 접속<br />
               현재: {checkData.quizSessions}세션 / {checkData.activeDays}일 접속
             </p>
@@ -289,22 +288,22 @@ function FeedbackSection() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-      <h2 className="text-xl font-bold text-[#26422E] mb-2">💬 사용 후기 & 개선 의견</h2>
-      <p className="text-sm text-gray-500 mb-2">솔직한 의견이 앱 개선에 큰 도움이 됩니다.</p>
-      <p className="text-sm text-[#3d5c3e] bg-[#f0f7f0] px-4 py-3 rounded-lg mb-6">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10">
+      <h2 className="text-2xl font-bold text-[#26422E] mb-2">💬 사용 후기 & 개선 의견</h2>
+      <p className="text-base text-gray-500 mb-2">솔직한 의견이 앱 개선에 큰 도움이 됩니다.</p>
+      <p className="text-base text-[#3d5c3e] bg-[#f0f7f0] px-4 py-3 rounded-lg mb-6">
         베타 테스터 여부와 관계없이 누구나 의견을 남겨주실 수 있습니다. 불편했던 점, 개선됐으면 하는 기능, 사용 소감 등 자유롭게 작성해 주세요. 하나하나 꼼꼼히 읽고 반영하겠습니다. 🙏
       </p>
 
       {result?.ok ? (
         <div className="text-center py-6">
-          <div className="text-4xl mb-3">🙏</div>
-          <p className="text-lg font-semibold text-[#3d5c3e]">소중한 의견 감사합니다!</p>
+          <div className="text-5xl mb-3">🙏</div>
+          <p className="text-xl font-semibold text-[#3d5c3e]">소중한 의견 감사합니다!</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1.5">
               이메일 <span className="text-gray-400 font-normal">(선택, 답변 원하시면 입력)</span>
             </label>
             <input
@@ -312,27 +311,27 @@ function FeedbackSection() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="yourname@gmail.com"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#3d5c3e]"
+              className="w-full px-4 py-4 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[#3d5c3e]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">내용 *</label>
+            <label className="block text-base font-medium text-gray-700 mb-1.5">내용 *</label>
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
               placeholder="사용 소감, 불편한 점, 개선 제안 등 자유롭게 작성해 주세요."
               required
-              rows={5}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#3d5c3e] resize-none"
+              rows={6}
+              className="w-full px-4 py-4 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[#3d5c3e] resize-none"
             />
           </div>
           {result && !result.ok && (
-            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{result.message}</p>
+            <p className="text-base text-red-600 bg-red-50 px-4 py-3 rounded-lg">{result.message}</p>
           )}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#3d5c3e] text-white font-semibold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50"
+            className="w-full py-4 bg-[#3d5c3e] text-white text-base font-semibold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50"
           >
             {loading ? '제출 중...' : '의견 보내기'}
           </button>
@@ -347,17 +346,17 @@ export default function BetaPage() {
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#F5F3EE_0%,#F8FAF8_60%)] text-gray-800">
       <Header />
-      <main className="max-w-2xl mx-auto px-6 py-16 space-y-10">
+      <main className="max-w-3xl mx-auto px-6 py-20 space-y-10">
 
         {/* 히어로 */}
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center gap-2 bg-[#e8f0e8] text-[#3d5c3e] text-sm font-semibold px-4 py-1.5 rounded-full">
+          <div className="inline-flex items-center gap-2 bg-[#e8f0e8] text-[#3d5c3e] text-base font-semibold px-5 py-2 rounded-full">
             🌲 선착순 15명 모집
           </div>
-          <h1 className="text-3xl font-bold text-[#26422E]">
+          <h1 className="text-4xl font-bold text-[#26422E]">
             트리오! 베타 테스터 모집
           </h1>
-          <p className="text-gray-600 text-base leading-relaxed">
+          <p className="text-lg text-gray-600 leading-relaxed">
             나무의사 시험을 준비하는 수험생을 위한 수종 퀴즈 앱 <strong>트리오!</strong>의<br />
             베타 테스터를 모집합니다. 2주간 테스트 후 혜택을 드립니다.
           </p>
@@ -365,27 +364,27 @@ export default function BetaPage() {
 
         {/* 참여 안내 카드 */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <p className="text-sm font-semibold text-gray-500 mb-2">참여 조건</p>
-            <p className="text-sm text-gray-700 leading-relaxed">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
+            <p className="text-base font-semibold text-gray-500 mb-3">참여 조건</p>
+            <p className="text-base text-gray-700 leading-relaxed">
               2주 내 퀴즈 <strong>5세션 이상</strong> 참여<br />
               <strong>3일 이상</strong> 접속<br />
               Google 계정으로 앱 로그인 필수
             </p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <p className="text-sm font-semibold text-gray-500 mb-2">혜택</p>
-            <p className="text-sm text-gray-700 leading-relaxed">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
+            <p className="text-base font-semibold text-gray-500 mb-3">혜택</p>
+            <p className="text-base text-gray-700 leading-relaxed">
               🎁 선착순 15명 전원 <strong>1년 광고 제거</strong><br />
-              <span className="text-xs text-gray-500">요건 충족 후 결과 확인 섹션에서<br />직접 신청하셔야 합니다.</span>
+              <span className="text-sm text-gray-500">요건 충족 후 결과 확인 섹션에서<br />직접 신청하셔야 합니다.</span>
             </p>
           </div>
         </div>
 
         {/* 참여 방법 */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-          <h2 className="text-lg font-bold text-[#26422E] mb-5">참여 방법</h2>
-          <ol className="space-y-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10">
+          <h2 className="text-xl font-bold text-[#26422E] mb-6">참여 방법</h2>
+          <ol className="space-y-5">
             {[
               { step: '01', text: '아래 신청 폼에 이름과 이메일(Gmail)을 입력해 신청합니다.' },
               { step: '02', text: '아래 링크로 앱을 설치하고, 신청한 Gmail로 Google 로그인합니다.' },
@@ -393,19 +392,19 @@ export default function BetaPage() {
               { step: '04', text: '결과 확인 섹션에서 이메일로 활동 내역을 확인하고 혜택을 신청합니다.' },
             ].map(({ step, text }) => (
               <li key={step} className="flex gap-4 items-start">
-                <span className="flex-shrink-0 w-8 h-8 bg-[#3d5c3e] text-white text-xs font-bold rounded-full flex items-center justify-center">
+                <span className="flex-shrink-0 w-9 h-9 bg-[#3d5c3e] text-white text-sm font-bold rounded-full flex items-center justify-center">
                   {step}
                 </span>
-                <span className="text-sm text-gray-700 leading-relaxed pt-1">{text}</span>
+                <span className="text-base text-gray-700 leading-relaxed pt-1.5">{text}</span>
               </li>
             ))}
           </ol>
-          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <a
               href="https://play.google.com/apps/testing/com.soopify.tree.quiz"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-[#3d5c3e] text-white text-sm font-semibold px-6 py-3 rounded-lg hover:bg-[#2d4a2e] transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-[#3d5c3e] text-white text-base font-semibold px-7 py-4 rounded-lg hover:bg-[#2d4a2e] transition-colors"
             >
               🌐 웹에서 테스트 참여
             </a>
@@ -413,7 +412,7 @@ export default function BetaPage() {
               href="https://play.google.com/store/apps/details?id=com.soopify.tree.quiz"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-white border border-[#3d5c3e] text-[#3d5c3e] text-sm font-semibold px-6 py-3 rounded-lg hover:bg-[#f0f7f0] transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-white border border-[#3d5c3e] text-[#3d5c3e] text-base font-semibold px-7 py-4 rounded-lg hover:bg-[#f0f7f0] transition-colors"
             >
               📱 Android에서 다운로드
             </a>
