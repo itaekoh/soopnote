@@ -388,7 +388,7 @@ export default function BetaPage() {
           <ol className="space-y-4">
             {[
               { step: '01', text: '아래 신청 폼에 이름과 이메일(Gmail)을 입력해 신청합니다.' },
-              { step: '02', text: 'Google Play에서 트리오! 앱을 설치하고, 신청한 Gmail로 Google 로그인합니다.' },
+              { step: '02', text: '아래 링크로 앱을 설치하고, 신청한 Gmail로 Google 로그인합니다.' },
               { step: '03', text: '2주간 자유롭게 퀴즈를 풀어보세요. (5세션 이상, 3일 이상 접속)' },
               { step: '04', text: '결과 확인 섹션에서 이메일로 활동 내역을 확인하고 혜택을 신청합니다.' },
             ].map(({ step, text }) => (
@@ -400,14 +400,22 @@ export default function BetaPage() {
               </li>
             ))}
           </ol>
-          <div className="mt-6 flex justify-center">
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <a
+              href="https://play.google.com/apps/testing/com.soopify.tree.quiz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 bg-[#3d5c3e] text-white text-sm font-semibold px-6 py-3 rounded-lg hover:bg-[#2d4a2e] transition-colors"
+            >
+              🌐 웹에서 테스트 참여
+            </a>
             <a
               href="https://play.google.com/store/apps/details?id=com.soopify.tree.quiz"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-[#3d5c3e] text-white text-sm font-semibold px-6 py-3 rounded-lg hover:bg-[#2d4a2e] transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-white border border-[#3d5c3e] text-[#3d5c3e] text-sm font-semibold px-6 py-3 rounded-lg hover:bg-[#f0f7f0] transition-colors"
             >
-              📱 Google Play에서 트리오! 다운로드
+              📱 Android에서 다운로드
             </a>
           </div>
         </div>
