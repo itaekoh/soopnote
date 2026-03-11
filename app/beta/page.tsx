@@ -8,11 +8,14 @@ import { Footer } from '@/components/Footer';
 function ApplySection() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [privacyExpanded, setPrivacyExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!privacyConsent) return;
     setLoading(true);
     setResult(null);
     try {
@@ -23,7 +26,7 @@ function ApplySection() {
       });
       const data = await res.json();
       setResult({ ok: res.ok, message: data.message || data.error });
-      if (res.ok) { setName(''); setEmail(''); }
+      if (res.ok) { setName(''); setEmail(''); setPrivacyConsent(false); }
     } catch {
       setResult({ ok: false, message: '네트워크 오류가 발생했습니다.' });
     } finally {
@@ -40,7 +43,7 @@ function ApplySection() {
           <div className="text-5xl mb-3">🎉</div>
           <p className="text-xl font-semibold text-[#3d5c3e]">신청이 완료되었습니다!</p>
           <p className="text-base text-gray-500 mt-2">
-            2주간 앱을 사용해 보시고 결과 확인 섹션에서 혜택을 신청해 주세요.
+            운영자가 테스터 목록에 등록하면 안내 없이 비공개 테스트 링크로 바로 참여하실 수 있습니다.
           </p>
         </div>
       ) : (
@@ -58,7 +61,7 @@ function ApplySection() {
           </div>
           <div>
             <label className="block text-base font-medium text-gray-700 mb-1.5">
-              이메일 <span className="text-[#3d5c3e] font-semibold">(Google Play 계정 Gmail)</span>
+              이메일 <span className="text-[#3d5c3e] font-semibold">(Google Play에 로그인된 Gmail)</span>
             </label>
             <input
               type="email"
@@ -69,17 +72,55 @@ function ApplySection() {
               className="w-full px-4 py-4 rounded-lg border border-gray-300 text-base focus:outline-none focus:ring-2 focus:ring-[#3d5c3e]"
             />
             <p className="text-sm text-amber-600 mt-2 bg-amber-50 px-4 py-3 rounded-lg">
-              ⚠️ 앱에서 반드시 이 이메일과 동일한 Google 계정으로 <strong>Google로 시작하기</strong>를 해주세요.
-              다른 계정으로 로그인하면 활동 내역이 연결되지 않습니다.
+              ⚠️ 반드시 Google Play에 로그인된 Gmail 주소를 입력해 주세요.<br />
+              입력한 주소와 실제 테스트에 사용할 Google 계정이 다르면 비공개 테스트 참여가 되지 않을 수 있습니다.
             </p>
           </div>
+
+          {/* 개인정보 동의 */}
+          <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="privacyConsent"
+                checked={privacyConsent}
+                onChange={e => setPrivacyConsent(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-[#3d5c3e] cursor-pointer flex-shrink-0"
+              />
+              <label htmlFor="privacyConsent" className="text-base text-gray-700 cursor-pointer leading-relaxed">
+                개인정보 수집 및 이용에 동의합니다.{' '}
+                <span className="text-red-500 font-semibold">(필수)</span>
+                {' '}
+                <button
+                  type="button"
+                  onClick={() => setPrivacyExpanded(v => !v)}
+                  className="text-sm text-[#3d5c3e] underline underline-offset-2 hover:text-[#2d4a2e]"
+                >
+                  {privacyExpanded ? '접기 ▲' : '자세히 보기 ▼'}
+                </button>
+              </label>
+            </div>
+
+            {privacyExpanded && (
+              <div className="bg-gray-50 rounded-lg px-4 py-4 text-sm text-gray-600 space-y-2 leading-relaxed">
+                <p className="font-semibold text-gray-700">개인정보 수집 및 이용 동의</p>
+                <div className="space-y-1.5">
+                  <p><span className="font-medium text-gray-700">수집 항목:</span> 이름, 이메일(Google Play 계정)</p>
+                  <p><span className="font-medium text-gray-700">수집 목적:</span> 트리오 앱 베타 테스트 참여 관리 및 혜택 지급 확인</p>
+                  <p><span className="font-medium text-gray-700">보관 기간:</span> 베타 테스트 종료 후 30일 이내 파기</p>
+                  <p><span className="font-medium text-gray-700">동의 거부 권리:</span> 개인정보 수집에 동의하지 않을 권리가 있으며, 동의하지 않을 경우 베타 테스트 신청이 제한될 수 있습니다.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
           {result && !result.ok && (
             <p className="text-base text-red-600 bg-red-50 px-4 py-3 rounded-lg">{result.message}</p>
           )}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-[#3d5c3e] text-white text-base font-semibold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50"
+            disabled={loading || !privacyConsent}
+            className="w-full py-4 bg-[#3d5c3e] text-white text-base font-semibold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? '신청 중...' : '베타 테스터 신청하기'}
           </button>
@@ -151,8 +192,8 @@ function CheckSection() {
 
   return (
     <div id="check" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10">
-      <h2 className="text-2xl font-bold text-[#26422E] mb-2">🏆 결과 확인 & 혜택 신청</h2>
-      <p className="text-base text-gray-500 mb-6">2주 테스트 후, 신청하신 이메일로 활동 내역을 확인해 주세요.</p>
+      <h2 className="text-2xl font-bold text-[#26422E] mb-2">🏆 결과 확인 및 혜택 대상 조회</h2>
+      <p className="text-base text-gray-500 mb-6">2주 이상 테스트에 참여한 뒤, 신청한 이메일을 입력해 혜택 대상 여부를 확인해 주세요.</p>
 
       <form onSubmit={handleCheck} className="flex gap-2 mb-6">
         <input
@@ -168,7 +209,7 @@ function CheckSection() {
           disabled={loading}
           className="px-6 py-4 bg-[#3d5c3e] text-white text-base font-semibold rounded-lg hover:bg-[#2d4a2e] transition-colors disabled:opacity-50 whitespace-nowrap"
         >
-          {loading ? '확인 중...' : '확인하기'}
+          {loading ? '확인 중...' : '혜택 대상 확인하기'}
         </button>
       </form>
 
@@ -178,7 +219,6 @@ function CheckSection() {
 
       {checkData && (
         <div className="space-y-4">
-          {/* 활동 내역 카드 */}
           <div className="bg-gray-50 rounded-xl p-6 space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-base text-gray-600">신청자</span>
@@ -211,12 +251,12 @@ function CheckSection() {
             )}
           </div>
 
-          {/* 혜택 상태 */}
           {checkData.applicant.benefit_granted ? (
             <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
               <p className="text-xl font-bold text-green-700">🎊 혜택 적용 완료!</p>
               <p className="text-base text-green-600 mt-2">
-                {checkData.applicant.benefit_months}개월 광고 제거가 앱에 적용되었습니다.
+                {checkData.applicant.benefit_months}개월 광고 제거가 앱에 적용되었습니다.<br />
+                <span className="text-sm text-green-500 mt-1 block">앱에서 로그아웃 후 재로그인하면 즉시 반영됩니다.</span>
               </p>
             </div>
           ) : checkData.qualified && checkData.appLinked ? (
@@ -226,6 +266,9 @@ function CheckSection() {
                   <p className={`text-base font-semibold ${grantResult.ok ? 'text-green-700' : 'text-red-600'}`}>
                     {grantResult.ok ? '🎊 ' : '❌ '}{grantResult.message}
                   </p>
+                  {grantResult.ok && (
+                    <p className="text-sm text-green-500 mt-1">앱에서 로그아웃 후 재로그인하면 즉시 반영됩니다.</p>
+                  )}
                 </div>
               ) : (
                 <>
@@ -246,7 +289,7 @@ function CheckSection() {
             </div>
           ) : !checkData.appLinked ? (
             <p className="text-base text-amber-700 bg-amber-50 px-4 py-4 rounded-lg">
-              앱에서 <strong>이 이메일과 동일한 Google 계정</strong>으로 로그인 후 다시 확인해 주세요.
+              앱에서 <strong>신청한 Gmail과 동일한 Google 계정</strong>으로 로그인 후 다시 확인해 주세요.
             </p>
           ) : (
             <p className="text-base text-gray-600 bg-gray-50 px-4 py-4 rounded-lg">
@@ -289,10 +332,10 @@ function FeedbackSection() {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10">
-      <h2 className="text-2xl font-bold text-[#26422E] mb-2">💬 사용 후기 & 개선 의견</h2>
-      <p className="text-base text-gray-500 mb-2">솔직한 의견이 앱 개선에 큰 도움이 됩니다.</p>
+      <h2 className="text-2xl font-bold text-[#26422E] mb-2">💬 사용 후기 및 개선 의견</h2>
+      <p className="text-base text-gray-500 mb-2">베타 테스트 중 불편했던 점, 개선이 필요한 기능, 사용 소감 등을 자유롭게 남겨 주세요.</p>
       <p className="text-base text-[#3d5c3e] bg-[#f0f7f0] px-4 py-3 rounded-lg mb-6">
-        베타 테스터 여부와 관계없이 누구나 의견을 남겨주실 수 있습니다. 불편했던 점, 개선됐으면 하는 기능, 사용 소감 등 자유롭게 작성해 주세요. 하나하나 꼼꼼히 읽고 반영하겠습니다. 🙏
+        보내주신 의견은 앱 개선에 큰 도움이 됩니다. 베타 테스터가 아니어도 누구나 의견을 남겨주실 수 있습니다. 🙏
       </p>
 
       {result?.ok ? (
@@ -357,8 +400,9 @@ export default function BetaPage() {
             트리오! 베타 테스터 모집
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed">
-            나무의사 시험을 준비하는 수험생을 위한 수종 퀴즈 앱 <strong>트리오!</strong>의<br />
-            베타 테스터를 모집합니다. 2주간 테스트 후 혜택을 드립니다.
+            나무의사 시험을 준비하는 수험생을 위한 수목 퀴즈 앱 <strong>트리오!</strong>의<br />
+            비공개 베타 테스터를 모집합니다.<br />
+            Google Play 비공개 테스트에 참여하고, 2주간 앱을 사용해 주시면 혜택을 드립니다.
           </p>
         </div>
 
@@ -367,16 +411,17 @@ export default function BetaPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
             <p className="text-base font-semibold text-gray-500 mb-3">참여 조건</p>
             <p className="text-base text-gray-700 leading-relaxed">
-              2주 내 퀴즈 <strong>5세션 이상</strong> 참여<br />
-              <strong>3일 이상</strong> 접속<br />
-              Google 계정으로 앱 로그인 필수
+              2주 이상 비공개 테스트 참여<br />
+              Android 휴대폰 또는 태블릿<br />
+              Google Play 로그인 Gmail 필요
             </p>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7">
             <p className="text-base font-semibold text-gray-500 mb-3">혜택</p>
             <p className="text-base text-gray-700 leading-relaxed">
-              🎁 선착순 15명 전원 <strong>1년 광고 제거</strong><br />
-              <span className="text-sm text-gray-500">요건 충족 후 결과 확인 섹션에서<br />직접 신청하셔야 합니다.</span>
+              🎁 선착순 15명 한정<br />
+              <strong>광고 제거 1년</strong> 혜택 제공<br />
+              <span className="text-sm text-gray-500">요건 충족 후 직접 신청하셔야 합니다.</span>
             </p>
           </div>
         </div>
@@ -386,10 +431,22 @@ export default function BetaPage() {
           <h2 className="text-xl font-bold text-[#26422E] mb-6">참여 방법</h2>
           <ol className="space-y-5">
             {[
-              { step: '01', text: '아래 신청 폼에 이름과 이메일(Gmail)을 입력해 신청합니다.' },
-              { step: '02', text: '아래 링크로 앱을 설치하고, 신청한 Gmail로 Google 로그인합니다.' },
-              { step: '03', text: '2주간 자유롭게 퀴즈를 풀어보세요. (5세션 이상, 3일 이상 접속)' },
-              { step: '04', text: '결과 확인 섹션에서 이메일로 활동 내역을 확인하고 혜택을 신청합니다.' },
+              {
+                step: '01',
+                text: '아래 신청 폼에 Google Play에 로그인된 Gmail 주소를 입력해 신청합니다.',
+              },
+              {
+                step: '02',
+                text: '운영자가 테스트 참여 대상자로 등록하면, 등록된 Gmail 계정으로 비공개 테스트 링크에 접속합니다.',
+              },
+              {
+                step: '03',
+                text: '테스트 링크에서 "Become a tester"를 누른 뒤 Google Play에서 앱을 설치합니다.',
+              },
+              {
+                step: '04',
+                text: '2주 동안 앱을 자유롭게 사용해 주세요. 테스트 종료 후 신청한 이메일로 혜택 지급 여부를 확인하실 수 있습니다.',
+              },
             ].map(({ step, text }) => (
               <li key={step} className="flex gap-4 items-start">
                 <span className="flex-shrink-0 w-9 h-9 bg-[#3d5c3e] text-white text-sm font-bold rounded-full flex items-center justify-center">
@@ -399,23 +456,27 @@ export default function BetaPage() {
               </li>
             ))}
           </ol>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="https://play.google.com/apps/testing/com.soopify.tree.quiz"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-[#3d5c3e] text-white text-base font-semibold px-7 py-4 rounded-lg hover:bg-[#2d4a2e] transition-colors"
-            >
-              🌐 웹에서 테스트 참여
-            </a>
-            <a
-              href="https://play.google.com/store/apps/details?id=com.soopify.tree.quiz"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-white border border-[#3d5c3e] text-[#3d5c3e] text-base font-semibold px-7 py-4 rounded-lg hover:bg-[#f0f7f0] transition-colors"
-            >
-              📱 Android에서 다운로드
-            </a>
+
+          <div className="mt-8 space-y-3">
+            <p className="text-sm text-gray-500 text-center">테스터 등록 완료 후 아래 링크로 참여하세요</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a
+                href="https://play.google.com/apps/testing/com.soopify.tree.quiz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-[#3d5c3e] text-white text-base font-semibold px-7 py-4 rounded-lg hover:bg-[#2d4a2e] transition-colors"
+              >
+                🌐 비공개 테스트 링크 열기
+              </a>
+              <a
+                href="https://play.google.com/store/apps/details?id=com.soopify.tree.quiz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-white border border-[#3d5c3e] text-[#3d5c3e] text-base font-semibold px-7 py-4 rounded-lg hover:bg-[#f0f7f0] transition-colors"
+              >
+                📱 Google Play에서 앱 보기
+              </a>
+            </div>
           </div>
         </div>
 
