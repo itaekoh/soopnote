@@ -11,67 +11,66 @@ import {
   type QuizGroup,
 } from '@/lib/api/quiz-admin';
 
+const EMPTY_FORM = {
+  name_ko: '',
+  name_latin: '',
+  group_id: '',
+  aliases: '',
+  is_active: true,
+};
+
 export function SpeciesManagement() {
   const [species, setSpecies] = useState<QuizSpeciesWithGroup[]>([]);
   const [groups, setGroups] = useState<QuizGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ ...EMPTY_FORM });
 
-  const [formData, setFormData] = useState({
-    name_ko: '',
-    name_latin: '',
-    group_id: '',
-    aliases: '',
-    is_active: true,
-  });
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     try {
       setLoading(true);
-      const [speciesData, groupsData] = await Promise.all([
-        getAllSpecies(),
-        getAllGroups(),
-      ]);
+      const [speciesData, groupsData] = await Promise.all([getAllSpecies(), getAllGroups()]);
       setSpecies(speciesData);
       setGroups(groupsData);
-    } catch (error) {
-      console.error('데이터 로딩 실패:', error);
+    } catch {
       alert('데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
   }
 
-  function resetForm() {
-    setFormData({
-      name_ko: '',
-      name_latin: '',
-      group_id: '',
-      aliases: '',
-      is_active: true,
-    });
-    setShowAddForm(false);
+  function openAdd() {
+    setFormData({ ...EMPTY_FORM });
     setEditingId(null);
+    setDrawerOpen(true);
+  }
+
+  function openEdit(sp: QuizSpeciesWithGroup) {
+    setFormData({
+      name_ko: sp.name_ko,
+      name_latin: sp.name_latin || '',
+      group_id: sp.group_id || '',
+      aliases: sp.aliases?.join(', ') || '',
+      is_active: sp.is_active,
+    });
+    setEditingId(sp.id);
+    setDrawerOpen(true);
+  }
+
+  function closeDrawer() {
+    setDrawerOpen(false);
+    setEditingId(null);
+    setFormData({ ...EMPTY_FORM });
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!formData.name_ko.trim()) { alert('수종명(한)은 필수입니다.'); return; }
 
-    if (!formData.name_ko.trim()) {
-      alert('수종명(한)은 필수입니다.');
-      return;
-    }
-
-    const aliasArray = formData.aliases
-      .split(',')
-      .map((a) => a.trim())
-      .filter(Boolean);
-
+    const aliasArray = formData.aliases.split(',').map((a) => a.trim()).filter(Boolean);
     try {
       if (editingId) {
         await updateSpecies(editingId, {
@@ -81,7 +80,6 @@ export function SpeciesManagement() {
           aliases: aliasArray,
           is_active: formData.is_active,
         });
-        alert('수종이 수정되었습니다.');
       } else {
         await createSpecies({
           name_ko: formData.name_ko.trim(),
@@ -90,32 +88,19 @@ export function SpeciesManagement() {
           aliases: aliasArray,
           is_active: formData.is_active,
         });
-        alert('수종이 생성되었습니다.');
       }
-      resetForm();
+      closeDrawer();
       await loadData();
     } catch (error: any) {
       alert(error.message || '수종 저장에 실패했습니다.');
     }
   }
 
-  function handleEdit(sp: QuizSpeciesWithGroup) {
-    setFormData({
-      name_ko: sp.name_ko,
-      name_latin: sp.name_latin || '',
-      group_id: sp.group_id || '',
-      aliases: sp.aliases?.join(', ') || '',
-      is_active: sp.is_active,
-    });
-    setEditingId(sp.id);
-    setShowAddForm(true);
-  }
-
   async function handleToggleActive(sp: QuizSpeciesWithGroup) {
     try {
       await updateSpecies(sp.id, { is_active: !sp.is_active });
       await loadData();
-    } catch (error) {
+    } catch {
       alert('상태 변경에 실패했습니다.');
     }
   }
@@ -125,111 +110,19 @@ export function SpeciesManagement() {
   }
 
   return (
-    <div>
+    <div className="relative">
+      {/* 헤더 */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">
           수종 관리 <span className="text-gray-500">({species.length}개)</span>
         </h2>
         <button
-          onClick={() => { showAddForm ? resetForm() : setShowAddForm(true); }}
+          onClick={openAdd}
           className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
-          {showAddForm ? (
-            <><X className="w-4 h-4" />취소</>
-          ) : (
-            <><Plus className="w-4 h-4" />수종 추가</>
-          )}
+          <Plus className="w-4 h-4" />수종 추가
         </button>
       </div>
-
-      {/* 추가/수정 폼 */}
-      {showAddForm && (
-        <form onSubmit={handleSubmit} className="bg-gray-50 rounded-lg p-6 mb-6 border border-gray-200">
-          <h3 className="font-semibold text-gray-900 mb-4">
-            {editingId ? '수종 수정' : '새 수종 추가'}
-          </h3>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                수종명(한) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.name_ko}
-                onChange={(e) => setFormData({ ...formData, name_ko: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                placeholder="예: 소나무"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">학명</label>
-              <input
-                type="text"
-                value={formData.name_latin}
-                onChange={(e) => setFormData({ ...formData, name_latin: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                placeholder="예: Pinus densiflora"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">혼동그룹</label>
-              <select
-                value={formData.group_id}
-                onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              >
-                <option value="">없음</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">별칭 (쉼표 구분)</label>
-              <input
-                type="text"
-                value={formData.aliases}
-                onChange={(e) => setFormData({ ...formData, aliases: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                placeholder="예: 적송, 육송"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                />
-                <span className="text-sm font-medium text-gray-700">활성 상태</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="mt-4 flex gap-2">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              {editingId ? '수정' : '추가'}
-            </button>
-            <button
-              type="button"
-              onClick={resetForm}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              취소
-            </button>
-          </div>
-        </form>
-      )}
 
       {/* 수종 목록 테이블 */}
       <div className="overflow-x-auto">
@@ -263,9 +156,7 @@ export function SpeciesManagement() {
                 </td>
                 <td className="px-4 py-3 text-sm">
                   <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    sp.is_active
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-500'
+                    sp.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                   }`}>
                     {sp.is_active ? '활성' : '비활성'}
                   </span>
@@ -273,7 +164,7 @@ export function SpeciesManagement() {
                 <td className="px-4 py-3 text-sm">
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => handleEdit(sp)}
+                      onClick={() => openEdit(sp)}
                       className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="수정"
                     >
@@ -282,17 +173,11 @@ export function SpeciesManagement() {
                     <button
                       onClick={() => handleToggleActive(sp)}
                       className={`p-1.5 rounded-lg transition-colors ${
-                        sp.is_active
-                          ? 'text-green-600 hover:bg-green-50'
-                          : 'text-gray-400 hover:bg-gray-100'
+                        sp.is_active ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'
                       }`}
                       title={sp.is_active ? '비활성화' : '활성화'}
                     >
-                      {sp.is_active ? (
-                        <ToggleRight className="w-5 h-5" />
-                      ) : (
-                        <ToggleLeft className="w-5 h-5" />
-                      )}
+                      {sp.is_active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
                     </button>
                   </div>
                 </td>
@@ -304,6 +189,115 @@ export function SpeciesManagement() {
 
       {species.length === 0 && (
         <div className="text-center py-12 text-gray-500">등록된 수종이 없습니다.</div>
+      )}
+
+      {/* 드로어 오버레이 */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-40 flex justify-end">
+          {/* 배경 딤 */}
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={closeDrawer}
+          />
+          {/* 패널 */}
+          <div className="relative z-50 w-full max-w-md bg-white shadow-xl flex flex-col h-full overflow-y-auto">
+            {/* 드로어 헤더 */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h3 className="text-base font-semibold text-gray-900">
+                {editingId ? '수종 수정' : '새 수종 추가'}
+              </h3>
+              <button
+                onClick={closeDrawer}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 폼 */}
+            <form onSubmit={handleSubmit} className="flex-1 px-6 py-5 flex flex-col gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  수종명(한) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.name_ko}
+                  onChange={(e) => setFormData({ ...formData, name_ko: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="예: 소나무"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">학명</label>
+                <input
+                  type="text"
+                  value={formData.name_latin}
+                  onChange={(e) => setFormData({ ...formData, name_latin: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="예: Pinus densiflora"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">혼동그룹</label>
+                <select
+                  value={formData.group_id}
+                  onChange={(e) => setFormData({ ...formData, group_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                >
+                  <option value="">없음</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">별칭 (쉼표 구분)</label>
+                <input
+                  type="text"
+                  value={formData.aliases}
+                  onChange={(e) => setFormData({ ...formData, aliases: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="예: 적송, 육송"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">활성 상태</span>
+                </label>
+              </div>
+
+              {/* 하단 버튼 */}
+              <div className="mt-auto pt-4 flex gap-2 border-t border-gray-100">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  {editingId ? '수정' : '추가'}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeDrawer}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
