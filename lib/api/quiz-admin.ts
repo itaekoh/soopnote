@@ -461,3 +461,45 @@ export function getQuizImageUrl(imagePath: string | null): string | null {
   const { data } = supabase.storage.from('quiz_public').getPublicUrl(imagePath);
   return data?.publicUrl || null;
 }
+
+// ============================================
+// 퀴즈 모듈 관리
+// ============================================
+
+export interface QuizModule {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  display_order: number;
+}
+
+export async function getQuizModules(): Promise<QuizModule[]> {
+  const { data, error } = await supabase
+    .from('quiz_modules')
+    .select('*')
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('모듈 목록 조회 실패:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+export async function updateQuizModule(
+  id: string,
+  updates: { is_active?: boolean }
+): Promise<void> {
+  const { error } = await supabase
+    .from('quiz_modules')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) {
+    console.error('모듈 수정 실패:', error);
+    throw error;
+  }
+}

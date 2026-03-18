@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Image, TreePine, GitBranch, BarChart3, HardDrive } from 'lucide-react';
+import { Image, TreePine, GitBranch, BarChart3, HardDrive, Package } from 'lucide-react';
 import { ItemManagement } from './ItemManagement';
 import { SpeciesManagement } from './SpeciesManagement';
 import { GroupManagement } from './GroupManagement';
 import { QuizStats } from './QuizStats';
 import { StorageCleanup } from './StorageCleanup';
+import { ModuleManagement } from './ModuleManagement';
 
-type SubTab = 'items' | 'species' | 'groups' | 'stats' | 'storage';
+type SubTab = 'items' | 'species' | 'groups' | 'stats' | 'storage' | 'modules';
 
 const subTabs = [
   { id: 'items' as SubTab, label: '문항 관리', icon: Image },
@@ -16,6 +17,7 @@ const subTabs = [
   { id: 'groups' as SubTab, label: '혼동그룹', icon: GitBranch },
   { id: 'stats' as SubTab, label: '통계', icon: BarChart3 },
   { id: 'storage' as SubTab, label: '스토리지', icon: HardDrive },
+  { id: 'modules' as SubTab, label: '모듈 관리', icon: Package },
 ];
 
 export function QuizManagement() {
@@ -50,6 +52,7 @@ export function QuizManagement() {
       {activeSubTab === 'groups' && <GroupManagement />}
       {activeSubTab === 'stats' && <QuizStats />}
       {activeSubTab === 'storage' && <StorageCleanup />}
+      {activeSubTab === 'modules' && <ModuleManagement />}
     </div>
   );
 }
