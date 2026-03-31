@@ -11,76 +11,10 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// 워터마크 타일 PNG (빌드 시 1회 로드)
+// 워터마크 타일 PNG (프로세스 시작 시 1회 로드)
 const watermarkTile = readFileSync(
   join(process.cwd(), 'assets', 'watermark-tile.png')
 );
-
-/**
- * 워터마크 타일을 이미지 크기에 맞게 반복 합성
- */
-async function applyWatermark(
-  imageBuffer: Buffer,
-  width: number,
-  height: number
-): Promise<Buffer> {
-  // 타일을 이미지 크기만큼 반복해서 채운 오버레이 생성
-  const tileMetadata = await sharp(watermarkTile).metadata();
-  const tileW = tileMetadata.width!;
-  const tileH = tileMetadata.height!;
-
-  const cols = Math.ceil(width / tileW);
-  const rows = Math.ceil(height / tileH);
-
-  // 타일을 가로로 반복
-  const rowImages: Buffer[] = [];
-  for (let r = 0; r < rows; r++) {
-    const tiles: sharp.OverlayOptions[] = [];
-    for (let c = 0; c < cols; c++) {
-      tiles.push({ input: watermarkTile, top: 0, left: c * tileW });
-    }
-    const rowBuffer = await sharp({
-      create: {
-        width: cols * tileW,
-        height: tileH,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      },
-    })
-      .composite(tiles)
-      .png()
-      .toBuffer();
-    rowImages.push(rowBuffer);
-  }
-
-  // 세로로 합치기
-  const overlayComposites: sharp.OverlayOptions[] = rowImages.map(
-    (buf, i) => ({
-      input: buf,
-      top: i * tileH,
-      left: 0,
-    })
-  );
-
-  const fullOverlay = await sharp({
-    create: {
-      width: cols * tileW,
-      height: rows * tileH,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite(overlayComposites)
-    .resize(width, height, { fit: 'cover' })
-    .png()
-    .toBuffer();
-
-  // 원본 이미지에 워터마크 합성
-  return sharp(imageBuffer)
-    .composite([{ input: fullOverlay, top: 0, left: 0 }])
-    .jpeg({ quality: 75 })
-    .toBuffer();
-}
 
 export async function GET(
   request: Request,
@@ -123,11 +57,39 @@ export async function GET(
 
     // 2. 메타데이터
     const metadata = await sharp(resizedBuffer).metadata();
-    const width = metadata.width ?? 800;
-    const height = metadata.height ?? 600;
+    const width = metadata.width!;
+    const height = metadata.height!;
 
-    // 3. 워터마크 합성
-    const outputBuffer = await applyWatermark(resizedBuffer, width, height);
+    // 3. 워터마크 타일을 정확히 이미지 크기로 반복 생성
+    const tileInfo = await sharp(watermarkTile).metadata();
+    const tileW = tileInfo.width!;
+    const tileH = tileInfo.height!;
+
+    const composites: sharp.OverlayOptions[] = [];
+    for (let y = 0; y < height; y += tileH) {
+      for (let x = 0; x < width; x += tileW) {
+        composites.push({ input: watermarkTile, top: y, left: x });
+      }
+    }
+
+    // 정확히 이미지와 같은 크기의 투명 캔버스에 타일 배치
+    const watermarkOverlay = await sharp({
+      create: {
+        width,
+        height,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    })
+      .composite(composites)
+      .png()
+      .toBuffer();
+
+    // 4. 원본에 워터마크 합성
+    const outputBuffer = await sharp(resizedBuffer)
+      .composite([{ input: watermarkOverlay, top: 0, left: 0 }])
+      .jpeg({ quality: 75 })
+      .toBuffer();
 
     return new Response(outputBuffer, {
       status: 200,
