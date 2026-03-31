@@ -16,7 +16,22 @@ interface AnswerRecord {
   correct: boolean;
 }
 
-type Phase = 'intro' | 'playing' | 'mid-ad' | 'finished';
+type Phase = 'intro' | 'loading' | 'playing' | 'mid-ad' | 'finished';
+
+/** 모든 이미지를 프리로드하고 완료 시 resolve */
+function preloadImages(urls: string[]): Promise<void> {
+  return Promise.all(
+    urls.map(
+      (url) =>
+        new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // 실패해도 진행
+          img.src = url;
+        })
+    )
+  ).then(() => {});
+}
 
 export default function WebQuiz({ initialQuestions }: WebQuizProps) {
   const [phase, setPhase] = useState<Phase>('intro');
@@ -24,17 +39,38 @@ export default function WebQuiz({ initialQuestions }: WebQuizProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
+  const [loadProgress, setLoadProgress] = useState(0);
 
   const total = initialQuestions.length;
 
-  // 이미지 프리로딩: 시작 시 전체 이미지를 백그라운드 로드
+  // loading 단계: 모든 이미지 프리로드 후 playing으로 전환
   useEffect(() => {
-    if (phase === 'playing') {
-      initialQuestions.forEach((q) => {
-        const img = new Image();
-        img.src = q.imageUrl;
-      });
-    }
+    if (phase !== 'loading') return;
+
+    let loaded = 0;
+    const urls = initialQuestions.map((q) => q.imageUrl);
+
+    const promises = urls.map(
+      (url) =>
+        new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            loaded++;
+            setLoadProgress(Math.round((loaded / urls.length) * 100));
+            resolve();
+          };
+          img.onerror = () => {
+            loaded++;
+            setLoadProgress(Math.round((loaded / urls.length) * 100));
+            resolve();
+          };
+          img.src = url;
+        })
+    );
+
+    Promise.all(promises).then(() => {
+      setPhase('playing');
+    });
   }, [phase, initialQuestions]);
 
   const advanceToNext = useCallback(() => {
@@ -75,7 +111,6 @@ export default function WebQuiz({ initialQuestions }: WebQuizProps) {
     if (!showFeedback) return;
 
     const timer = setTimeout(() => {
-      // Check if this was the last question
       if (currentIndex + 1 >= total && currentIndex !== 2) {
         setPhase('finished');
       } else {
@@ -87,7 +122,8 @@ export default function WebQuiz({ initialQuestions }: WebQuizProps) {
   }, [showFeedback, advanceToNext, currentIndex, total]);
 
   const handleStart = () => {
-    setPhase('playing');
+    setLoadProgress(0);
+    setPhase('loading');
   };
 
   const handleRetry = () => {
@@ -164,6 +200,26 @@ export default function WebQuiz({ initialQuestions }: WebQuizProps) {
 
         {/* AdSense */}
         <AdSlot adSlot="quiz-intro" />
+      </div>
+    );
+  }
+
+  // ──────────────── LOADING ────────────────
+  if (phase === 'loading') {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-8 sm:p-12 text-center space-y-6">
+        <div className="text-5xl animate-bounce">🌳</div>
+        <h2 className="text-lg font-bold text-gray-900">문제를 준비하고 있어요...</h2>
+        {/* 프로그레스 바 */}
+        <div className="w-full max-w-xs mx-auto">
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-green-600 rounded-full transition-all duration-300"
+              style={{ width: `${loadProgress}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-400 mt-2">{loadProgress}%</p>
+        </div>
       </div>
     );
   }
