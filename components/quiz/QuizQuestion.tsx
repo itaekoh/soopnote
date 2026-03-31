@@ -10,6 +10,31 @@ interface QuizQuestionProps {
   selectedAnswer: string | null;
 }
 
+/** CSS 워터마크 오버레이 */
+function WatermarkOverlay() {
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none overflow-hidden"
+      aria-hidden="true"
+    >
+      <div
+        className="absolute inset-0 flex flex-wrap items-center justify-center gap-x-16 gap-y-10"
+        style={{ transform: 'rotate(-30deg) scale(1.5)' }}
+      >
+        {Array.from({ length: 24 }).map((_, i) => (
+          <span
+            key={i}
+            className="text-white/25 text-sm font-bold whitespace-nowrap select-none"
+            style={{ textShadow: '0 0 3px rgba(0,0,0,0.25)' }}
+          >
+            soopnote.com
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function QuizQuestion({
   question,
   onAnswer,
@@ -37,7 +62,7 @@ export default function QuizQuestion({
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        {/* Image with copy protection + click to zoom */}
+        {/* Image + CSS 워터마크 */}
         <div
           className="relative w-full select-none cursor-zoom-in"
           onContextMenu={(e) => e.preventDefault()}
@@ -68,9 +93,11 @@ export default function QuizQuestion({
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
           />
+          {/* 워터마크 */}
+          {imageLoaded && <WatermarkOverlay />}
           {/* Zoom hint */}
           {imageLoaded && (
-            <div className="absolute bottom-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded-lg pointer-events-none">
+            <div className="absolute bottom-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded-lg pointer-events-none z-10">
               🔍 클릭하여 확대
             </div>
           )}
@@ -121,18 +148,22 @@ export default function QuizQuestion({
         >
           <button
             onClick={() => setShowZoom(false)}
-            className="absolute top-4 right-4 text-white bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-xl hover:bg-black/70 transition-colors"
+            className="absolute top-4 right-4 text-white bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-xl hover:bg-black/70 transition-colors z-10"
           >
             ✕
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={question.imageUrl}
-            alt="퀴즈 이미지 확대"
-            draggable={false}
-            className="max-w-full max-h-[90vh] object-contain select-none"
-            style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
-          />
+          <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={question.imageUrl}
+              alt="퀴즈 이미지 확대"
+              draggable={false}
+              className="max-w-full max-h-[90vh] object-contain select-none"
+              style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
+            />
+            {/* 확대에서도 워터마크 */}
+            <WatermarkOverlay />
+          </div>
         </div>
       )}
     </>
