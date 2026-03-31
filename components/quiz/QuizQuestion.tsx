@@ -58,6 +58,7 @@ export default function QuizQuestion({
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
+            key={question.itemId}
             ref={handleImgRef}
             src={question.imageUrl}
             alt="퀴즈 이미지"
