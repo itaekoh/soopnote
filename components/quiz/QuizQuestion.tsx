@@ -28,7 +28,7 @@ export default function QuizQuestion({
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        {/* Image + CSS 워터마크 오버레이 */}
+        {/* Image with copy protection + click to zoom */}
         <div
           className="relative w-full select-none cursor-zoom-in"
           onContextMenu={(e) => e.preventDefault()}
@@ -57,39 +57,6 @@ export default function QuizQuestion({
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
           />
-          {/* CSS 워터마크 오버레이 */}
-          {imageLoaded && (
-            <div
-              className="absolute inset-0 pointer-events-none overflow-hidden"
-              aria-hidden="true"
-              style={{
-                backgroundImage: `repeating-linear-gradient(
-                  -30deg,
-                  transparent,
-                  transparent 60px,
-                  rgba(255,255,255,0.06) 60px,
-                  rgba(255,255,255,0.06) 61px
-                )`,
-              }}
-            >
-              <div
-                className="absolute inset-0 flex flex-wrap items-center justify-center gap-x-16 gap-y-12"
-                style={{ transform: 'rotate(-30deg) scale(1.5)' }}
-              >
-                {Array.from({ length: 20 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="text-white/25 text-sm font-bold whitespace-nowrap select-none"
-                    style={{
-                      textShadow: '0 0 2px rgba(0,0,0,0.2)',
-                    }}
-                  >
-                    soopnote.com
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
           {/* Zoom hint */}
           {imageLoaded && (
             <div className="absolute bottom-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded-lg pointer-events-none">
@@ -147,38 +114,14 @@ export default function QuizQuestion({
           >
             ✕
           </button>
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={question.imageUrl}
-              alt="퀴즈 이미지 확대"
-              draggable={false}
-              className="max-w-full max-h-[90vh] object-contain select-none"
-              style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
-            />
-            {/* 확대 모달에서도 워터마크 */}
-            <div
-              className="absolute inset-0 pointer-events-none overflow-hidden"
-              aria-hidden="true"
-            >
-              <div
-                className="absolute inset-0 flex flex-wrap items-center justify-center gap-x-16 gap-y-12"
-                style={{ transform: 'rotate(-30deg) scale(1.5)' }}
-              >
-                {Array.from({ length: 30 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="text-white/25 text-sm font-bold whitespace-nowrap select-none"
-                    style={{
-                      textShadow: '0 0 2px rgba(0,0,0,0.2)',
-                    }}
-                  >
-                    soopnote.com
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={question.imageUrl}
+            alt="퀴즈 이미지 확대"
+            draggable={false}
+            className="max-w-full max-h-[90vh] object-contain select-none"
+            style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
+          />
         </div>
       )}
     </>
