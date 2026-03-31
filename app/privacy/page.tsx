@@ -38,7 +38,7 @@ export default function PrivacyPage() {
               <li>이메일 주소 (회원가입 시)</li>
               <li>소셜 계정 정보 (Google, Kakao 로그인 시 제공되는 이름, 프로필 사진)</li>
               <li>퀴즈 학습 기록 및 통계 데이터</li>
-              <li>인앱 구매 정보 (구매 상태)</li>
+              <li>구독 상태 및 결제 정보 (구독 상품, 구독 기간, 갱신일)</li>
               <li>기기 정보 및 광고 식별자 (Google AdMob 광고 표시용)</li>
             </ul>
           </section>
@@ -78,7 +78,7 @@ export default function PrivacyPage() {
             <p>
               모바일 앱에서는 Google AdMob을 통해 배너 광고를 표시합니다.
               AdMob은 광고 식별자를 사용하여 맞춤형 광고를 제공할 수 있습니다.
-              광고 제거 상품을 구매하시면 광고 표시 및 광고 ID 수집이 중단됩니다.
+              프리미엄 구독 이용자는 광고가 표시되지 않으며, 광고 ID 수집이 중단됩니다.
             </p>
           </section>
 
@@ -188,7 +188,7 @@ export default function PrivacyPage() {
               본 개인정보처리방침은 법령 또는 서비스 변경에 따라 수정될 수 있으며,
               변경 시 본 페이지를 통해 공지합니다.
             </p>
-            <p className="text-sm text-gray-500">최종 수정일: 2026년 3월 1일</p>
+            <p className="text-sm text-gray-500">최종 수정일: 2026년 3월 28일</p>
           </section>
         </div>
       </main>

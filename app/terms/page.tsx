@@ -59,18 +59,29 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#26422E]">5. 인앱 결제</h2>
+            <h2 className="text-2xl font-semibold text-[#26422E]">5. 구독 및 결제</h2>
             <p>
-              모바일 앱에서는 Google Play를 통한 인앱 결제를 지원합니다.
-              현재 제공되는 유료 상품은 다음과 같습니다:
+              모바일 앱에서는 Google Play를 통한 정기 구독 결제를 지원합니다.
+              현재 제공되는 구독 상품은 다음과 같습니다:
             </p>
             <ul className="list-disc pl-6 space-y-1">
-              <li>광고 제거: 1회 구매, 서비스 운영 기간 동안 적용</li>
+              <li>프리미엄 월간: 월 단위 자동 갱신 구독</li>
+              <li>프리미엄 연간: 연 단위 자동 갱신 구독</li>
             </ul>
             <p>
-              &quot;영구 적용&quot;은 본 서비스가 정상적으로 운영되는 기간에 한하여 유효합니다.
-              서비스 종료 시에는 인앱 결제 혜택이 함께 종료될 수 있으며,
-              이 경우 환불은 Google Play 정책 및 본 약관 제8조에 따라 처리됩니다.
+              구독 시 광고 제거, 무제한 퀴즈 풀이, 오답 복습 퀴즈 등 프리미엄 기능을 이용할 수 있습니다.
+              무료 사용자는 하루 3세트까지 퀴즈를 이용할 수 있습니다.
+            </p>
+            <h3 className="text-lg font-semibold text-[#26422E] mt-4">자동 갱신</h3>
+            <p>
+              구독은 이용자가 직접 취소하지 않는 한 결제 주기(월간/연간)에 따라 자동으로 갱신됩니다.
+              자동 갱신을 원하지 않으시면 현재 구독 기간이 만료되기 최소 24시간 전에
+              Google Play 구독 관리에서 취소해 주세요.
+            </p>
+            <h3 className="text-lg font-semibold text-[#26422E] mt-4">구독 취소</h3>
+            <p>
+              구독을 취소하더라도 현재 결제된 구독 기간이 끝날 때까지 프리미엄 기능을 계속 이용할 수 있습니다.
+              구독 기간 만료 후에는 무료 사용자로 전환되며, 퀴즈 기록과 통계 데이터는 유지됩니다.
             </p>
             <p>
               결제 및 환불에 관한 자세한 사항은{' '}
@@ -110,10 +121,10 @@ export default function TermsPage() {
                 불가항력적인 경우에는 사전 공지 없이 서비스가 중단될 수 있습니다.
               </li>
               <li>
-                <strong>인앱 결제 처리</strong>: 서비스 종료 공지 후 종료일까지의 기간 동안
-                구매한 이력이 있는 이용자는 <a href="/refund" className="text-green-700 underline">환불 정책</a>에
-                따라 환불을 요청할 수 있습니다. 단, Google Play 정책상 구매 후 48시간을 초과한
-                경우 환불이 제한될 수 있습니다.
+                <strong>구독 결제 처리</strong>: 서비스 종료 공지 시 활성 구독은 다음 갱신일에
+                자동으로 중단됩니다. 이미 결제된 구독 기간에 대해서는{' '}
+                <a href="/refund" className="text-green-700 underline">환불 정책</a>에
+                따라 환불을 요청할 수 있습니다.
               </li>
               <li>
                 <strong>책임 제한</strong>: 서비스 중단으로 인한 이용자의 손해에 대해 운영자는
@@ -140,7 +151,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <p className="text-sm text-gray-500">시행일: 2026년 3월 1일</p>
+          <p className="text-sm text-gray-500">시행일: 2026년 3월 28일</p>
         </div>
       </main>
 
