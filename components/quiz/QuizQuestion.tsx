@@ -46,16 +46,17 @@ export default function QuizQuestion({
   const [imageError, setImageError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  useEffect(() => {
-    setImageLoaded(false);
-    setImageError(false);
-  }, [question.itemId]);
-
-  // 캐시된 이미지는 onLoad가 React 마운트 전에 발생 → complete 체크
+  // key={itemId}로 img가 재생성될 때 ref callback에서 상태 관리
+  // useEffect 제거 — ref callback 뒤에 실행되면서 imageLoaded를 덮어쓰는 버그 방지
   const handleImgRef = useCallback((el: HTMLImageElement | null) => {
     (imgRef as React.MutableRefObject<HTMLImageElement | null>).current = el;
-    if (el?.complete && el.naturalWidth > 0) {
+    if (!el) return; // unmount
+    if (el.complete && el.naturalWidth > 0) {
       setImageLoaded(true);
+      setImageError(false);
+    } else {
+      setImageLoaded(false);
+      setImageError(false);
     }
   }, []);
 
