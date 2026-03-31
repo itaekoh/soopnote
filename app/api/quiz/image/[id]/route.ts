@@ -60,28 +60,33 @@ export async function GET(
     const width = metadata.width!;
     const height = metadata.height!;
 
-    // 3. 워터마크 타일을 정확히 이미지 크기로 반복 생성
+    // 3. 워터마크 타일을 이미지 크기에 맞게 반복 생성
     const tileInfo = await sharp(watermarkTile).metadata();
     const tileW = tileInfo.width!;
     const tileH = tileInfo.height!;
 
+    // 타일 배수 크기로 캔버스 생성 (경계 초과 방지)
+    const canvasW = Math.ceil(width / tileW) * tileW;
+    const canvasH = Math.ceil(height / tileH) * tileH;
+
     const composites: sharp.OverlayOptions[] = [];
-    for (let y = 0; y < height; y += tileH) {
-      for (let x = 0; x < width; x += tileW) {
+    for (let y = 0; y < canvasH; y += tileH) {
+      for (let x = 0; x < canvasW; x += tileW) {
         composites.push({ input: watermarkTile, top: y, left: x });
       }
     }
 
-    // 정확히 이미지와 같은 크기의 투명 캔버스에 타일 배치
+    // 타일 배수 캔버스에 배치 → 이미지 크기로 crop
     const watermarkOverlay = await sharp({
       create: {
-        width,
-        height,
+        width: canvasW,
+        height: canvasH,
         channels: 4,
         background: { r: 0, g: 0, b: 0, alpha: 0 },
       },
     })
       .composite(composites)
+      .extract({ left: 0, top: 0, width, height })
       .png()
       .toBuffer();
 
