@@ -3,17 +3,10 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-// 워터마크 타일 PNG (프로세스 시작 시 1회 로드)
-const watermarkTile = readFileSync(
-  join(process.cwd(), 'assets', 'watermark-tile.png')
 );
 
 export async function GET(
@@ -49,14 +42,11 @@ export async function GET(
 
     const imageBuffer = Buffer.from(await fileData.arrayBuffer());
 
-    // 1. 리사이즈
-    const resizedBuffer = await sharp(imageBuffer)
+    // 리사이즈만 (워터마크 비활성화 — 파이프라인 확인용)
+    const outputBuffer = await sharp(imageBuffer)
       .resize({ width: 800, withoutEnlargement: true })
-      .jpeg({ quality: 75 })
+      .jpeg({ quality: 70 })
       .toBuffer();
-
-    // TODO: 워터마크 임시 비활성화 — 기본 이미지 파이프라인 확인용
-    const outputBuffer = resizedBuffer;
 
     return new Response(outputBuffer, {
       status: 200,
