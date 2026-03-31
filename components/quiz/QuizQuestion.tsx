@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { WebQuizQuestion } from '@/lib/api/quiz-web';
 
 interface QuizQuestionProps {
@@ -17,6 +17,12 @@ export default function QuizQuestion({
   selectedAnswer,
 }: QuizQuestionProps) {
   const [showZoom, setShowZoom] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  // 문제가 바뀔 때마다 로딩 상태 리셋
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [question.itemId]);
 
   return (
     <>
@@ -25,21 +31,30 @@ export default function QuizQuestion({
         <div
           className="relative w-full select-none cursor-zoom-in"
           onContextMenu={(e) => e.preventDefault()}
-          onClick={() => setShowZoom(true)}
+          onClick={() => imageLoaded && setShowZoom(true)}
           style={{ WebkitTouchCallout: 'none' }}
         >
+          {/* 로딩 스켈레톤 */}
+          {!imageLoaded && (
+            <div className="w-full aspect-[4/3] bg-gray-100 animate-pulse flex items-center justify-center">
+              <div className="text-gray-300 text-4xl">🌳</div>
+            </div>
+          )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={question.imageUrl}
             alt="퀴즈 이미지"
             draggable={false}
-            className="w-full h-auto select-none"
+            className={`w-full h-auto select-none ${imageLoaded ? '' : 'hidden'}`}
             style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
+            onLoad={() => setImageLoaded(true)}
           />
           {/* Zoom hint */}
-          <div className="absolute bottom-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded-lg pointer-events-none">
-            🔍 클릭하여 확대
-          </div>
+          {imageLoaded && (
+            <div className="absolute bottom-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded-lg pointer-events-none">
+              🔍 클릭하여 확대
+            </div>
+          )}
         </div>
 
         {/* Choices */}
@@ -68,7 +83,7 @@ export default function QuizQuestion({
               <button
                 key={choice.speciesId}
                 onClick={() => !showFeedback && onAnswer(choice.speciesId)}
-                disabled={showFeedback}
+                disabled={showFeedback || !imageLoaded}
                 className={buttonClass}
               >
                 {choice.nameKo}

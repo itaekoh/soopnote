@@ -27,6 +27,16 @@ export default function WebQuiz({ initialQuestions }: WebQuizProps) {
 
   const total = initialQuestions.length;
 
+  // 이미지 프리로딩: 시작 시 전체 이미지를 백그라운드 로드
+  useEffect(() => {
+    if (phase === 'playing') {
+      initialQuestions.forEach((q) => {
+        const img = new Image();
+        img.src = q.imageUrl;
+      });
+    }
+  }, [phase, initialQuestions]);
+
   const advanceToNext = useCallback(() => {
     const nextIndex = currentIndex + 1;
 

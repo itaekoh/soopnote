@@ -11,15 +11,17 @@ const supabaseAdmin = createClient(
 
 function createWatermarkSvg(width: number, height: number): string {
   const texts: string[] = [];
-  const fontSize = Math.max(16, Math.floor(width / 20));
-  const step = fontSize * 5;
+  const fontSize = Math.max(14, Math.floor(width / 22));
+  const step = fontSize * 4;
 
   for (let y = -height; y < height * 2; y += step) {
     for (let x = -width; x < width * 2; x += step) {
+      // 흰색 외곽선 + 반투명 텍스트로 어떤 배경에서도 보이도록
       texts.push(
         `<text x="${x}" y="${y}" transform="rotate(-30 ${x} ${y})" ` +
-          `font-size="${fontSize}" font-family="Arial, sans-serif" ` +
-          `fill="rgba(255,255,255,0.25)">soopnote.com</text>`
+          `font-size="${fontSize}" ` +
+          `stroke="rgba(0,0,0,0.15)" stroke-width="1" ` +
+          `fill="rgba(255,255,255,0.35)">soopnote.com</text>`
       );
     }
   }
@@ -34,7 +36,6 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Look up the quiz_items record to get image_path
     const { data: item, error: dbError } = await supabaseAdmin
       .from('quiz_items')
       .select('image_path')
@@ -48,7 +49,6 @@ export async function GET(
       );
     }
 
-    // Download the original image from Supabase Storage
     const { data: fileData, error: storageError } = await supabaseAdmin.storage
       .from('quiz_public')
       .download(item.image_path);
@@ -62,21 +62,24 @@ export async function GET(
 
     const imageBuffer = Buffer.from(await fileData.arrayBuffer());
 
-    // 1. 먼저 리사이즈한 buffer를 생성
+    // 1. 리사이즈
     const resizedBuffer = await sharp(imageBuffer)
       .resize({ width: 800, withoutEnlargement: true })
       .toBuffer();
 
-    // 2. 리사이즈된 이미지의 실제 크기 확인
+    // 2. 메타데이터
     const metadata = await sharp(resizedBuffer).metadata();
     const width = metadata.width ?? 800;
     const height = metadata.height ?? 600;
 
-    // 3. 실제 크기에 맞는 워터마크 SVG 생성
+    // 3. 워터마크 생성 (PNG로 변환하여 폰트 의존성 해결)
     const watermarkSvg = createWatermarkSvg(width, height);
-    const watermarkBuffer = Buffer.from(watermarkSvg);
+    const watermarkBuffer = await sharp(Buffer.from(watermarkSvg))
+      .resize(width, height)
+      .png()
+      .toBuffer();
 
-    // 4. 리사이즈된 이미지에 워터마크 합성 → JPEG 출력
+    // 4. 합성 → JPEG
     const outputBuffer = await sharp(resizedBuffer)
       .composite([{ input: watermarkBuffer, top: 0, left: 0 }])
       .jpeg({ quality: 75 })

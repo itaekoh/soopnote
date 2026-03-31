@@ -29,7 +29,8 @@ export default function AdSlot({ adSlot, adFormat, className }: AdSlotProps) {
     }
   }, []);
 
-  if (process.env.NODE_ENV !== 'production') {
+  // AdSense 미승인 상태에서는 placeholder 표시
+  if (process.env.NODE_ENV !== 'production' || !process.env.NEXT_PUBLIC_ADSENSE_ENABLED) {
     return (
       <div
         className={`flex items-center justify-center bg-gray-100 border border-dashed border-gray-300 rounded-xl text-gray-400 text-sm py-8 ${className ?? ''}`}
