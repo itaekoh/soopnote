@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { WebQuizQuestion } from '@/lib/api/quiz-web';
 
 interface QuizQuestionProps {
@@ -19,11 +19,20 @@ export default function QuizQuestion({
   const [showZoom, setShowZoom] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     setImageLoaded(false);
     setImageError(false);
   }, [question.itemId]);
+
+  // 캐시된 이미지는 onLoad가 React 마운트 전에 발생 → complete 체크
+  const handleImgRef = useCallback((el: HTMLImageElement | null) => {
+    (imgRef as React.MutableRefObject<HTMLImageElement | null>).current = el;
+    if (el?.complete && el.naturalWidth > 0) {
+      setImageLoaded(true);
+    }
+  }, []);
 
   return (
     <>
@@ -49,6 +58,7 @@ export default function QuizQuestion({
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
+            ref={handleImgRef}
             src={question.imageUrl}
             alt="퀴즈 이미지"
             draggable={false}
