@@ -59,9 +59,9 @@ export function Header() {
 
         {/* 데스크톱 네비게이션 */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link className="text-sm hover:text-green-700 transition-colors" href="/quiz">
+          {/* <Link className="text-sm hover:text-green-700 transition-colors" href="/quiz">
             수목 퀴즈
-          </Link>
+          </Link> */}
           <Link className="text-sm hover:text-green-700 transition-colors" href="/wildflower">
             야생화 일지
           </Link>
@@ -189,13 +189,13 @@ export function Header() {
 
           <div className="h-[calc(100vh-73px)] overflow-y-auto p-6 bg-[#F5F3EE]">
             <div className="flex flex-col space-y-3">
-              <Link
+              {/* <Link
                 href="/quiz"
                 onClick={() => setShowMobileMenu(false)}
                 className="block text-base py-4 px-4 rounded-xl bg-white text-gray-900 font-medium shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
               >
                 🌿 수목 퀴즈
-              </Link>
+              </Link> */}
               <Link
                 href="/wildflower"
                 onClick={() => setShowMobileMenu(false)}
