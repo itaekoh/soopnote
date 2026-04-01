@@ -37,6 +37,7 @@ export function ItemManagement() {
   const [species, setSpecies] = useState<QuizSpeciesWithGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<QuizItemStatus | 'all'>('all');
+  const [photoTypeFilter, setPhotoTypeFilter] = useState<string>('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<QuizItemWithSpecies | null>(null);
 
@@ -256,9 +257,11 @@ export function ItemManagement() {
   }
 
   // 필터
-  const filteredItems = statusFilter === 'all'
-    ? items
-    : items.filter((i) => i.status === statusFilter);
+  const filteredItems = items.filter((i) => {
+    if (statusFilter !== 'all' && i.status !== statusFilter) return false;
+    if (photoTypeFilter !== 'all' && i.photo_type !== photoTypeFilter) return false;
+    return true;
+  });
 
   // 수종 필터 (폼용)
   const filteredSpecies = speciesSearch
@@ -326,6 +329,32 @@ export function ItemManagement() {
               }`}
             >
               {s} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 유형 필터 */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <button
+          onClick={() => setPhotoTypeFilter('all')}
+          className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+            photoTypeFilter === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          전체 유형
+        </button>
+        {PHOTO_TYPES.map((pt) => {
+          const count = items.filter((i) => i.photo_type === pt && (statusFilter === 'all' || i.status === statusFilter)).length;
+          return (
+            <button
+              key={pt}
+              onClick={() => setPhotoTypeFilter(pt)}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                photoTypeFilter === pt ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {pt} ({count})
             </button>
           );
         })}
