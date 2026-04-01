@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit2, Trash2, X, Upload, Check } from 'lucide-react';
+import { ImageModal } from '@/components/ImageModal';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase/client';
 import {
@@ -38,6 +39,9 @@ export function ItemManagement() {
   const [statusFilter, setStatusFilter] = useState<QuizItemStatus | 'all'>('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<QuizItemWithSpecies | null>(null);
+
+  // 이미지 확대 모달
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
 
   // 일괄 선택
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -363,7 +367,13 @@ export function ItemManagement() {
                   </td>
                   <td className="px-4 py-3">
                     {imageUrl ? (
-                      <img src={imageUrl} alt="" className="w-12 h-12 object-cover rounded" loading="lazy" />
+                      <img
+                        src={imageUrl}
+                        alt=""
+                        className="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                        loading="lazy"
+                        onClick={() => setZoomImageUrl(imageUrl)}
+                      />
                     ) : (
                       <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
                         N/A
@@ -568,6 +578,10 @@ export function ItemManagement() {
             </form>
           </div>
         </div>
+      )}
+
+      {zoomImageUrl && (
+        <ImageModal imageUrl={zoomImageUrl} onClose={() => setZoomImageUrl(null)} />
       )}
     </div>
   );
