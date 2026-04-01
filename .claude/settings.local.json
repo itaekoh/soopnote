@@ -24,7 +24,11 @@
       "Bash(git rm:*)",
       "Bash(grep:*)",
       "Bash(del:*)",
-      "Bash(Remove-Item -Path \"image copy.png\",\"image.png\" -ErrorAction SilentlyContinue)"
+      "Bash(Remove-Item -Path \"image copy.png\",\"image.png\" -ErrorAction SilentlyContinue)",
+      "Bash(git push:*)",
+      "Bash(npx next build:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:soopnote.com)"
     ],
     "deny": [],
     "ask": []
