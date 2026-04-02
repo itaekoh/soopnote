@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, X, Upload, Check } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Plus, Edit2, Trash2, X, Upload, Check, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ImageModal } from '@/components/ImageModal';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase/client';
@@ -38,6 +38,9 @@ export function ItemManagement() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<QuizItemStatus | 'all'>('all');
   const [photoTypeFilter, setPhotoTypeFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<QuizItemWithSpecies | null>(null);
 
@@ -249,19 +252,36 @@ export function ItemManagement() {
   }
 
   function toggleSelectAll() {
-    if (selectedIds.size === filteredItems.length) {
-      setSelectedIds(new Set());
+    const allPageSelected = pagedItems.length > 0 && pagedItems.every((i) => selectedIds.has(i.id));
+    if (allPageSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pagedItems.forEach((i) => next.delete(i.id));
+        return next;
+      });
     } else {
-      setSelectedIds(new Set(filteredItems.map((i) => i.id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pagedItems.forEach((i) => next.add(i.id));
+        return next;
+      });
     }
   }
 
   // 필터
-  const filteredItems = items.filter((i) => {
+  const filteredItems = useMemo(() => items.filter((i) => {
     if (statusFilter !== 'all' && i.status !== statusFilter) return false;
     if (photoTypeFilter !== 'all' && i.photo_type !== photoTypeFilter) return false;
+    if (searchQuery && !i.quiz_species?.name_ko?.includes(searchQuery)) return false;
     return true;
-  });
+  }), [items, statusFilter, photoTypeFilter, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedItems = filteredItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // 필터 변경 시 1페이지로 리셋
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, photoTypeFilter, searchQuery]);
 
   // 수종 필터 (폼용)
   const filteredSpecies = speciesSearch
@@ -360,6 +380,18 @@ export function ItemManagement() {
         })}
       </div>
 
+      {/* 수종명 검색 */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="수종명 검색..."
+          className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+        />
+      </div>
+
       {/* 문항 목록 테이블 */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -368,7 +400,7 @@ export function ItemManagement() {
               <th className="px-3 py-3 text-left">
                 <input
                   type="checkbox"
-                  checked={filteredItems.length > 0 && selectedIds.size === filteredItems.length}
+                  checked={pagedItems.length > 0 && pagedItems.every((i) => selectedIds.has(i.id))}
                   onChange={toggleSelectAll}
                   className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                 />
@@ -382,7 +414,7 @@ export function ItemManagement() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredItems.map((item) => {
+            {pagedItems.map((item) => {
               const imageUrl = getQuizImageUrl(item.image_path);
               return (
                 <tr key={item.id} className={selectedIds.has(item.id) ? 'bg-red-50' : ''}>
@@ -451,6 +483,39 @@ export function ItemManagement() {
           </tbody>
         </table>
       </div>
+
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 py-4">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={safePage <= 1}
+            className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`w-8 h-8 text-sm rounded-lg transition-colors ${
+                page === safePage
+                  ? 'bg-gray-900 text-white'
+                  : 'border border-gray-300 hover:bg-gray-100'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safePage >= totalPages}
+            className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {filteredItems.length === 0 && (
         <div className="text-center py-12 text-gray-500">
