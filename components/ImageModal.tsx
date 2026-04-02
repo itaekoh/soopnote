@@ -45,7 +45,7 @@ export function ImageModal({ imageUrl, onClose }: ImageModalProps) {
       <img
         src={imageUrl}
         alt="확대 이미지"
-        className="max-w-full max-h-full object-contain"
+        className="max-w-[80vw] max-h-[80vh] object-contain rounded-lg"
         onClick={(e) => e.stopPropagation()}
       />
     </div>
