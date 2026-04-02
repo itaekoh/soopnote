@@ -29,25 +29,30 @@ export function ImageModal({ imageUrl, onClose }: ImageModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
-      {/* 닫기 버튼 */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-        aria-label="닫기"
-      >
-        <X className="w-6 h-6 text-white" />
-      </button>
-
-      {/* 이미지 */}
-      <img
-        src={imageUrl}
-        alt="확대 이미지"
-        className="max-w-[80vw] max-h-[80vh] object-contain rounded-lg"
+      {/* 모달 창 */}
+      <div
+        className="relative bg-gray-900 rounded-2xl p-4 max-w-[80vw] max-h-[85vh] flex items-center justify-center shadow-2xl"
         onClick={(e) => e.stopPropagation()}
-      />
+      >
+        {/* 닫기 버튼 */}
+        <button
+          onClick={onClose}
+          className="absolute -top-3 -right-3 p-1.5 rounded-full bg-white shadow-md hover:bg-gray-100 transition-colors"
+          aria-label="닫기"
+        >
+          <X className="w-5 h-5 text-gray-700" />
+        </button>
+
+        {/* 이미지 */}
+        <img
+          src={imageUrl}
+          alt="확대 이미지"
+          className="max-w-full max-h-[78vh] object-contain rounded-lg"
+        />
+      </div>
     </div>
   );
 }
