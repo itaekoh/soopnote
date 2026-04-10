@@ -204,10 +204,13 @@ export default function Home() {
                     <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer">
                       {/* 썸네일 */}
                       {post.featured_image_url ? (
-                        <div
-                          className="h-64 aspect-[16/9] bg-contain bg-no-repeat bg-center bg-gray-50"
-                          style={{ backgroundImage: `url(${post.featured_image_url})` }}
-                        />
+                        <div className="h-64">
+                          <img
+                            src={post.featured_image_url}
+                            alt={post.title}
+                            className="w-full h-full object-cover object-center"
+                          />
+                        </div>
                       ) : (
                         <div className={`h-64 aspect-[16/9] bg-gradient-to-br ${categoryColors[post.category_slug as keyof typeof categoryColors]?.bg || 'from-gray-100 to-gray-200'} flex items-center justify-center`}>
                           <Leaf className="w-20 h-20 text-green-700 opacity-20" />
@@ -321,10 +324,13 @@ function PostCard({ post, colors }: { post: PostFull; colors: { bg: string; badg
       <article className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer h-full">
         {/* 썸네일 */}
         {post.featured_image_url ? (
-          <div
-            className="h-40 aspect-[4/3] bg-contain bg-no-repeat bg-center bg-gray-50"
-            style={{ backgroundImage: `url(${post.featured_image_url})` }}
-          />
+          <div className="h-40">
+            <img
+              src={post.featured_image_url}
+              alt={post.title}
+              className="w-full h-full object-cover object-center"
+            />
+          </div>
         ) : (
           <div className={`h-40 aspect-[4/3] bg-gradient-to-br ${colors.bg} flex items-center justify-center`}>
             <Leaf className={`w-12 h-12 ${colors.icon} opacity-30`} />

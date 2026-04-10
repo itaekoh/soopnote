@@ -243,10 +243,13 @@ export default function TreeDiagnoseList() {
                   <article className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer">
                     {/* 썸네일 */}
                     {background.type === 'image' ? (
-                      <div
-                        className="h-48 aspect-[4/3] bg-contain bg-no-repeat bg-center bg-gray-50"
-                        style={{ backgroundImage: `url(${background.value})` }}
-                      />
+                      <div className="h-48">
+                        <img
+                          src={background.value}
+                          alt={post.title}
+                          className="w-full h-full object-cover object-center"
+                        />
+                      </div>
                     ) : (
                       <div className={`h-48 aspect-[4/3] bg-gradient-to-br ${background.value} flex items-center justify-center`}>
                         <div className="text-center">
