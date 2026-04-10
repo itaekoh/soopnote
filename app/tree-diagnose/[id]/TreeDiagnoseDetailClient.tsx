@@ -386,19 +386,6 @@ export default function TreeDiagnoseDetailClient({ postId }: { postId: number })
           )}
         </div>
 
-        {/* 대표 이미지 */}
-        {post.featured_image_url && (
-          <div className="mb-8 rounded-2xl overflow-hidden shadow-lg">
-            <img
-              src={post.featured_image_url}
-              alt={post.title}
-              width={1200}
-              height={675}
-              className="w-full h-auto max-h-[420px] object-cover aspect-[16/9]"
-            />
-          </div>
-        )}
-
         {/* 본문 */}
         <div
           ref={contentRef}
