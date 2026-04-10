@@ -50,6 +50,7 @@ export default function EditPostPage() {
 
   // 선택된 서브카테고리 ID들
   const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<number[]>([]);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // 특정 필드 값들 (UI용)
   const [readTime, setReadTime] = useState('');
@@ -134,8 +135,8 @@ export default function EditPostPage() {
     try {
       const grouped = await getCategoryAttributesGrouped(menuSlug);
       setSubCategories(grouped);
-      if (!editMode) {
-        setSelectedSubcategoryIds([]); // 메뉴 변경 시 선택 초기화 (새 글 작성시만)
+      if (!editMode || initialLoadDone) {
+        setSelectedSubcategoryIds([]); // 메뉴 변경 시 선택 초기화
       }
     } catch (error) {
       console.error('Failed to load subcategories:', error);
@@ -184,6 +185,9 @@ export default function EditPostPage() {
         setSelectedSubcategoryIds(post.subcategory_ids);
         console.log('✓ 서브카테고리 설정:', post.subcategory_ids);
       }
+
+      // 초기 로드 완료 표시 (이후 카테고리 변경 시 서브카테고리 초기화 허용)
+      setInitialLoadDone(true);
 
       console.log('✓ 게시글 로드 완료:', post.title);
       console.log('✓ 카테고리 설정:', post.category_name, `(${post.category_slug})`);
