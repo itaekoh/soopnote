@@ -136,7 +136,7 @@ export default function Home() {
       badge: 'bg-green-100 text-green-700',
       icon: 'text-green-700',
       link: '/wildflower',
-      name: '야생화 일지',
+      name: '식물 관찰',
     },
     tree: {
       bg: 'from-amber-50 to-yellow-100',
@@ -248,11 +248,11 @@ export default function Home() {
             </section>
           )}
 
-          {/* 야생화 일지 */}
+          {/* 식물 관찰 */}
           {wildflowerPosts.length > 0 && (
             <section className="max-w-6xl mx-auto px-6 mb-16">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#26422E]">🌸 야생화 일지</h2>
+                <h2 className="text-2xl font-bold text-[#26422E]">🌸 식물 관찰</h2>
                 <Link href="/wildflower" className="flex items-center gap-1 text-sm text-green-700 hover:underline">
                   더보기 <ArrowRight className="w-4 h-4" />
                 </Link>

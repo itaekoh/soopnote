@@ -14,8 +14,8 @@ export const metadata: Metadata = {
     default: 'Soopnote - 숲의 기록',
     template: '%s | Soopnote',
   },
-  description: '자연 속의 관찰과 나무의사의 시선을 담은 기록 공간입니다. 야생화 일지, 나무진단, 일상의 기록을 공유합니다.',
-  keywords: ['숲의 기록', '야생화', '나무의사', '나무진단', '자연관찰', '식물일지', 'soopnote'],
+  description: '자연 속의 관찰과 나무의사의 시선을 담은 기록 공간입니다. 식물 관찰, 나무진단, 일상의 기록을 공유합니다.',
+  keywords: ['숲의 기록', '식물 관찰', '야생화', '나무의사', '나무진단', '자연관찰', '식물일지', 'soopnote'],
   authors: [{ name: 'Soopnote' }],
   creator: 'Soopnote',
   publisher: 'Soopnote',
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     url: 'https://www.soopnote.com',
     siteName: 'Soopnote - 숲의 기록',
     title: 'Soopnote - 숲의 기록',
-    description: '자연 속의 관찰과 나무의사의 시선을 담은 기록 공간입니다. 야생화 일지, 나무진단, 일상의 기록을 공유합니다.',
+    description: '자연 속의 관찰과 나무의사의 시선을 담은 기록 공간입니다. 식물 관찰, 나무진단, 일상의 기록을 공유합니다.',
     images: [
       {
         url: '/og-image.png',

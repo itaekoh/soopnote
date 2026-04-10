@@ -138,9 +138,9 @@ export default function WildflowerList() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-100 mb-4">
             <Leaf className="w-8 h-8 text-green-700" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-[#26422E] mb-4">야생화 일지</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-[#26422E] mb-4">식물 관찰</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            자연 속에서 발견한 작은 꽃들의 이야기. 계절의 변화와 함께하는 야생화 관찰 기록입니다.
+            자연 속에서 발견한 식물들의 이야기. 계절의 변화와 함께하는 관찰 기록입니다.
           </p>
         </div>
 
@@ -214,7 +214,7 @@ export default function WildflowerList() {
         {!loading && !error && posts.length === 0 && (
           <div className="text-center py-20">
             <div className="text-gray-600 mb-4">아직 게시글이 없습니다.</div>
-            <p className="text-sm text-gray-500">첫 번째 야생화 관찰 기록을 작성해보세요!</p>
+            <p className="text-sm text-gray-500">첫 번째 식물 관찰 기록을 작성해보세요!</p>
           </div>
         )}
 
@@ -272,7 +272,7 @@ export default function WildflowerList() {
                     {/* 하단 태그 */}
                     <div className="px-5 pb-4">
                       <div className="inline-block px-3 py-1 text-xs rounded-full bg-green-50 text-green-700 font-medium">
-                        야생화 일지
+                        식물 관찰
                       </div>
                     </div>
                   </article>

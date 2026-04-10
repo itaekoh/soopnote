@@ -177,7 +177,7 @@ export function CategoryManagement() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                placeholder="예: 야생화 일지"
+                placeholder="예: 식물 관찰"
                 required
               />
             </div>

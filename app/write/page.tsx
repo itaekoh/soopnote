@@ -425,7 +425,7 @@ export default function WritePage() {
           />
         </div>
 
-        {/* 상세 주소 (야생화 일지, 나무진단만) */}
+        {/* 상세 주소 (식물 관찰, 나무진단만) */}
         {(selectedMenuSlug === 'wildflower' || selectedMenuSlug === 'tree-diagnose') && (
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">상세 주소</label>
