@@ -231,7 +231,7 @@ export default function WildflowerList() {
                     {/* 썸네일 */}
                     {background.type === 'image' ? (
                       <div
-                        className="h-48 aspect-[4/3] bg-cover bg-center"
+                        className="h-48 aspect-[4/3] bg-contain bg-no-repeat bg-center bg-gray-50"
                         style={{ backgroundImage: `url(${background.value})` }}
                       />
                     ) : (

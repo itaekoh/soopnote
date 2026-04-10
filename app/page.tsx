@@ -205,7 +205,7 @@ export default function Home() {
                       {/* 썸네일 */}
                       {post.featured_image_url ? (
                         <div
-                          className="h-64 aspect-[16/9] bg-cover bg-center"
+                          className="h-64 aspect-[16/9] bg-contain bg-no-repeat bg-center bg-gray-50"
                           style={{ backgroundImage: `url(${post.featured_image_url})` }}
                         />
                       ) : (
@@ -322,7 +322,7 @@ function PostCard({ post, colors }: { post: PostFull; colors: { bg: string; badg
         {/* 썸네일 */}
         {post.featured_image_url ? (
           <div
-            className="h-40 aspect-[4/3] bg-cover bg-center"
+            className="h-40 aspect-[4/3] bg-contain bg-no-repeat bg-center bg-gray-50"
             style={{ backgroundImage: `url(${post.featured_image_url})` }}
           />
         ) : (
