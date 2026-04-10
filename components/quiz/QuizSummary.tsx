@@ -33,21 +33,19 @@ export default function QuizSummary({ score, total, onRetry }: QuizSummaryProps)
         </button>
       </div>
 
-      {/* App download CTA */}
+      {/* App CTA */}
       <div className="bg-white rounded-2xl shadow-sm p-6 text-center">
         <p className="text-lg font-bold text-gray-800 mb-2">
-          {'\uD83D\uDCF1'} 더 많은 퀴즈를 풀어보세요!
+          더 많은 퀴즈를 풀어보세요!
         </p>
         <p className="text-sm text-gray-600 mb-4">
           트리오 앱에서 오답 복습, 학습 통계 등 다양한 기능을 이용할 수 있어요.
         </p>
         <a
-          href="https://play.google.com/store/apps/details?id=com.soopify.tree.quiz"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+          href="/treeoh"
+          className="inline-block px-5 py-2.5 bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-800 transition-colors"
         >
-          Google Play에서 다운로드
+          트리오 앱 알아보기
         </a>
       </div>
 

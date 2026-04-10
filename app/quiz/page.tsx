@@ -8,9 +8,9 @@ import { Footer } from '@/components/Footer';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: '수목 퀴즈 - 나무 이름 맞추기 | Soopnote',
+  title: '오늘의 수목 퀴즈 - 매일 새로운 5문제! | Soopnote',
   description:
-    '나무의사 시험 대비 수목 퀴즈! 사진을 보고 나무 이름을 맞춰보세요. 수목감별, 나무 식별 연습에 도움이 됩니다.',
+    '매일 새로운 수목 퀴즈 5문제! 사진을 보고 나무 이름을 맞춰보세요. 나무의사 시험 대비, 수목감별 연습에 도움이 됩니다.',
   keywords: [
     '나무의사 시험',
     '수목 퀴즈',
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
     '산림기사',
   ],
   openGraph: {
-    title: '수목 퀴즈 - 나무 이름 맞추기 | Soopnote',
-    description: '사진을 보고 나무 이름을 맞춰보세요!',
+    title: '오늘의 수목 퀴즈 - 매일 새로운 5문제! | Soopnote',
+    description: '매일 새로운 수목 퀴즈 5문제! 사진을 보고 나무 이름을 맞춰보세요.',
     url: 'https://www.soopnote.com/quiz',
     type: 'website',
   },
@@ -36,8 +36,8 @@ export const metadata: Metadata = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Quiz',
-  name: '수목 퀴즈 - 나무 이름 맞추기',
-  description: '나무의사 시험 대비 수목 퀴즈. 사진을 보고 나무 이름을 맞춰보세요.',
+  name: '오늘의 수목 퀴즈',
+  description: '매일 새로운 수목 퀴즈 5문제. 사진을 보고 나무 이름을 맞춰보세요.',
   educationalAlignment: {
     '@type': 'AlignmentObject',
     educationalFramework: '나무의사 자격시험',
@@ -66,10 +66,10 @@ export default async function QuizPage() {
           {/* SEO용 헤딩 */}
           <div className="text-center mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              🌳 수목 퀴즈
+              오늘의 수목 퀴즈
             </h1>
             <p className="text-gray-600 mt-2 text-sm sm:text-base">
-              사진을 보고 나무 이름을 맞춰보세요!
+              매일 새로운 5문제!
             </p>
           </div>
 
