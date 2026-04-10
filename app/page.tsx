@@ -333,7 +333,7 @@ function PostCard({ post, colors }: { post: PostFull; colors: { bg: string; badg
 
         {/* 콘텐츠 */}
         <div className="p-4">
-          <h3 className="font-semibold text-base text-[#26422E] mb-2 line-clamp-2 leading-snug">
+          <h3 className="font-semibold text-base text-[#26422E] mb-2 line-clamp-1 leading-snug">
             {post.title}
           </h3>
           <p className="text-sm text-gray-600 line-clamp-2 mb-3">

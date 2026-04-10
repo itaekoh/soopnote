@@ -257,7 +257,7 @@ export default function TreeDiagnoseList() {
 
                     {/* 콘텐츠 */}
                     <div className="p-5">
-                      <h3 className="font-bold text-lg text-[#26422E] mb-2 line-clamp-2 leading-snug">
+                      <h3 className="font-bold text-lg text-[#26422E] mb-2 line-clamp-1 leading-snug">
                         {post.title}
                       </h3>
                       <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
