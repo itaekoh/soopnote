@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createBrowserClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
+import sharp from 'sharp';
 
-export const runtime = 'edge';
+// edge → nodejs: sharp 사용을 위해 Node.js 런타임 필요
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -78,16 +80,22 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const EXTENSION_MAP: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
-    const fileExtension = EXTENSION_MAP[file.type] || 'jpg';
-    const fileName = `${nanoid()}.${fileExtension}`;
+    // 이미지 최적화: 최장변 1200px, WebP quality 82로 변환
+    const originalBuffer = Buffer.from(await file.arrayBuffer());
+    const optimizedBuffer = await sharp(originalBuffer)
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer();
+
+    // 항상 WebP로 저장
+    const fileName = `${nanoid()}.webp`;
     const filePath = itemId
       ? `quiz/${itemId}/${fileName}`
       : `pending/${fileName}`;
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from('quiz_public')
-      .upload(filePath, file);
+      .upload(filePath, optimizedBuffer, { contentType: 'image/webp' });
 
     if (uploadError) {
       console.error('Quiz Upload Error:', uploadError);
