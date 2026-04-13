@@ -61,23 +61,31 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // 파일 검증: MIME 타입 + 크기 제한
+    const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    if (!ALLOWED_MIMES.includes(file.type)) {
+      return new NextResponse(JSON.stringify({ error: `허용되지 않는 파일 형식: ${file.type}` }), {
+        status: 400, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return new NextResponse(JSON.stringify({ error: '파일 크기가 10MB를 초과합니다.' }), {
+        status: 400, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const userId = user.id;
 
-    // 파일 확장자 추출 및 정리
-    const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const EXTENSION_MAP: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+    const fileExtension = EXTENSION_MAP[file.type] || 'jpg';
 
     // 안전한 파일명 생성 (nanoid + 확장자)
     const fileName = `${nanoid()}.${fileExtension}`;
     const filePath = `public/${userId}/${fileName}`;
 
-    console.log('📁 업로드 파일 정보:', {
-      originalName: file.name,
-      sanitizedName: fileName,
-      path: filePath,
-      size: file.size,
-      type: file.type,
-      userId: userId
-    });
+    console.log('📁 업로드:', { path: filePath, size: file.size, type: file.type });
 
     // Service Role Key로 Storage에 업로드 (RLS 우회)
     const { error: uploadError } = await supabaseAdmin.storage
@@ -107,8 +115,8 @@ export async function POST(req: NextRequest) {
     );
   } catch (e: unknown) {
     const error = e as Error;
-    console.error('Unhandled Upload Error:', error);
-    return new NextResponse(JSON.stringify({ error: error.message }), {
+    console.error('Upload Error:', error);
+    return new NextResponse(JSON.stringify({ error: '파일 업로드에 실패했습니다.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

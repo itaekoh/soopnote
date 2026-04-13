@@ -63,7 +63,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    // 파일 검증: MIME 타입 + 크기 제한
+    const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    if (!ALLOWED_MIMES.includes(file.type)) {
+      return new NextResponse(JSON.stringify({ error: `허용되지 않는 파일 형식: ${file.type}` }), {
+        status: 400, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return new NextResponse(JSON.stringify({ error: '파일 크기가 10MB를 초과합니다.' }), {
+        status: 400, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const EXTENSION_MAP: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+    const fileExtension = EXTENSION_MAP[file.type] || 'jpg';
     const fileName = `${nanoid()}.${fileExtension}`;
     const filePath = itemId
       ? `quiz/${itemId}/${fileName}`
@@ -96,7 +112,7 @@ export async function POST(req: NextRequest) {
   } catch (e: unknown) {
     const error = e as Error;
     console.error('Quiz Upload Error:', error);
-    return new NextResponse(JSON.stringify({ error: error.message }), {
+    return new NextResponse(JSON.stringify({ error: '파일 업로드에 실패했습니다.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
