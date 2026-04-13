@@ -21,6 +21,17 @@ async function authenticateAdmin(req: NextRequest) {
   );
   const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
   if (error || !user) return null;
+
+  // admin 권한 확인
+  const admin = getAdminClient();
+  const { data: profile } = await admin
+    .from('sn_users')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile || profile.role !== 'super_admin') return null;
+
   return user;
 }
 

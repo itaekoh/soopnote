@@ -31,11 +31,26 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. SERVICE ROLE KEY로 Storage 업로드 (RLS 우회)
+    // 2. admin 권한 확인
     const supabaseAdmin = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+
+    const { data: profile } = await supabaseAdmin
+      .from('sn_users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || !['super_admin', 'writer'].includes(profile.role)) {
+      return new NextResponse(JSON.stringify({ error: 'Forbidden: Admin only' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // supabaseAdmin은 위에서 이미 생성됨 — 그대로 사용
 
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
