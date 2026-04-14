@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
+// edge → nodejs: 재귀 API 호출이 많아 edge 타임아웃 발생 방지
+export const runtime = 'nodejs';
 
 function jsonResponse(data: object, status = 200) {
   return new NextResponse(JSON.stringify(data), {
@@ -25,7 +26,6 @@ async function authenticateAdmin(req: NextRequest) {
   const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
   if (error || !user) return null;
 
-  // admin 권한 확인
   const admin = getAdminClient();
   const { data: profile } = await admin
     .from('sn_users')
@@ -45,28 +45,6 @@ function getAdminClient() {
   );
 }
 
-async function listAllFiles(
-  admin: ReturnType<typeof getAdminClient>,
-  bucket: string,
-  folder: string
-): Promise<string[]> {
-  const paths: string[] = [];
-  const { data, error } = await admin.storage.from(bucket).list(folder, { limit: 1000 });
-  if (error || !data) return paths;
-
-  for (const item of data) {
-    const fullPath = folder ? `${folder}/${item.name}` : item.name;
-    if (item.id === null) {
-      // It's a folder — recurse
-      const children = await listAllFiles(admin, bucket, fullPath);
-      paths.push(...children);
-    } else {
-      paths.push(fullPath);
-    }
-  }
-  return paths;
-}
-
 // GET: scan for orphan files
 export async function GET(req: NextRequest) {
   try {
@@ -77,10 +55,7 @@ export async function GET(req: NextRequest) {
 
     const admin = getAdminClient();
 
-    // 1. Collect all storage files recursively
-    const allFiles = await listAllFiles(admin, 'quiz_public', '');
-
-    // 2. Get all image_path values from DB
+    // 1. Get all image_path values from DB
     const { data: rows, error: dbError } = await admin
       .from('quiz_items')
       .select('image_path');
@@ -93,12 +68,57 @@ export async function GET(req: NextRequest) {
       (rows || []).map((r: { image_path: string }) => r.image_path).filter(Boolean)
     );
 
-    // 3. Diff
-    const orphans = allFiles.filter((f) => !usedPaths.has(f));
+    const orphans: string[] = [];
+    let totalFiles = 0;
+
+    // 2. Scan pending/ folder (단일 API 호출)
+    const { data: pendingFiles, error: pendingErr } = await admin.storage
+      .from('quiz_public')
+      .list('pending', { limit: 1000 });
+
+    if (!pendingErr && pendingFiles) {
+      for (const file of pendingFiles) {
+        if (file.id !== null) {
+          // actual file (not subfolder)
+          totalFiles++;
+          const path = `pending/${file.name}`;
+          if (!usedPaths.has(path)) {
+            orphans.push(path);
+          }
+        }
+      }
+    }
+
+    // 3. Scan quiz/ subfolders (item_id 단위)
+    const { data: quizFolders, error: quizErr } = await admin.storage
+      .from('quiz_public')
+      .list('quiz', { limit: 1000 });
+
+    if (!quizErr && quizFolders) {
+      for (const folder of quizFolders) {
+        if (folder.id === null) {
+          // subfolder = item_id
+          const itemId = folder.name;
+          const { data: files } = await admin.storage
+            .from('quiz_public')
+            .list(`quiz/${itemId}`, { limit: 100 });
+
+          for (const file of files || []) {
+            if (file.id !== null) {
+              totalFiles++;
+              const path = `quiz/${itemId}/${file.name}`;
+              if (!usedPaths.has(path)) {
+                orphans.push(path);
+              }
+            }
+          }
+        }
+      }
+    }
 
     return jsonResponse({
       orphans,
-      totalFiles: allFiles.length,
+      totalFiles,
       usedFiles: usedPaths.size,
     });
   } catch (e: unknown) {

@@ -249,8 +249,23 @@ export async function bulkUpdateStatus(
 }
 
 export async function deleteStorageFile(filePath: string): Promise<void> {
-  const { error } = await supabase.storage.from('quiz_public').remove([filePath]);
-  if (error) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+
+    const res = await fetch('/api/quiz/delete-file', {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ path: filePath }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      console.error('Storage 파일 삭제 실패:', data.error);
+    }
+  } catch (error) {
     console.error('Storage 파일 삭제 실패:', error);
   }
 }
