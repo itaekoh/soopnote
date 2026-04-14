@@ -12,6 +12,7 @@ import {
   updateItem,
   deleteItem,
   deleteStorageFile,
+  moveStorageFile,
   bulkUpdateStatus,
   getQuizImageUrl,
   type QuizItemWithSpecies,
@@ -191,13 +192,24 @@ export function ItemManagement() {
           deleteStorageFile(editingItem.image_path);
         }
       } else {
-        await createItem({
+        const newItem = await createItem({
           species_id: formSpeciesId,
           photo_type: formPhotoType,
           image_path: formImagePath,
           caption: formCaption || undefined,
           status: formStatus,
         });
+        // pending/ → quiz/{item_id}/ 로 이동
+        if (formImagePath.startsWith('pending/')) {
+          const fileName = formImagePath.split('/').pop()!;
+          const newPath = `quiz/${newItem.id}/${fileName}`;
+          try {
+            await moveStorageFile(formImagePath, newPath);
+            await updateItem(newItem.id, { image_path: newPath });
+          } catch {
+            console.error('파일 이동 실패 — pending 경로 유지');
+          }
+        }
       }
       closeDrawer();
       await loadData();

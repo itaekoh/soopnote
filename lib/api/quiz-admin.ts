@@ -248,6 +248,24 @@ export async function bulkUpdateStatus(
   }
 }
 
+export async function moveStorageFile(from: string, to: string): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('로그인이 필요합니다.');
+
+  const res = await fetch('/api/quiz/move-file', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from, to }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || '파일 이동 실패');
+  }
+}
+
 export async function deleteStorageFile(filePath: string): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
