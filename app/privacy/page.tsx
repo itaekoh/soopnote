@@ -76,7 +76,8 @@ export default function PrivacyPage() {
               Google의 광고 쿠키를 통해 Google과 파트너는 본 사이트 및 다른 사이트 방문 기록을 기반으로 광고를 표시할 수 있습니다.
             </p>
             <p>
-              모바일 앱에서는 Google AdMob을 통해 배너 광고를 표시합니다.
+              모바일 앱에서는 Google AdMob을 통해 배너 광고 및 보상형 광고를 표시합니다.
+              보상형 광고는 이용자가 자발적으로 시청하여 추가 퀴즈 문항을 획득하는 방식입니다.
               AdMob은 광고 식별자를 사용하여 맞춤형 광고를 제공할 수 있습니다.
               프리미엄 구독 이용자는 광고가 표시되지 않으며, 광고 ID 수집이 중단됩니다.
             </p>
@@ -188,7 +189,7 @@ export default function PrivacyPage() {
               본 개인정보처리방침은 법령 또는 서비스 변경에 따라 수정될 수 있으며,
               변경 시 본 페이지를 통해 공지합니다.
             </p>
-            <p className="text-sm text-gray-500">최종 수정일: 2026년 3월 28일</p>
+            <p className="text-sm text-gray-500">최종 수정일: 2026년 4월 16일</p>
           </section>
         </div>
       </main>

@@ -69,8 +69,9 @@ export default function TermsPage() {
               <li>프리미엄 연간: 연 단위 자동 갱신 구독</li>
             </ul>
             <p>
-              구독 시 광고 제거, 무제한 퀴즈 풀이, 오답 복습 퀴즈 등 프리미엄 기능을 이용할 수 있습니다.
-              무료 사용자는 하루 3세트까지 퀴즈를 이용할 수 있습니다.
+              구독 시 광고 없이 무제한 퀴즈 풀이, 오답 복습 즉시 이용 등 프리미엄 기능을 이용할 수 있습니다.
+              무료 사용자는 하루 15문항까지 무료로 이용할 수 있으며,
+              보상형 광고를 시청하여 추가 문항(1회당 10문항)을 획득할 수 있습니다.
             </p>
             <h3 className="text-lg font-semibold text-[#26422E] mt-4">자동 갱신</h3>
             <p>
@@ -151,7 +152,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <p className="text-sm text-gray-500">시행일: 2026년 3월 28일</p>
+          <p className="text-sm text-gray-500">시행일: 2026년 4월 16일</p>
         </div>
       </main>
 

@@ -60,8 +60,8 @@ export default function RefundPage() {
               구독이 취소되거나 만료되면 다음과 같이 처리됩니다:
             </p>
             <ul className="list-disc pl-6 space-y-1">
-              <li>프리미엄 기능(광고 제거, 무제한 퀴즈, 오답 복습)이 비활성화됩니다.</li>
-              <li>무료 사용자로 전환되며 하루 3세트까지 퀴즈 이용이 가능합니다.</li>
+              <li>프리미엄 기능(광고 제거, 무제한 퀴즈, 오답 즉시 복습)이 비활성화됩니다.</li>
+              <li>무료 사용자로 전환되며 하루 15문항까지 이용 가능합니다. 보상형 광고 시청으로 추가 문항을 획득할 수 있습니다.</li>
               <li>퀴즈 기록, 통계, 오답 데이터는 삭제되지 않고 유지됩니다.</li>
             </ul>
           </section>
@@ -107,7 +107,7 @@ export default function RefundPage() {
             </p>
           </section>
 
-          <p className="text-sm text-gray-500">시행일: 2026년 3월 28일</p>
+          <p className="text-sm text-gray-500">시행일: 2026년 4월 16일</p>
         </div>
       </main>
 
