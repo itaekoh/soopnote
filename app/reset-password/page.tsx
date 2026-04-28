@@ -17,65 +17,54 @@ export default function ResetPasswordPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // 1) URL hash 또는 query에 error가 있으면 바로 invalid
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    const search = typeof window !== 'undefined' ? window.location.search : '';
+    // @supabase/ssr 의 createBrowserClient 는 PKCE+cookie 기반이라
+    // 이메일 recovery의 hash 기반 토큰을 자동 처리하지 않는다.
+    // → hash를 직접 파싱해서 setSession() 으로 명시 적용.
+    if (typeof window === 'undefined') return;
 
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+
+    // 1) error 가 있으면 즉시 invalid
     if (hash.includes('error=') || search.includes('error=')) {
       setStage('invalid');
       return;
     }
 
-    // 2) hash에 access_token 또는 type=recovery 가 있으면 recovery 흐름
-    //    Supabase JS가 자동으로 hash를 파싱해 세션을 만든다 (detectSessionInUrl: true 기본값)
-    const hasRecoveryHash =
-      hash.includes('access_token=') || hash.includes('type=recovery');
+    // 2) hash 파싱
+    const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    const type = hashParams.get('type');
 
-    let resolved = false;
-
-    const markReady = () => {
-      if (!resolved) {
-        resolved = true;
-        setStage('ready');
-      }
-    };
-
-    // 3) Supabase 이벤트 listener — PASSWORD_RECOVERY / SIGNED_IN / INITIAL_SESSION 모두 허용
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        markReady();
-        return;
-      }
-      // recovery hash가 있는 상태에서 세션이 잡히면 ready로 간주
-      if (hasRecoveryHash && session) {
-        markReady();
-      }
-    });
-
-    // 4) 이미 처리된 세션 폴링 (이벤트 놓쳤을 경우 대비)
-    const poll = async () => {
-      for (let i = 0; i < 20; i++) {
-        if (resolved) return;
-        const { data } = await supabase.auth.getSession();
-        if (data.session && hasRecoveryHash) {
-          markReady();
-          return;
-        }
-        await new Promise((r) => setTimeout(r, 250));
-      }
-      // 5초 동안 세션이 안 잡히면 invalid
-      if (!resolved) setStage('invalid');
-    };
-
-    if (hasRecoveryHash) {
-      poll();
-    } else {
-      // hash 자체에 recovery 토큰이 없으면 잘못된 진입
+    if (!accessToken || !refreshToken || type !== 'recovery') {
       setStage('invalid');
+      return;
     }
 
+    // 3) 세션 명시 적용
+    let cancelled = false;
+    (async () => {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (cancelled) return;
+      if (error) {
+        setStage('invalid');
+        return;
+      }
+      setStage('ready');
+      // hash 에서 토큰을 지워 새로고침 시 재사용/노출 방지
+      try {
+        window.history.replaceState({}, '', window.location.pathname);
+      } catch (_) {
+        // ignore
+      }
+    })();
+
     return () => {
-      sub.subscription.unsubscribe();
+      cancelled = true;
     };
   }, []);
 
