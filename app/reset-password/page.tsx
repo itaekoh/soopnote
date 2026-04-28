@@ -16,34 +16,66 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Supabase가 URL의 access_token을 자동으로 세션에 적용한 뒤
-  // PASSWORD_RECOVERY 이벤트를 발생시킨다.
   useEffect(() => {
+    // 1) URL hash 또는 query에 error가 있으면 바로 invalid
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const search = typeof window !== 'undefined' ? window.location.search : '';
+
+    if (hash.includes('error=') || search.includes('error=')) {
+      setStage('invalid');
+      return;
+    }
+
+    // 2) hash에 access_token 또는 type=recovery 가 있으면 recovery 흐름
+    //    Supabase JS가 자동으로 hash를 파싱해 세션을 만든다 (detectSessionInUrl: true 기본값)
+    const hasRecoveryHash =
+      hash.includes('access_token=') || hash.includes('type=recovery');
+
     let resolved = false;
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    const markReady = () => {
+      if (!resolved) {
+        resolved = true;
+        setStage('ready');
+      }
+    };
+
+    // 3) Supabase 이벤트 listener — PASSWORD_RECOVERY / SIGNED_IN / INITIAL_SESSION 모두 허용
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
-        resolved = true;
-        setStage('ready');
+        markReady();
+        return;
+      }
+      // recovery hash가 있는 상태에서 세션이 잡히면 ready로 간주
+      if (hasRecoveryHash && session) {
+        markReady();
       }
     });
 
-    // 안전망: 이미 세션이 있을 수도 있음 (recovery 토큰이 즉시 처리된 경우)
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session && !resolved) {
-        resolved = true;
-        setStage('ready');
+    // 4) 이미 처리된 세션 폴링 (이벤트 놓쳤을 경우 대비)
+    const poll = async () => {
+      for (let i = 0; i < 20; i++) {
+        if (resolved) return;
+        const { data } = await supabase.auth.getSession();
+        if (data.session && hasRecoveryHash) {
+          markReady();
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 250));
       }
-    });
-
-    // 5초 안에 PASSWORD_RECOVERY나 세션이 안 잡히면 잘못된 링크로 간주
-    const timer = setTimeout(() => {
+      // 5초 동안 세션이 안 잡히면 invalid
       if (!resolved) setStage('invalid');
-    }, 5000);
+    };
+
+    if (hasRecoveryHash) {
+      poll();
+    } else {
+      // hash 자체에 recovery 토큰이 없으면 잘못된 진입
+      setStage('invalid');
+    }
 
     return () => {
       sub.subscription.unsubscribe();
-      clearTimeout(timer);
     };
   }, []);
 
