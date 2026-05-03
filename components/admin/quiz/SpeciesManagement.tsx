@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Edit2, X, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Edit2, X, ToggleLeft, ToggleRight, Search } from 'lucide-react';
 import {
   getAllSpecies,
   createSpecies,
@@ -26,6 +26,46 @@ export function SpeciesManagement() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ ...EMPTY_FORM });
+
+  // 검색/필터 state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterGroupId, setFilterGroupId] = useState(''); // '' = 전체, 'none' = 그룹 없음
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+
+  // 필터링된 목록
+  const filteredSpecies = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return species.filter((sp) => {
+      // 그룹 필터
+      if (filterGroupId === 'none') {
+        if (sp.group_id) return false;
+      } else if (filterGroupId) {
+        if (sp.group_id !== filterGroupId) return false;
+      }
+      // 상태 필터
+      if (filterStatus === 'active' && !sp.is_active) return false;
+      if (filterStatus === 'inactive' && sp.is_active) return false;
+      // 검색 (이름/학명/별칭)
+      if (q) {
+        const hay = [
+          sp.name_ko,
+          sp.name_latin || '',
+          (sp.aliases || []).join(' '),
+          sp.quiz_groups?.name || '',
+        ].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [species, searchQuery, filterGroupId, filterStatus]);
+
+  const isFiltered = searchQuery.trim() !== '' || filterGroupId !== '' || filterStatus !== 'all';
+
+  function resetFilters() {
+    setSearchQuery('');
+    setFilterGroupId('');
+    setFilterStatus('all');
+  }
 
   useEffect(() => { loadData(); }, []);
 
@@ -114,7 +154,12 @@ export function SpeciesManagement() {
       {/* 헤더 */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">
-          수종 관리 <span className="text-gray-500">({species.length}개)</span>
+          수종 관리{' '}
+          <span className="text-gray-500">
+            {isFiltered
+              ? `(${filteredSpecies.length}/${species.length}개)`
+              : `(${species.length}개)`}
+          </span>
         </h2>
         <button
           onClick={openAdd}
@@ -122,6 +167,50 @@ export function SpeciesManagement() {
         >
           <Plus className="w-4 h-4" />수종 추가
         </button>
+      </div>
+
+      {/* 검색 / 필터 바 */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="이름·학명·별칭 검색…"
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+          />
+        </div>
+        <select
+          value={filterGroupId}
+          onChange={(e) => setFilterGroupId(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white"
+          title="혼동그룹(과) 필터"
+        >
+          <option value="">전체 그룹</option>
+          <option value="none">그룹 없음</option>
+          {groups.map((g) => (
+            <option key={g.id} value={g.id}>{g.name}</option>
+          ))}
+        </select>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white"
+          title="상태 필터"
+        >
+          <option value="all">전체 상태</option>
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
+        {isFiltered && (
+          <button
+            onClick={resetFilters}
+            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            초기화
+          </button>
+        )}
       </div>
 
       {/* 수종 목록 테이블 */}
@@ -138,7 +227,7 @@ export function SpeciesManagement() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {species.map((sp) => (
+            {filteredSpecies.map((sp) => (
               <tr key={sp.id} className={!sp.is_active ? 'bg-gray-50 opacity-60' : ''}>
                 <td className="px-4 py-3 text-sm font-medium text-gray-900">{sp.name_ko}</td>
                 <td className="px-4 py-3 text-sm text-gray-500 italic">{sp.name_latin || '-'}</td>
@@ -189,6 +278,14 @@ export function SpeciesManagement() {
 
       {species.length === 0 && (
         <div className="text-center py-12 text-gray-500">등록된 수종이 없습니다.</div>
+      )}
+      {species.length > 0 && filteredSpecies.length === 0 && (
+        <div className="text-center py-12 text-gray-500">
+          조건에 맞는 수종이 없습니다.{' '}
+          <button onClick={resetFilters} className="text-red-600 hover:underline">
+            필터 초기화
+          </button>
+        </div>
       )}
 
       {/* 드로어 오버레이 */}
