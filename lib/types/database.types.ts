@@ -6,6 +6,16 @@ export type UserRole = 'super_admin' | 'writer' | 'user';
 export type PostStatus = 'draft' | 'published' | 'archived';
 export type CategoryType = 'menu' | 'attribute';
 
+// 구독 상태 (트리오! 앱과 공유)
+export type SubscriptionState =
+  | 'none'
+  | 'active'
+  | 'grace_period'
+  | 'on_hold'
+  | 'paused'
+  | 'cancelled'
+  | 'expired';
+
 // 사용자 프로필
 export interface User {
   id: string;
@@ -16,6 +26,11 @@ export interface User {
   bio: string | null;
   created_at: string;
   updated_at: string;
+  // 트리오! 구독 정보 (sn_users 테이블 공유)
+  subscription_state?: SubscriptionState | null;
+  subscription_expires_at?: string | null;
+  subscription_product_id?: string | null;
+  subscription_purchase_token?: string | null;
 }
 
 // 카테고리 (계층형)
