@@ -77,24 +77,21 @@ export async function updateUserProfile(
 
 /**
  * 사용자 권한 변경 (super_admin만 가능)
+ * RLS 트리거가 role 직접 변경을 차단하므로 RPC 경유.
+ * 실 사용은 lib/api/admin.ts 의 updateUserRole 권장.
  */
 export async function updateUserRole(
   userId: string,
   role: UserRole
-): Promise<User> {
-  const { data, error } = await supabase
-    .from('sn_users')
-    .update({ role })
-    .eq('id', userId)
-    .select()
-    .single();
-
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_update_user_role', {
+    target_user_id: userId,
+    new_role: role,
+  });
   if (error) {
     console.error('Error updating user role:', error);
     throw error;
   }
-
-  return data;
 }
 
 /**
