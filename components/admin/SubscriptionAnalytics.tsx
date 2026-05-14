@@ -8,9 +8,11 @@ const PRICE_MONTHLY = 3000;
 const PRICE_ANNUAL = 25000;
 
 function isActive(s: SubscriberRow): boolean {
-  if (s.subscription_state !== 'active' && s.subscription_state !== 'grace_period') return false;
-  if (s.subscription_expires_at) return new Date(s.subscription_expires_at) > new Date();
-  return true;
+  // cancelled도 만료일 전이면 활성 (자동갱신만 취소된 케이스)
+  const st = s.subscription_state;
+  if (st !== 'active' && st !== 'grace_period' && st !== 'cancelled') return false;
+  if (!s.subscription_expires_at) return false;
+  return new Date(s.subscription_expires_at) > new Date();
 }
 
 function getProductType(productId: string | null): 'monthly' | 'annual' | 'unknown' {
@@ -143,9 +145,13 @@ export function SubscriptionAnalytics() {
 
   function getStateBadge(s: SubscriberRow) {
     if (isActive(s)) {
-      return s.subscription_state === 'grace_period'
-        ? { color: 'bg-yellow-100 text-yellow-700', label: '유예' }
-        : { color: 'bg-green-100 text-green-700', label: '활성' };
+      if (s.subscription_state === 'grace_period') {
+        return { color: 'bg-yellow-100 text-yellow-700', label: '유예' };
+      }
+      if (s.subscription_state === 'cancelled') {
+        return { color: 'bg-amber-100 text-amber-700', label: '활성(갱신X)' };
+      }
+      return { color: 'bg-green-100 text-green-700', label: '활성' };
     }
     const state = s.subscription_state ?? '-';
     switch (state) {
