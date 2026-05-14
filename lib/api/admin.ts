@@ -99,12 +99,13 @@ export async function updateUserRole(userId: string, role: UserRole): Promise<vo
 
 /**
  * 테스트 계정 플래그 토글 (본인 부계정 등 통계 제외용)
+ * RLS 우회를 위해 SECURITY DEFINER RPC 사용 (super_admin 권한 함수 내부 검증)
  */
 export async function updateTestAccountFlag(userId: string, isTest: boolean): Promise<void> {
-  const { error } = await supabase
-    .from('sn_users')
-    .update({ is_test_account: isTest })
-    .eq('id', userId);
+  const { error } = await supabase.rpc('set_test_account_flag', {
+    target_user_id: userId,
+    is_test: isTest,
+  });
 
   if (error) {
     console.error('테스트 계정 플래그 변경 실패:', error);
