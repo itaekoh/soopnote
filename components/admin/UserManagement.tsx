@@ -85,7 +85,7 @@ export function UserManagement() {
         : { color: 'bg-green-100 text-green-700', label: '활성' };
     }
     switch (state) {
-      case 'cancelled':
+      case 'canceled':
         return { color: 'bg-orange-100 text-orange-700', label: '취소됨' };
       case 'expired':
         return { color: 'bg-gray-200 text-gray-600', label: '만료' };

@@ -83,13 +83,14 @@ export async function getAllUsers(): Promise<User[]> {
 }
 
 /**
- * 회원 권한 변경
+ * 회원 권한 변경 (RLS 우회 위해 SECURITY DEFINER RPC 사용)
+ * super_admin 권한 함수 내부 검증
  */
 export async function updateUserRole(userId: string, role: UserRole): Promise<void> {
-  const { error } = await supabase
-    .from('sn_users')
-    .update({ role })
-    .eq('id', userId);
+  const { error } = await supabase.rpc('admin_update_user_role', {
+    target_user_id: userId,
+    new_role: role,
+  });
 
   if (error) {
     console.error('권한 변경 실패:', error);
