@@ -47,6 +47,13 @@ export async function DELETE(req: NextRequest) {
       return json({ error: 'path required' }, 400);
     }
 
+    // 경로 검증 — quiz/{item_id}/* 또는 pending/{...}/* 형식만 허용
+    // 디렉토리 traversal, 다른 prefix 접근 차단
+    const PATH_REGEX = /^(quiz|pending)\/[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_.-]+)*$/;
+    if (!PATH_REGEX.test(body.path) || body.path.includes('..')) {
+      return json({ error: 'invalid path' }, 400);
+    }
+
     const { error } = await supabaseAdmin.storage.from('quiz_public').remove([body.path]);
     if (error) {
       return json({ error: error.message }, 500);

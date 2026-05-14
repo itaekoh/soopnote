@@ -47,6 +47,15 @@ export async function POST(req: NextRequest) {
       return json({ error: 'from and to paths required' }, 400);
     }
 
+    // 경로 검증 — quiz/{item_id}/* 또는 pending/{...}/* 형식만 허용
+    const PATH_REGEX = /^(quiz|pending)\/[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_.-]+)*$/;
+    if (!PATH_REGEX.test(from) || from.includes('..')) {
+      return json({ error: 'invalid from path' }, 400);
+    }
+    if (!PATH_REGEX.test(to) || to.includes('..')) {
+      return json({ error: 'invalid to path' }, 400);
+    }
+
     const { error } = await supabaseAdmin.storage
       .from('quiz_public')
       .move(from, to);
