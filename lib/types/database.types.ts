@@ -6,14 +6,14 @@ export type UserRole = 'super_admin' | 'writer' | 'user';
 export type PostStatus = 'draft' | 'published' | 'archived';
 export type CategoryType = 'menu' | 'attribute';
 
-// 구독 상태 (트리오! 앱과 공유)
+// 구독 상태 (트리오! 앱과 공유) — Google Play API 표기 = 미국식 'canceled' (L 하나)
 export type SubscriptionState =
   | 'none'
   | 'active'
   | 'grace_period'
   | 'on_hold'
   | 'paused'
-  | 'cancelled'
+  | 'canceled'
   | 'expired';
 
 // 사용자 프로필

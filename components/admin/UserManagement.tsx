@@ -59,10 +59,10 @@ export function UserManagement() {
   }
 
   // 활성 구독 판정 (앱의 isPremium 로직과 동일)
-  // cancelled도 expires_at 까지는 활성 (자동갱신만 취소된 케이스)
+  // canceled도 expires_at 까지는 활성 (자동갱신만 취소된 케이스)
   const isActiveSubscriber = (u: User): boolean => {
     const state = u.subscription_state;
-    if (state !== 'active' && state !== 'grace_period' && state !== 'cancelled') return false;
+    if (state !== 'active' && state !== 'grace_period' && state !== 'canceled') return false;
     if (!u.subscription_expires_at) return false;
     return new Date(u.subscription_expires_at) > new Date();
   };

@@ -8,9 +8,9 @@ const PRICE_MONTHLY = 3000;
 const PRICE_ANNUAL = 25000;
 
 function isActive(s: SubscriberRow): boolean {
-  // cancelled도 만료일 전이면 활성 (자동갱신만 취소된 케이스)
+  // canceled도 만료일 전이면 활성 (자동갱신만 취소된 케이스)
   const st = s.subscription_state;
-  if (st !== 'active' && st !== 'grace_period' && st !== 'cancelled') return false;
+  if (st !== 'active' && st !== 'grace_period' && st !== 'canceled') return false;
   if (!s.subscription_expires_at) return false;
   return new Date(s.subscription_expires_at) > new Date();
 }
@@ -65,7 +65,7 @@ interface MonthlyStats {
 export function SubscriptionAnalytics() {
   const [subs, setSubs] = useState<SubscriberRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stateFilter, setStateFilter] = useState<'all' | 'active' | 'cancelled' | 'expired'>('all');
+  const [stateFilter, setStateFilter] = useState<'all' | 'active' | 'canceled' | 'expired'>('all');
   const [productFilter, setProductFilter] = useState<'all' | 'monthly' | 'annual'>('all');
   const [excludeTest, setExcludeTest] = useState(true);
 
@@ -132,7 +132,7 @@ export function SubscriptionAnalytics() {
   const filteredSubs = useMemo(() => {
     return subs.filter(s => {
       if (stateFilter === 'active' && !isActive(s)) return false;
-      if (stateFilter === 'cancelled' && s.subscription_state !== 'cancelled') return false;
+      if (stateFilter === 'canceled' && s.subscription_state !== 'canceled') return false;
       if (stateFilter === 'expired') {
         if (s.subscription_state === 'expired') return true;
         if (s.subscription_expires_at && new Date(s.subscription_expires_at) <= new Date()) return true;
@@ -148,14 +148,14 @@ export function SubscriptionAnalytics() {
       if (s.subscription_state === 'grace_period') {
         return { color: 'bg-yellow-100 text-yellow-700', label: '유예' };
       }
-      if (s.subscription_state === 'cancelled') {
+      if (s.subscription_state === 'canceled') {
         return { color: 'bg-amber-100 text-amber-700', label: '활성(갱신X)' };
       }
       return { color: 'bg-green-100 text-green-700', label: '활성' };
     }
     const state = s.subscription_state ?? '-';
     switch (state) {
-      case 'cancelled': return { color: 'bg-orange-100 text-orange-700', label: '취소됨' };
+      case 'canceled': return { color: 'bg-orange-100 text-orange-700', label: '취소됨' };
       case 'expired': return { color: 'bg-gray-200 text-gray-600', label: '만료' };
       case 'on_hold': return { color: 'bg-red-100 text-red-700', label: '보류' };
       case 'paused': return { color: 'bg-blue-100 text-blue-700', label: '일시정지' };
@@ -261,7 +261,7 @@ export function SubscriptionAnalytics() {
             >
               <option value="all">전체 상태</option>
               <option value="active">활성</option>
-              <option value="cancelled">취소됨</option>
+              <option value="canceled">취소됨</option>
               <option value="expired">만료</option>
             </select>
             <select
