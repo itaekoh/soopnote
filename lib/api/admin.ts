@@ -98,6 +98,38 @@ export async function updateUserRole(userId: string, role: UserRole): Promise<vo
 }
 
 // ============================================
+// 구독 분석 (트리오! 앱)
+// ============================================
+
+export interface SubscriberRow {
+  id: string;
+  email: string;
+  display_name: string | null;
+  subscription_state: string | null;
+  subscription_expires_at: string | null;
+  subscription_product_id: string | null;
+  created_at: string;
+}
+
+/**
+ * 구독 정보가 있는 모든 회원 조회 (purchase_token 존재 = 결제 이력 있음)
+ */
+export async function getAllSubscribers(): Promise<SubscriberRow[]> {
+  const { data, error } = await supabase
+    .from('sn_users')
+    .select('id, email, display_name, subscription_state, subscription_expires_at, subscription_product_id, created_at')
+    .not('subscription_purchase_token', 'is', null)
+    .order('subscription_expires_at', { ascending: false, nullsFirst: false });
+
+  if (error) {
+    console.error('구독자 목록 조회 실패:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// ============================================
 // 추천글 관리
 // ============================================
 

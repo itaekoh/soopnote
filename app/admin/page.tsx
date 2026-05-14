@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Star, FolderTree, FileText, Gamepad2, HardDrive } from 'lucide-react';
+import { Shield, Users, Star, FolderTree, FileText, Gamepad2, HardDrive, CreditCard } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { checkAdminPermission, checkSuperAdminPermission } from '@/lib/api/admin';
@@ -12,9 +12,10 @@ import { CategoryManagement } from '@/components/admin/CategoryManagement';
 import { PostManagement } from '@/components/admin/PostManagement';
 import { QuizManagement } from '@/components/admin/quiz/QuizManagement';
 import { StorageManager } from '@/components/admin/StorageManager';
+import { SubscriptionAnalytics } from '@/components/admin/SubscriptionAnalytics';
 import { supabase } from '@/lib/supabase/client';
 
-type TabType = 'posts' | 'users' | 'featured' | 'categories' | 'quiz' | 'storage';
+type TabType = 'posts' | 'users' | 'subscriptions' | 'featured' | 'categories' | 'quiz' | 'storage';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -54,6 +55,7 @@ export default function AdminPage() {
   const allTabs = [
     { id: 'posts' as TabType, label: '게시글 관리', icon: FileText, minRole: 'writer' },
     { id: 'users' as TabType, label: '회원 관리', icon: Users, minRole: 'super_admin' },
+    { id: 'subscriptions' as TabType, label: '구독 현황', icon: CreditCard, minRole: 'super_admin' },
     { id: 'featured' as TabType, label: '추천글 관리', icon: Star, minRole: 'super_admin' },
     { id: 'categories' as TabType, label: '카테고리 관리', icon: FolderTree, minRole: 'super_admin' },
     { id: 'quiz' as TabType, label: '퀴즈 관리', icon: Gamepad2, minRole: 'super_admin' },
@@ -121,6 +123,7 @@ export default function AdminPage() {
           <div className="p-6">
             {activeTab === 'posts' && <PostManagement />}
             {activeTab === 'users' && <UserManagement />}
+            {activeTab === 'subscriptions' && <SubscriptionAnalytics />}
             {activeTab === 'featured' && <FeaturedManagement />}
             {activeTab === 'categories' && <CategoryManagement />}
             {activeTab === 'quiz' && <QuizManagement />}
