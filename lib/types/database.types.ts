@@ -31,6 +31,8 @@ export interface User {
   subscription_expires_at?: string | null;
   subscription_product_id?: string | null;
   subscription_purchase_token?: string | null;
+  // 테스트 계정 여부 (본인 부계정 등 — 통계 제외 대상)
+  is_test_account?: boolean | null;
 }
 
 // 카테고리 (계층형)

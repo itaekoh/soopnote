@@ -97,6 +97,21 @@ export async function updateUserRole(userId: string, role: UserRole): Promise<vo
   }
 }
 
+/**
+ * 테스트 계정 플래그 토글 (본인 부계정 등 통계 제외용)
+ */
+export async function updateTestAccountFlag(userId: string, isTest: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('sn_users')
+    .update({ is_test_account: isTest })
+    .eq('id', userId);
+
+  if (error) {
+    console.error('테스트 계정 플래그 변경 실패:', error);
+    throw error;
+  }
+}
+
 // ============================================
 // 구독 분석 (트리오! 앱)
 // ============================================
@@ -109,17 +124,24 @@ export interface SubscriberRow {
   subscription_expires_at: string | null;
   subscription_product_id: string | null;
   created_at: string;
+  is_test_account: boolean | null;
 }
 
 /**
  * 구독 정보가 있는 모든 회원 조회 (purchase_token 존재 = 결제 이력 있음)
+ * @param excludeTest 테스트 계정 제외 여부 (기본 true)
  */
-export async function getAllSubscribers(): Promise<SubscriberRow[]> {
-  const { data, error } = await supabase
+export async function getAllSubscribers(excludeTest: boolean = true): Promise<SubscriberRow[]> {
+  let q = supabase
     .from('sn_users')
-    .select('id, email, display_name, subscription_state, subscription_expires_at, subscription_product_id, created_at')
-    .not('subscription_purchase_token', 'is', null)
-    .order('subscription_expires_at', { ascending: false, nullsFirst: false });
+    .select('id, email, display_name, subscription_state, subscription_expires_at, subscription_product_id, created_at, is_test_account')
+    .not('subscription_purchase_token', 'is', null);
+
+  if (excludeTest) {
+    q = q.or('is_test_account.is.null,is_test_account.eq.false');
+  }
+
+  const { data, error } = await q.order('subscription_expires_at', { ascending: false, nullsFirst: false });
 
   if (error) {
     console.error('구독자 목록 조회 실패:', error);

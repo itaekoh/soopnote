@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { getAllUsers, updateUserRole } from '@/lib/api/admin';
+import { getAllUsers, updateUserRole, updateTestAccountFlag } from '@/lib/api/admin';
 import type { User, UserRole, SubscriptionState } from '@/lib/types/database.types';
 
 type SubFilter = 'all' | 'paid' | 'none';
@@ -27,6 +27,16 @@ export function UserManagement() {
       alert('회원 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleToggleTest(userId: string, current: boolean) {
+    try {
+      await updateTestAccountFlag(userId, !current);
+      // 낙관적 업데이트
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_test_account: !current } : u));
+    } catch {
+      alert('테스트 계정 플래그 변경에 실패했습니다.');
     }
   }
 
@@ -187,6 +197,7 @@ export function UserManagement() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">만료일</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">가입일</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" title="통계에서 제외할 테스트 계정 (본인 부계정 등)">🧪 테스트</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">권한 변경</th>
             </tr>
           </thead>
@@ -195,7 +206,7 @@ export function UserManagement() {
               const badge = getSubBadge(user);
               const active = isActiveSubscriber(user);
               return (
-                <tr key={user.id} className={`hover:bg-gray-50 ${active ? 'bg-green-50/30' : ''}`}>
+                <tr key={user.id} className={`hover:bg-gray-50 ${active ? 'bg-green-50/30' : ''} ${user.is_test_account ? 'opacity-60' : ''}`}>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                     {user.email}
                   </td>
@@ -222,6 +233,15 @@ export function UserManagement() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                     {new Date(user.created_at).toLocaleDateString('ko-KR')}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-center">
+                    <input
+                      type="checkbox"
+                      checked={!!user.is_test_account}
+                      onChange={() => handleToggleTest(user.id, !!user.is_test_account)}
+                      className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500 cursor-pointer"
+                      title="체크 시 구독 분석 등 통계에서 제외됩니다"
+                    />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <select
