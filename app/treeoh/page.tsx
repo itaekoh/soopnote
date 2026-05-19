@@ -378,6 +378,9 @@ export default function TreeohPage() {
               </div>
             ))}
           </div>
+          <p className="text-center text-sm text-green-700 font-medium mt-4">
+            🌱 콘텐츠는 꾸준히 추가되고 있습니다
+          </p>
         </section>
 
         {/* ── Features ── */}
