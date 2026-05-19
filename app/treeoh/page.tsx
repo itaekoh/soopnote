@@ -68,6 +68,11 @@ const features = [
     desc: '틀린 문제만 모아서 다시 풀 수 있어요. 반복 학습으로 취약 수종을 정복하세요.',
   },
   {
+    emoji: '⭐',
+    title: '문제 찜하기',
+    desc: '헷갈리거나 다시 보고 싶은 문제는 찜해두고, 언제든 모아서 풀어보세요.',
+  },
+  {
     emoji: '📊',
     title: '학습 통계',
     desc: '정답률, 학습 이력을 한눈에 확인하고 성장 과정을 기록하세요.',
@@ -119,7 +124,7 @@ export default function TreeohPage() {
           <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
             주요 기능
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((f) => (
               <div
                 key={f.title}
