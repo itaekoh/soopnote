@@ -10,6 +10,7 @@ const screenshots = [
   { src: '/screen/screen4.jpg', alt: '퀴즈 풀이 화면' },
   { src: '/screen/screen5.jpg', alt: '오답 복습 화면' },
   { src: '/screen/screen6.jpg', alt: '학습 통계 화면' },
+  { src: '/screen/screen7.jpg', alt: '문제 찜하기 화면' },
 ];
 
 export default function ScreenshotCarousel() {
