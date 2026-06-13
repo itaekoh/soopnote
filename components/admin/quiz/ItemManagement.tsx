@@ -60,6 +60,7 @@ export function ItemManagement() {
   const [formImagePreview, setFormImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 수종 검색
@@ -114,9 +115,11 @@ export function ItemManagement() {
   }
 
   // 이미지 업로드
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function processFile(file: File) {
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드 가능합니다.');
+      return;
+    }
 
     // 미리보기
     const reader = new FileReader();
@@ -168,6 +171,44 @@ export function ItemManagement() {
       // 같은 파일 재선택 허용
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  }
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!uploading && !isDragging) setIsDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }
+
+  async function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (uploading) return;
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  }
+
+  async function handlePaste(e: React.ClipboardEvent<HTMLDivElement>) {
+    if (uploading) return;
+    const item = Array.from(e.clipboardData.items).find((i) => i.type.startsWith('image/'));
+    if (!item) return;
+    const file = item.getAsFile();
+    if (!file) return;
+    e.preventDefault();
+    await processFile(file);
   }
 
   // 문항 저장
@@ -593,19 +634,31 @@ export function ItemManagement() {
                 </label>
                 <div
                   onClick={() => !uploading && fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onPaste={handlePaste}
+                  tabIndex={0}
+                  className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors outline-none ${
                     uploading
                       ? 'border-gray-300 bg-gray-50'
-                      : 'border-gray-300 hover:border-red-400 hover:bg-red-50'
+                      : isDragging
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300 hover:border-red-400 hover:bg-red-50'
                   }`}
                 >
                   {formImagePreview ? (
-                    <img src={formImagePreview} alt="미리보기" className="max-h-40 mx-auto rounded" />
+                    <img src={formImagePreview} alt="미리보기" className="max-h-40 mx-auto rounded pointer-events-none" />
                   ) : (
-                    <div className="py-4">
+                    <div className="py-4 pointer-events-none">
                       <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-sm text-gray-500">
-                        {uploading ? '업로드 중...' : '클릭하여 이미지 선택'}
+                        {uploading
+                          ? '업로드 중...'
+                          : isDragging
+                            ? '여기에 놓으세요'
+                            : '클릭하거나 이미지를 드래그하세요 (붙여넣기도 가능)'}
                       </p>
                     </div>
                   )}
