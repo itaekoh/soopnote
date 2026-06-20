@@ -308,7 +308,7 @@ export default function LogsList() {
                         )}
                       </div>
                     ) : (
-                      <div className={`h-48 aspect-[4/3] bg-gradient-to-br ${background.value} flex items-center justify-center relative`}>
+                      <div className={`h-48 w-full bg-gradient-to-br ${background.value} flex items-center justify-center relative`}>
                         <div className="text-center">
                           <div className="text-6xl mb-2">{emoji}</div>
                         </div>
