@@ -7,7 +7,7 @@ import ScreenshotCarousel from './ScreenshotCarousel';
 export const metadata: Metadata = {
   title: '트리오 Tree-Oh! — 나무의사 시험 대비 수목 퀴즈 앱 | Soopnote',
   description:
-    '나무의사·산림기사·조경기사 수험생을 위한 무료 수목 퀴즈 앱. 500+ 문제, 150+ 수종을 사진으로 학습하고 오답 복습, 찜하기, 학습 통계로 약점을 정복하세요. Android 무료 다운로드.',
+    '나무의사·산림기사·조경기사 수험생을 위한 무료 수목 퀴즈 앱. 약 700 문제, 약 300 수종을 사진으로 학습하고 오답 복습, 찜하기, 학습 통계로 약점을 정복하세요. Android 무료 다운로드.',
   keywords: [
     '트리오',
     'Tree-Oh',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '트리오 Tree-Oh! — 나무의사 시험 대비 수목 퀴즈 앱',
     description:
-      '500+ 수목 사진 퀴즈로 나무 이름 학습. 오답 복습 · 찜하기 · 학습 통계까지. Android 무료.',
+      '약 700 수목 사진 퀴즈로 나무 이름 학습. 오답 복습 · 찜하기 · 학습 통계까지. Android 무료.',
     url: 'https://www.soopnote.com/treeoh',
     siteName: 'Soopnote',
     type: 'website',
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '트리오 Tree-Oh! — 나무의사 시험 대비 수목 퀴즈 앱',
     description:
-      '500+ 수목 사진 퀴즈, 오답 복습, 찜하기, 학습 통계. Android 무료.',
+      '약 700 수목 사진 퀴즈, 오답 복습, 찜하기, 학습 통계. Android 무료.',
     images: ['https://www.soopnote.com/screen/screen1.jpg'],
   },
   alternates: {
@@ -83,7 +83,7 @@ const appSchema = {
   operatingSystem: 'Android',
   applicationCategory: 'EducationalApplication',
   description:
-    '나무의사·산림기사·조경기사 시험 대비를 위한 수목 퀴즈 앱. 500+ 문제와 150+ 수종을 사진으로 학습하고 오답 복습·찜하기·학습 통계 기능을 제공합니다.',
+    '나무의사·산림기사·조경기사 시험 대비를 위한 수목 퀴즈 앱. 약 700 문제와 약 300 수종을 사진으로 학습하고 오답 복습·찜하기·학습 통계 기능을 제공합니다.',
   offers: [
     {
       '@type': 'Offer',
@@ -152,7 +152,7 @@ const faqSchema = {
       name: '몇 종류의 나무와 문제가 등록되어 있나요?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: '약 150종 이상의 수목과 500개 이상의 문제가 등록되어 있으며 계속 추가되고 있습니다. 같은 수종이라도 전경·수피·잎·꽃·열매 등 다양한 부위 사진으로 학습 가능합니다.',
+        text: '약 300종의 수목과 약 700개의 문제가 등록되어 있으며 계속 추가되고 있습니다. 같은 수종이라도 전경·수피·잎·꽃·열매 등 다양한 부위 사진으로 학습 가능합니다.',
       },
     },
     {
@@ -249,8 +249,8 @@ const features = [
 ];
 
 const stats = [
-  { value: '150+', label: '등록 수종' },
-  { value: '500+', label: '학습 문제' },
+  { value: '약 300', label: '등록 수종' },
+  { value: '약 700', label: '학습 문제' },
   { value: '7', label: '사진 카테고리' },
   { value: '무료', label: '기본 사용' },
 ];
@@ -285,7 +285,7 @@ const faqs = [
   },
   {
     q: '몇 종류의 나무와 문제가 등록되어 있나요?',
-    a: '약 150종 이상의 수목과 500개 이상의 문제가 등록되어 있으며 계속 추가되고 있습니다.',
+    a: '약 300종의 수목과 약 700개의 문제가 등록되어 있으며 계속 추가되고 있습니다.',
   },
   {
     q: '무료로 사용 가능한가요?',
@@ -336,7 +336,7 @@ export default function TreeohPage() {
             나무의사 시험 대비 수목 퀴즈 앱
           </p>
           <p className="text-gray-600 text-base sm:text-lg leading-relaxed max-w-xl mx-auto mb-8">
-            500여 개의 수목 사진 문제로 나무 이름을 익히고,
+            700여 개의 수목 사진 문제로 나무 이름을 익히고,
             <br />
             오답 복습·찜하기·학습 통계로 약점을 정복하세요.
           </p>
