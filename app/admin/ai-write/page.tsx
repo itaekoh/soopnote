@@ -100,6 +100,7 @@ export default function AiWritePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [generating, setGenerating] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [saving, setSaving] = useState(false);
   const [savingStatus, setSavingStatus] = useState('');
   const [error, setError] = useState('');
@@ -123,6 +124,17 @@ export default function AiWritePage() {
       }
     }
   }, [authLoading, user, profile, router]);
+
+  // 생성/수정 중 경과 시간(초) 카운터
+  useEffect(() => {
+    if (!generating) {
+      setElapsed(0);
+      return;
+    }
+    const start = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [generating]);
 
   async function checkApiStatus() {
     setApiStatus('checking');
@@ -888,7 +900,8 @@ export default function AiWritePage() {
               {generating ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  {hasResult && reviseInstruction.trim() ? '수정 중...' : '초안 생성 중...'}
+                  {(hasResult && reviseInstruction.trim() ? '수정 중' : '초안 생성 중')}
+                  {` (${elapsed}초)`}
                 </>
               ) : (
                 <>
@@ -978,7 +991,7 @@ export default function AiWritePage() {
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
                 <div className="flex items-center gap-3 text-gray-500 mb-6">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  AI가 초안을 작성하고 있습니다...
+                  AI가 초안을 작성하고 있습니다... ({elapsed}초)
                 </div>
                 <div className="space-y-3 animate-pulse">
                   <div className="h-6 bg-gray-100 rounded w-2/3" />
