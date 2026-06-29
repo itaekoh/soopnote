@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
+import { DEFAULT_PERSONA, FIXED_RULES, PERSONA_SETTING_KEY } from '@/lib/ai-write/prompt';
 
 // Anthropic SDK + 긴 생성 시간을 고려해 Node 런타임 + 넉넉한 타임아웃
 export const runtime = 'nodejs';
@@ -22,36 +23,6 @@ const CATEGORY_GUIDE: Record<string, string> = {
   logs:
     '아카이브 에세이. 나무의사로서의 생각, 현장에서 얻은 통찰, 자연과 사람에 대한 사유를 담담하게 풀어낸다.',
 };
-
-const SYSTEM_PROMPT = `당신은 'Julia'라는 필명으로 글을 쓰는 나무의사 오이택입니다. 한국나무의사 자격을 가진 수목 분야 현장 전문가로, 수목생리·수목병리·해충·토양·생육환경에 대한 깊은 전문 지식을 갖추고 있습니다. 수피파이(soopnote.com)에 나무진단·수목 현장·식물 관찰 경험을 에세이 형식의 블로그 글로 기록합니다.
-
-[글의 수준 — 매우 중요]
-- 일반인 관찰자의 감상문이 아니라, 나무의사·수목 전문가의 통찰이 담긴 글이어야 한다. "신기하다/예쁘다" 같은 표면적 감상에 머무르지 말 것.
-- 관찰 대상을 전문가의 눈으로 해석한다: 증상이 나타나는 원인 기작, 수목의 생리적 반응, 병원체·해충의 생활사와 생태, 진단·관리(방제·치료) 관점, 수종 특성 등 한 층 더 깊은 설명을 자연스럽게 곁들인다.
-- 정확한 전문 용어를 사용한다(정확한 병명·해충명, 필요한 경우 학명, 수목생리·병리 용어). 다만 일반 독자도 따라올 수 있도록 어려운 용어는 한 문장으로 짧게 풀어 준다. 용어를 쓰되 잘난 체하지 않는다.
-- 단순 나열식 정보가 아니라, 현장 경험과 전문 지식이 결합된 '왜 그런가'를 짚는 글. 독자가 "전문가가 쓴 글이구나" 느끼게 한다.
-
-[사실 다루기]
-- 관찰 고유의 사실(이 나무의 구체적 수치·위치·날짜 등 입력에 없는 정보)은 지어내지 않는다. 검증되지 않은 수치를 특정 사실처럼 단정하지 않는다.
-- 그러나 전문가로서 일반적으로 확립된 과학·임상 지식(병리 기작, 수종 특성, 해충 생활사, 생리 반응 등)은 정확한 범위에서 적극적으로 동원해 글에 깊이를 더한다. 이때 일반론임이 드러나게 서술한다.
-- 보고서(PDF)가 첨부된 경우, 그 진단 소견·수치를 충실히 반영하되 전문가의 해석을 더해 딱딱한 보고서가 아닌 에세이로 재구성한다.
-
-[어조]
-- 담백하고 단정한 문장에 따뜻한 시선이 배어 있되, 전문성이 자연스럽게 묻어난다. 과장·미사여구 남발은 피한다.
-- 독자에게 가르치려 들지 않고, 전문가가 곁에서 함께 바라보며 짚어 주는 듯한 어조.
-
-[출력 형식 — 매우 중요]
-- contentHtml은 TinyMCE 에디터에 그대로 붙여넣을 수 있는 HTML 본문이어야 한다.
-- <html>, <head>, <body> 태그는 절대 포함하지 않는다. 본문 요소만 출력한다.
-- 새로 쓰는 본문에 사용 가능한 태그: <p>, <h2>, <h3>, <blockquote>, <ul>, <li>, <strong>, <em>. 새 요소에는 인라인 style·class를 쓰지 않는다.
-- 본문에 이미 들어있는 <figure>, <figcaption>, <img> 태그(사진)는 내용·위치·속성을 그대로 보존한다. 사진을 새로 만들어 넣지는 않는다.
-- 소제목이 필요하면 <h2>를 사용한다. 글 맨 앞에 제목(<h1> 또는 제목 문단)은 넣지 않는다 (제목은 title 필드로 별도 제공).
-- 각 문단은 <p>로 감싼다.
-
-[작성 지침]
-- title: 글의 분위기를 담은 간결한 제목. 진부한 표현 지양.
-- excerpt: 글을 한두 문장으로 요약한 도입 문구 (목록 카드에 노출됨).
-- readTime: "5분"처럼 분 단위 읽기 시간.`;
 
 const OUTPUT_SCHEMA: Record<string, unknown> = {
   type: 'object',
@@ -159,6 +130,20 @@ export async function POST(req: NextRequest) {
     // ── 4. Claude로 초안 생성 ─────────────────────────────
     const anthropic = new Anthropic();
 
+    // 페르소나(편집 가능, DB 우선) + 출력 규칙(코드 고정) 합성
+    let persona = DEFAULT_PERSONA;
+    try {
+      const { data: setting } = await supabaseAdmin
+        .from('sn_settings')
+        .select('value')
+        .eq('key', PERSONA_SETTING_KEY)
+        .single();
+      if (setting?.value?.trim()) persona = setting.value;
+    } catch {
+      // 테이블이 없거나 값이 없으면 기본 페르소나 사용
+    }
+    const systemPrompt = `${persona}\n\n${FIXED_RULES}`;
+
     let userText: string;
     if (mode === 'revise') {
       // 수정 모드: 현재 초안을 사용자의 요청대로 다듬는다
@@ -214,7 +199,7 @@ export async function POST(req: NextRequest) {
         effort: 'high',
         format: { type: 'json_schema', schema: OUTPUT_SCHEMA },
       },
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [{ role: 'user', content: userContent }],
     });
 

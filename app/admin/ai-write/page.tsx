@@ -24,6 +24,7 @@ import {
   AlertCircle,
   X,
   ImagePlus,
+  Settings,
 } from 'lucide-react';
 import { getMenuCategories } from '@/lib/api/categories';
 import { createPost } from '@/lib/api/posts';
@@ -59,6 +60,14 @@ export default function AiWritePage() {
   // API 연결 상태
   const [apiStatus, setApiStatus] = useState<ApiStatus>('checking');
   const [apiStatusMsg, setApiStatusMsg] = useState('');
+
+  // 프롬프트 설정(필자·지침)
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [personaText, setPersonaText] = useState('');
+  const [personaDefault, setPersonaDefault] = useState('');
+  const [personaLoading, setPersonaLoading] = useState(false);
+  const [personaSaving, setPersonaSaving] = useState(false);
+  const [personaMsg, setPersonaMsg] = useState('');
 
   // 좌측: 생성 컨트롤
   const [menuCategories, setMenuCategories] = useState<Category[]>([]);
@@ -167,6 +176,55 @@ export default function AiWritePage() {
         return { icon: BookOpen, bgColor: 'bg-purple-50', textColor: 'text-purple-700', borderColor: 'border-purple-700' };
       default:
         return { icon: BookOpen, bgColor: 'bg-gray-50', textColor: 'text-gray-700', borderColor: 'border-gray-700' };
+    }
+  };
+
+  // ── 프롬프트 설정(필자·지침) ──────────────────────────────
+  const openSettings = async () => {
+    setSettingsOpen(true);
+    setPersonaMsg('');
+    setPersonaLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('인증 세션을 가져오지 못했습니다.');
+      const res = await fetch('/api/admin/ai-write/settings', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '설정을 불러오지 못했습니다.');
+      setPersonaText(data.persona || '');
+      setPersonaDefault(data.defaultPersona || '');
+      if (!data.tableReady) {
+        setPersonaMsg('⚠️ sn_settings 테이블이 아직 없습니다. 저장하려면 먼저 테이블을 생성해야 합니다(개발자에게 요청).');
+      }
+    } catch (e: any) {
+      setPersonaMsg(e.message || '설정을 불러오지 못했습니다.');
+    } finally {
+      setPersonaLoading(false);
+    }
+  };
+
+  const savePersona = async () => {
+    setPersonaSaving(true);
+    setPersonaMsg('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('인증 세션을 가져오지 못했습니다.');
+      const res = await fetch('/api/admin/ai-write/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ persona: personaText }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '저장에 실패했습니다.');
+      setPersonaMsg('✓ 저장되었습니다. 다음 생성부터 적용됩니다.');
+    } catch (e: any) {
+      setPersonaMsg(e.message || '저장에 실패했습니다.');
+    } finally {
+      setPersonaSaving(false);
     }
   };
 
@@ -578,15 +636,26 @@ export default function AiWritePage() {
             <h1 className="text-2xl font-bold text-[#26422E]">AI 글쓰기</h1>
             <p className="text-sm text-gray-600">왼쪽에서 입력하고 생성하면, 오른쪽에서 다듬어 발행합니다.</p>
           </div>
-          <button
-            type="button"
-            onClick={checkApiStatus}
-            title={apiStatusMsg ? `${apiBadge.label} · ${apiStatusMsg} (클릭하여 다시 확인)` : `${apiBadge.label} (클릭하여 다시 확인)`}
-            className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 ${apiBadge.cls}`}
-          >
-            <apiBadge.Icon className={`w-3.5 h-3.5 ${apiBadge.spin ? 'animate-spin' : ''}`} />
-            {apiBadge.label}
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={openSettings}
+              title="AI 글쓰기 설정 (필자·지침)"
+              aria-label="AI 글쓰기 설정"
+              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={checkApiStatus}
+              title={apiStatusMsg ? `${apiBadge.label} · ${apiStatusMsg} (클릭하여 다시 확인)` : `${apiBadge.label} (클릭하여 다시 확인)`}
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 ${apiBadge.cls}`}
+            >
+              <apiBadge.Icon className={`w-3.5 h-3.5 ${apiBadge.spin ? 'animate-spin' : ''}`} />
+              {apiBadge.label}
+            </button>
+          </div>
         </div>
 
         {/* 에러 */}
@@ -1068,6 +1137,81 @@ export default function AiWritePage() {
           </section>
         </div>
       </main>
+
+      {/* 설정 모달 (필자·지침) */}
+      {settingsOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          onClick={() => setSettingsOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-gray-600" />
+                <h2 className="text-lg font-bold text-gray-900">AI 글쓰기 설정 — 필자 · 지침</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                aria-label="닫기"
+                className="text-gray-400 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 overflow-y-auto flex-1">
+              <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+                AI가 글을 쓸 때의 <strong>필자 성격 · 전문성 · 톤 · 지침</strong>입니다. 여기서 수정하면 <strong>다음 생성부터</strong> 반영됩니다.
+                출력 HTML 형식 · 사진 자리 규칙 등 기술적 부분은 안전을 위해 코드에 고정돼 있어 여기엔 없습니다.
+                <br />※ 큰 변경은 개발자(Claude)에게 한 번 검증받기를 권장합니다.
+              </p>
+              {personaLoading ? (
+                <div className="py-12 text-center text-gray-500">불러오는 중...</div>
+              ) : (
+                <textarea
+                  value={personaText}
+                  onChange={(e) => setPersonaText(e.target.value)}
+                  rows={18}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm font-mono leading-relaxed"
+                />
+              )}
+              {personaMsg && <p className="mt-2 text-sm text-gray-600">{personaMsg}</p>}
+            </div>
+
+            <div className="flex items-center justify-between gap-2 px-5 py-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setPersonaText(personaDefault)}
+                disabled={personaLoading || personaSaving || !personaDefault}
+                className="text-sm text-gray-500 hover:text-gray-800 disabled:opacity-50"
+              >
+                기본값으로 되돌리기
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 text-sm"
+                >
+                  닫기
+                </button>
+                <button
+                  type="button"
+                  onClick={savePersona}
+                  disabled={personaLoading || personaSaving}
+                  className="px-5 py-2 rounded-lg bg-green-700 text-white font-semibold hover:bg-green-800 text-sm disabled:opacity-50"
+                >
+                  {personaSaving ? '저장 중...' : '저장'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
