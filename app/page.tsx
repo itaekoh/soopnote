@@ -165,10 +165,10 @@ export default function Home() {
             <Leaf className="w-8 h-8 text-green-700" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold leading-tight text-[#26422E] mb-4">
-            숲의 기록 — 작은 꽃들, 큰 이야기
+            숲의 기록 — 나무의 시간을 읽다
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            자연 속의 관찰과 나무의사의 시선을 담은 기록 공간입니다. 글과 사진, 그리고 생각이 어우러진 이야기.
+            자연을 관찰하고, 나무를 진단하고, 그 사이의 생각을 적습니다.
           </p>
         </div>
       </section>
