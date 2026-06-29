@@ -298,7 +298,7 @@ export default function AiWritePage() {
   };
 
   // ── 본문 이미지 갤러리 ────────────────────────────────────
-  const handleGalleryUpload = async (files: FileList) => {
+  const handleGalleryUpload = async (files: File[]) => {
     setUploadingImages(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -307,7 +307,7 @@ export default function AiWritePage() {
       const uploaded: { url: string; name: string }[] = [];
       const failed: string[] = [];
 
-      for (const original of Array.from(files)) {
+      for (const original of files) {
         try {
           let file: File = original;
 
@@ -711,7 +711,8 @@ export default function AiWritePage() {
                   accept="image/*"
                   multiple
                   onChange={(e) => {
-                    if (e.target.files?.length) handleGalleryUpload(e.target.files);
+                    const picked = e.target.files ? Array.from(e.target.files) : [];
+                    if (picked.length) handleGalleryUpload(picked);
                     e.target.value = '';
                   }}
                   className="hidden"
