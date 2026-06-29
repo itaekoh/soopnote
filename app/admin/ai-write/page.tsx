@@ -77,6 +77,7 @@ export default function AiWritePage() {
   const [length, setLength] = useState<LengthOption>('medium');
   const [tone, setTone] = useState<string>(TONE_OPTIONS[0]);
   const [reviseInstruction, setReviseInstruction] = useState('');
+  const [inputTab, setInputTab] = useState<'notes' | 'pdf'>('notes');
 
   // 우측: 결과 + 발행
   const [hasResult, setHasResult] = useState(false);
@@ -645,65 +646,97 @@ export default function AiWritePage() {
               />
             </div>
 
-            {/* 현장 메모 */}
+            {/* 입력 소스: 현장 메모 / 보고서 첨부 (둘 중 하나) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">현장 메모 · 관찰</label>
-              <textarea
-                value={fieldNotes}
-                onChange={(e) => setFieldNotes(e.target.value)}
-                rows={7}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-y text-sm"
-                placeholder={'본 것·증상·날씨·풍경·떠오른 생각을\n메모처럼 자유롭게 적어주세요.'}
-              />
-            </div>
-
-            {/* 보고서 PDF 첨부 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">보고서 첨부 (PDF · 선택)</label>
-              <input
-                type="file"
-                accept=".pdf,application/pdf"
-                onChange={(e) => {
-                  handlePdfFile(e.target.files?.[0]);
-                  e.target.value = '';
-                }}
-                className="hidden"
-                id="pdf-upload"
-              />
-              <label
-                htmlFor="pdf-upload"
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setPdfDragOver(true);
-                }}
-                onDragLeave={() => setPdfDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setPdfDragOver(false);
-                  handlePdfFile(e.dataTransfer.files?.[0]);
-                }}
-                className={`block border-2 border-dashed rounded-lg px-3 py-3 text-center cursor-pointer transition-colors text-sm ${
-                  pdfDragOver ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-green-500'
-                }`}
-              >
-                {pdfFile ? (
-                  <span className="text-green-600 font-medium break-all">{pdfFile.name}</span>
-                ) : (
-                  <span className="text-gray-500">PDF 끌어다 놓기 또는 클릭하여 업로드</span>
-                )}
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                글 재료 <span className="text-gray-400 font-normal">(둘 중 하나)</span>
               </label>
-              {pdfFile && (
+              {/* 탭 헤더 */}
+              <div className="flex gap-1 p-1 bg-gray-100 rounded-lg mb-2">
                 <button
                   type="button"
-                  onClick={() => setPdfFile(null)}
-                  className="mt-1 text-xs text-gray-400 hover:text-gray-600"
+                  onClick={() => setInputTab('notes')}
+                  className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center justify-center gap-1.5 ${
+                    inputTab === 'notes' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  첨부 제거
+                  현장 메모
+                  {fieldNotes.trim() && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setInputTab('pdf')}
+                  className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center justify-center gap-1.5 ${
+                    inputTab === 'pdf' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  보고서 첨부
+                  {pdfFile && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+                </button>
+              </div>
+
+              {/* 탭 내용 */}
+              {inputTab === 'notes' ? (
+                <>
+                  <textarea
+                    value={fieldNotes}
+                    onChange={(e) => setFieldNotes(e.target.value)}
+                    rows={7}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-y text-sm"
+                    placeholder={'본 것·증상·날씨·풍경·떠오른 생각을\n메모처럼 자유롭게 적어주세요.'}
+                  />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    현장에서 보고 느낀 것을 자유롭게. 구체적일수록 좋은 초안이 나옵니다.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={(e) => {
+                      handlePdfFile(e.target.files?.[0]);
+                      e.target.value = '';
+                    }}
+                    className="hidden"
+                    id="pdf-upload"
+                  />
+                  <label
+                    htmlFor="pdf-upload"
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setPdfDragOver(true);
+                    }}
+                    onDragLeave={() => setPdfDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setPdfDragOver(false);
+                      handlePdfFile(e.dataTransfer.files?.[0]);
+                    }}
+                    className={`block border-2 border-dashed rounded-lg px-3 py-6 text-center cursor-pointer transition-colors text-sm ${
+                      pdfDragOver ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-green-500'
+                    }`}
+                  >
+                    {pdfFile ? (
+                      <span className="text-green-600 font-medium break-all">{pdfFile.name}</span>
+                    ) : (
+                      <span className="text-gray-500">PDF 끌어다 놓기 또는 클릭하여 업로드</span>
+                    )}
+                  </label>
+                  {pdfFile && (
+                    <button
+                      type="button"
+                      onClick={() => setPdfFile(null)}
+                      className="mt-1 text-xs text-gray-400 hover:text-gray-600"
+                    >
+                      첨부 제거
+                    </button>
+                  )}
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    보고서를 올리면 그 내용을 바탕으로 글을 씁니다. (최대 4MB)
+                  </p>
+                </>
               )}
-              <p className="mt-1 text-[11px] text-gray-400">
-                보고서를 올리면 그 내용을 바탕으로 글을 씁니다. 메모와 함께 써도 됩니다. (최대 4MB)
-              </p>
             </div>
 
             {/* 키워드 */}
