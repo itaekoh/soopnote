@@ -55,12 +55,18 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
+    // API 및 글쓰기 경로는 통과 (API 호출, 일반 글쓰기 에디터)
+    // 이게 없으면 /api/* 가 /admin 페이지로 rewrite 되어 모든 API 호출이 깨짐
+    if (pathname.startsWith('/api') || pathname.startsWith('/write')) {
+      return response
+    }
+
     // 루트(/) 접속 → /admin 으로 rewrite
     if (pathname === '/') {
       return NextResponse.rewrite(new URL('/admin', request.url))
     }
 
-    // /admin/* 이 아닌 경로 → /admin 으로 rewrite
+    // 그 외 /admin/* 이 아닌 경로 → /admin 으로 rewrite
     if (!pathname.startsWith('/admin')) {
       return NextResponse.rewrite(new URL('/admin', request.url))
     }
