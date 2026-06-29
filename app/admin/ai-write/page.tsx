@@ -305,29 +305,58 @@ export default function AiWritePage() {
       if (!session) throw new Error('인증 세션을 가져오지 못했습니다.');
 
       const uploaded: { url: string; name: string }[] = [];
-      for (const file of Array.from(files)) {
-        if (!file.type.startsWith('image/')) continue;
-        const compressed = await imageCompression(file, {
-          maxSizeMB: 4,
-          maxWidthOrHeight: 2048,
-          useWebWorker: true,
-          fileType: file.type,
-        });
-        const formData = new FormData();
-        formData.append('file', compressed, file.name);
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: formData,
-        });
-        if (!res.ok) {
-          const e = await res.json().catch(() => ({}));
-          throw new Error(e.error || `업로드 실패 (HTTP ${res.status})`);
+      const failed: string[] = [];
+
+      for (const original of Array.from(files)) {
+        try {
+          let file: File = original;
+
+          // 아이폰 HEIC/HEIF → JPEG 변환 (브라우저가 빈 타입으로 주는 경우 포함)
+          const isHeic =
+            /image\/(heic|heif)/i.test(original.type) ||
+            /\.(heic|heif)$/i.test(original.name) ||
+            original.type === '';
+          if (isHeic) {
+            const heic2any = (await import('heic2any')).default as any;
+            const out = await heic2any({ blob: original, toType: 'image/jpeg', quality: 0.9 });
+            const blob: Blob = Array.isArray(out) ? out[0] : out;
+            file = new File([blob], original.name.replace(/\.(heic|heif)$/i, '.jpg'), {
+              type: 'image/jpeg',
+            });
+          }
+
+          const compressed = await imageCompression(file, {
+            maxSizeMB: 4,
+            maxWidthOrHeight: 2048,
+            useWebWorker: true,
+            fileType: file.type || 'image/jpeg',
+          });
+          const safeName = original.name.replace(/\.(heic|heif)$/i, '.jpg');
+          const formData = new FormData();
+          formData.append('file', compressed, safeName);
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: formData,
+          });
+          if (!res.ok) {
+            const e = await res.json().catch(() => ({}));
+            throw new Error(e.error || `HTTP ${res.status}`);
+          }
+          const { location } = await res.json();
+          uploaded.push({ url: location, name: safeName });
+        } catch (e: any) {
+          console.error('이미지 처리 실패:', original.name, e);
+          failed.push(`${original.name} (${e?.message || '오류'})`);
         }
-        const { location } = await res.json();
-        uploaded.push({ url: location, name: file.name });
       }
-      setGalleryImages((prev) => [...prev, ...uploaded]);
+
+      if (uploaded.length) setGalleryImages((prev) => [...prev, ...uploaded]);
+      if (failed.length) {
+        alert(`일부 이미지를 올리지 못했습니다:\n- ${failed.join('\n- ')}`);
+      } else if (!uploaded.length) {
+        alert('업로드된 이미지가 없습니다. 파일 형식을 확인해주세요.');
+      }
     } catch (err: any) {
       console.error('갤러리 업로드 실패:', err);
       alert(`이미지 업로드 실패: ${err.message || '알 수 없는 오류'}`);
