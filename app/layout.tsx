@@ -5,6 +5,7 @@ import './globals.css';
 import { AuthProvider } from '@/lib/contexts/AuthContext';
 import { GoogleTagManager } from '@next/third-parties/google';
 import { Analytics } from '@/components/Analytics';
+import { ContentProtection } from '@/components/ContentProtection';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
@@ -107,6 +108,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
         <Analytics />
+        <ContentProtection />
         <AuthProvider>{children}</AuthProvider>
         <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID!} />
       </body>

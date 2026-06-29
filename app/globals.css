@@ -100,3 +100,28 @@
     display: none;  /* Chrome, Safari, Opera */
   }
 }
+
+/* 콘텐츠 복사 방지 (ContentProtection 컴포넌트가 공개 페이지에서 body에 no-select 부여) */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+/* 입력창은 정상 선택/편집 허용 */
+.no-select input,
+.no-select textarea,
+.no-select [contenteditable="true"] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+/* 이미지 드래그/저장 방지 */
+.no-select img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+}
