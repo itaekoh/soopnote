@@ -20,6 +20,8 @@ import {
   Save,
   Upload,
   RefreshCw,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { getMenuCategories } from '@/lib/api/categories';
 import { createPost } from '@/lib/api/posts';
@@ -30,6 +32,7 @@ import imageCompression from 'browser-image-compression';
 
 type CategorySlug = 'wildflower' | 'tree-diagnose' | 'logs';
 type LengthOption = 'short' | 'medium' | 'long';
+type ApiStatus = 'checking' | 'connected' | 'not_configured' | 'invalid_key' | 'error';
 
 const LENGTH_OPTIONS: { value: LengthOption; label: string; hint: string }[] = [
   { value: 'short', label: '짧게', hint: '약 600자' },
@@ -50,6 +53,10 @@ export default function AiWritePage() {
   const { user, profile, loading: authLoading } = useAuth();
 
   const [loading, setLoading] = useState(true);
+
+  // API 연결 상태
+  const [apiStatus, setApiStatus] = useState<ApiStatus>('checking');
+  const [apiStatusMsg, setApiStatusMsg] = useState('');
 
   // 좌측: 생성 컨트롤
   const [menuCategories, setMenuCategories] = useState<Category[]>([]);
@@ -93,9 +100,36 @@ export default function AiWritePage() {
       }
       if (profile) {
         loadCategories();
+        checkApiStatus();
       }
     }
   }, [authLoading, user, profile, router]);
+
+  async function checkApiStatus() {
+    setApiStatus('checking');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setApiStatus('error');
+        setApiStatusMsg('세션을 확인할 수 없습니다.');
+        return;
+      }
+      const res = await fetch('/api/admin/ai-write/status', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setApiStatus('error');
+        setApiStatusMsg(data.error || '상태 확인에 실패했습니다.');
+        return;
+      }
+      setApiStatus((data.status as ApiStatus) || 'error');
+      setApiStatusMsg(data.message || '');
+    } catch (e: any) {
+      setApiStatus('error');
+      setApiStatusMsg(e?.message || '상태 확인에 실패했습니다.');
+    }
+  }
 
   async function loadCategories() {
     try {
@@ -274,6 +308,15 @@ export default function AiWritePage() {
     return null;
   }
 
+  const statusMeta: Record<ApiStatus, { cls: string; label: string; Icon: any; spin?: boolean }> = {
+    checking: { cls: 'text-gray-500 bg-gray-100', label: 'API 연결 확인 중', Icon: Loader2, spin: true },
+    connected: { cls: 'text-green-700 bg-green-100', label: 'API 연결됨', Icon: CheckCircle2 },
+    not_configured: { cls: 'text-red-700 bg-red-100', label: 'API 키 미설정', Icon: AlertCircle },
+    invalid_key: { cls: 'text-red-700 bg-red-100', label: 'API 키 오류', Icon: AlertCircle },
+    error: { cls: 'text-amber-700 bg-amber-100', label: '연결 확인 실패', Icon: AlertCircle },
+  };
+  const apiBadge = statusMeta[apiStatus];
+
   const tinymceInit = {
     height: 520,
     menubar: true,
@@ -360,6 +403,15 @@ export default function AiWritePage() {
             <h1 className="text-2xl font-bold text-[#26422E]">AI 글쓰기</h1>
             <p className="text-sm text-gray-600">왼쪽에서 입력하고 생성하면, 오른쪽에서 다듬어 발행합니다.</p>
           </div>
+          <button
+            type="button"
+            onClick={checkApiStatus}
+            title={apiStatusMsg ? `${apiBadge.label} · ${apiStatusMsg} (클릭하여 다시 확인)` : `${apiBadge.label} (클릭하여 다시 확인)`}
+            className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80 ${apiBadge.cls}`}
+          >
+            <apiBadge.Icon className={`w-3.5 h-3.5 ${apiBadge.spin ? 'animate-spin' : ''}`} />
+            {apiBadge.label}
+          </button>
         </div>
 
         {/* 에러 */}
