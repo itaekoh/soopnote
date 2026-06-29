@@ -87,10 +87,8 @@ export async function middleware(request: NextRequest) {
     }
 
     // 권한 있어도 www에서 /admin 접근 시 → admin 서브도메인으로 리다이렉트
-    // (로컬 개발 환경은 예외: localhost/127.0.0.1에서는 /admin 을 그대로 렌더링)
-    const isLocalDev =
-      hostname.includes('localhost') || hostname.startsWith('127.0.0.1')
-    if (!isLocalDev) {
+    // (개발 모드(next dev)에서는 예외: 접속 주소와 무관하게 /admin 을 그대로 렌더링)
+    if (process.env.NODE_ENV === 'production') {
       return NextResponse.redirect(
         new URL(pathname, 'https://admin.soopnote.com')
       )
