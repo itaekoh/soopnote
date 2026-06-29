@@ -663,7 +663,63 @@ export default function AiWritePage() {
           </aside>
 
           {/* ── 우측: 결과 + 발행 ── */}
-          <section className="min-h-[600px]">
+          <section className="space-y-4">
+            {/* 본문 이미지 갤러리 — 항상 표시 (생성 전에도 업로드 가능, 삽입은 생성 후) */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                  <ImagePlus className="w-4 h-4" />
+                  본문 이미지
+                </label>
+                <label
+                  htmlFor="gallery-upload"
+                  className="text-xs text-green-700 font-medium cursor-pointer hover:underline shrink-0"
+                >
+                  {uploadingImages ? '업로드 중...' : '+ 사진 추가'}
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    if (e.target.files?.length) handleGalleryUpload(e.target.files);
+                    e.target.value = '';
+                  }}
+                  className="hidden"
+                  id="gallery-upload"
+                />
+              </div>
+              {galleryImages.length > 0 ? (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {galleryImages.map((img) => (
+                    <div key={img.url} className="relative group shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => insertImage(img.url, img.name)}
+                        title={hasResult ? '본문에 삽입' : '초안 생성 후 클릭하면 본문에 삽입됩니다'}
+                        className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:ring-2 hover:ring-green-500"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(img.url)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="이미지 제거"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-gray-400">
+                  “+ 사진 추가”로 미리 올려두면 썸네일이 생기고, 초안 생성 후 썸네일을 클릭하면 본문 커서 위치에 삽입됩니다.
+                </p>
+              )}
+            </div>
+
             {generating ? (
               // 로딩 스켈레톤
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
@@ -808,62 +864,6 @@ export default function AiWritePage() {
                       <span className="text-gray-500">클릭하여 대표 이미지 업로드</span>
                     )}
                   </label>
-                </div>
-
-                {/* 본문 이미지 갤러리 (클릭하여 삽입) */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
-                      <ImagePlus className="w-3.5 h-3.5" />
-                      본문 이미지 (클릭하여 커서 위치에 삽입)
-                    </label>
-                    <label
-                      htmlFor="gallery-upload"
-                      className="text-xs text-green-700 font-medium cursor-pointer hover:underline shrink-0"
-                    >
-                      {uploadingImages ? '업로드 중...' : '+ 사진 추가'}
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => {
-                        if (e.target.files?.length) handleGalleryUpload(e.target.files);
-                        e.target.value = '';
-                      }}
-                      className="hidden"
-                      id="gallery-upload"
-                    />
-                  </div>
-                  {galleryImages.length > 0 ? (
-                    <div className="flex gap-2 overflow-x-auto pb-1">
-                      {galleryImages.map((img) => (
-                        <div key={img.url} className="relative group shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => insertImage(img.url, img.name)}
-                            title="본문에 삽입"
-                            className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:ring-2 hover:ring-green-500"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeGalleryImage(img.url)}
-                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            aria-label="이미지 제거"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-gray-400">
-                      “+ 사진 추가”로 올리면 썸네일이 생기고, 클릭하면 본문 커서 위치에 삽입됩니다.
-                    </p>
-                  )}
                 </div>
 
                 {/* 본문 에디터 */}
