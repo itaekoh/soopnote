@@ -21,7 +21,7 @@ import {
   Upload,
   RefreshCw,
 } from 'lucide-react';
-import { getMenuCategories, getCategoryAttributesGrouped } from '@/lib/api/categories';
+import { getMenuCategories } from '@/lib/api/categories';
 import { createPost } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/AuthContext';
@@ -55,8 +55,6 @@ export default function AiWritePage() {
   const [menuCategories, setMenuCategories] = useState<Category[]>([]);
   const [selectedMenuId, setSelectedMenuId] = useState<number | null>(null);
   const [selectedMenuSlug, setSelectedMenuSlug] = useState<CategorySlug>('wildflower');
-  const [subCategories, setSubCategories] = useState<Record<string, Category[]>>({});
-  const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<number[]>([]);
   const [subject, setSubject] = useState('');
   const [fieldNotes, setFieldNotes] = useState('');
   const [keywords, setKeywords] = useState('');
@@ -98,12 +96,6 @@ export default function AiWritePage() {
     }
   }, [authLoading, user, profile, router]);
 
-  useEffect(() => {
-    if (selectedMenuSlug) {
-      loadSubCategories(selectedMenuSlug);
-    }
-  }, [selectedMenuSlug]);
-
   async function loadCategories() {
     try {
       const menus = await getMenuCategories();
@@ -120,16 +112,6 @@ export default function AiWritePage() {
     }
   }
 
-  async function loadSubCategories(menuSlug: CategorySlug) {
-    try {
-      const grouped = await getCategoryAttributesGrouped(menuSlug);
-      setSubCategories(grouped);
-      setSelectedSubcategoryIds([]);
-    } catch (err) {
-      console.error('서브카테고리 로드 실패:', err);
-    }
-  }
-
   const getCategoryStyle = (slug: string) => {
     switch (slug) {
       case 'wildflower':
@@ -141,22 +123,6 @@ export default function AiWritePage() {
       default:
         return { icon: BookOpen, bgColor: 'bg-gray-50', textColor: 'text-gray-700', borderColor: 'border-gray-700' };
     }
-  };
-
-  const selectedStyle = getCategoryStyle(selectedMenuSlug);
-
-  const toggleSubcategory = (categoryId: number) => {
-    setSelectedSubcategoryIds((prev) =>
-      prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId]
-    );
-  };
-
-  const groupLabel = (key: string) => {
-    const map: Record<string, string> = {
-      region: '지역별', month: '월별', species: '수종', pest: '병해충',
-      equipment: '장비', status: '상태', subcategory: '서브카테고리',
-    };
-    return map[key] || key;
   };
 
   // ── AI 초안 생성 ──────────────────────────────────────────
@@ -270,7 +236,6 @@ export default function AiWritePage() {
         location: location || undefined,
         read_time: readTime || undefined,
         featured_image_url: imageUrl,
-        subcategory_ids: selectedSubcategoryIds.length > 0 ? selectedSubcategoryIds : undefined,
         status: (isDraft ? 'draft' : 'published') as 'draft' | 'published',
       };
 
@@ -441,36 +406,6 @@ export default function AiWritePage() {
                 })}
               </div>
             </div>
-
-            {/* 속성 */}
-            {Object.keys(subCategories).length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">속성 (선택)</label>
-                <div className="space-y-3">
-                  {Object.entries(subCategories).map(([groupKey, categories]) => (
-                    <div key={groupKey}>
-                      <div className="text-xs text-gray-500 mb-1.5">{groupLabel(groupKey)}</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {categories.map((cat) => (
-                          <button
-                            key={cat.id}
-                            type="button"
-                            onClick={() => toggleSubcategory(cat.id)}
-                            className={`px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${
-                              selectedSubcategoryIds.includes(cat.id)
-                                ? `${selectedStyle.bgColor} ${selectedStyle.borderColor} ${selectedStyle.textColor}`
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                            }`}
-                          >
-                            {cat.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* 주제 */}
             <div>
