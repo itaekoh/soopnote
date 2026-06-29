@@ -22,6 +22,8 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
+  X,
+  ImagePlus,
 } from 'lucide-react';
 import { getMenuCategories } from '@/lib/api/categories';
 import { createPost } from '@/lib/api/posts';
@@ -66,6 +68,10 @@ export default function AiWritePage() {
   const [fieldNotes, setFieldNotes] = useState('');
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [keywords, setKeywords] = useState('');
+
+  // 본문 이미지 갤러리
+  const [galleryImages, setGalleryImages] = useState<{ url: string; name: string }[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [length, setLength] = useState<LengthOption>('medium');
   const [tone, setTone] = useState<string>(TONE_OPTIONS[0]);
 
@@ -289,6 +295,59 @@ export default function AiWritePage() {
       setSaving(false);
       setSavingStatus('');
     }
+  };
+
+  // ── 본문 이미지 갤러리 ────────────────────────────────────
+  const handleGalleryUpload = async (files: FileList) => {
+    setUploadingImages(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('인증 세션을 가져오지 못했습니다.');
+
+      const uploaded: { url: string; name: string }[] = [];
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) continue;
+        const compressed = await imageCompression(file, {
+          maxSizeMB: 4,
+          maxWidthOrHeight: 2048,
+          useWebWorker: true,
+          fileType: file.type,
+        });
+        const formData = new FormData();
+        formData.append('file', compressed, file.name);
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: formData,
+        });
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          throw new Error(e.error || `업로드 실패 (HTTP ${res.status})`);
+        }
+        const { location } = await res.json();
+        uploaded.push({ url: location, name: file.name });
+      }
+      setGalleryImages((prev) => [...prev, ...uploaded]);
+    } catch (err: any) {
+      console.error('갤러리 업로드 실패:', err);
+      alert(`이미지 업로드 실패: ${err.message || '알 수 없는 오류'}`);
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const insertImage = (url: string, name: string) => {
+    if (!editorRef.current) {
+      alert('먼저 AI 초안을 생성하면 본문에 이미지를 삽입할 수 있어요.');
+      return;
+    }
+    editorRef.current.insertContent(
+      `<p><img src="${url}" alt="${name}" style="max-width:100%;height:auto;" /></p>`
+    );
+  };
+
+  const removeGalleryImage = (url: string) => {
+    setGalleryImages((prev) => prev.filter((img) => img.url !== url));
   };
 
   // ── 로딩 / 권한 ───────────────────────────────────────────
@@ -603,6 +662,66 @@ export default function AiWritePage() {
                 </>
               )}
             </button>
+
+            {/* 본문 이미지 갤러리 */}
+            <div className="pt-4 border-t border-gray-100">
+              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                <ImagePlus className="w-4 h-4" />
+                본문 이미지
+              </label>
+              <p className="text-[11px] text-gray-400 mb-2">
+                사진을 올려두고, 초안 생성 후 썸네일을 클릭하면 본문 커서 위치에 삽입됩니다.
+              </p>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  if (e.target.files?.length) handleGalleryUpload(e.target.files);
+                  e.target.value = '';
+                }}
+                className="hidden"
+                id="gallery-upload"
+              />
+              <label
+                htmlFor="gallery-upload"
+                className="block border-2 border-dashed border-gray-300 rounded-lg px-3 py-3 text-center cursor-pointer hover:border-green-500 transition-colors text-sm text-gray-500"
+              >
+                {uploadingImages ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> 업로드 중...
+                  </span>
+                ) : (
+                  '사진 여러 장 업로드'
+                )}
+              </label>
+
+              {galleryImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  {galleryImages.map((img) => (
+                    <div key={img.url} className="relative group">
+                      <button
+                        type="button"
+                        onClick={() => insertImage(img.url, img.name)}
+                        title="본문에 삽입"
+                        className="block w-full aspect-square rounded-lg overflow-hidden border border-gray-200 hover:ring-2 hover:ring-green-500"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(img.url)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="이미지 제거"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </aside>
 
           {/* ── 우측: 결과 + 발행 ── */}
