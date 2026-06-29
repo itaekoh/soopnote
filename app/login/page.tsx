@@ -18,10 +18,16 @@ export default function LoginPage() {
   const [socialLoading, setSocialLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // admin 서브도메인이면 로그인 후 /admin 으로, 아니면 / 으로
+  const getPostLoginPath = () =>
+    typeof window !== 'undefined' && window.location.hostname.startsWith('admin.')
+      ? '/admin'
+      : '/';
+
   // 이미 로그인된 경우 리다이렉트
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push(getPostLoginPath());
     }
   }, [user, router]);
 
@@ -29,10 +35,12 @@ export default function LoginPage() {
     setError('');
     setSocialLoading(true);
     try {
+      // 현재 origin 기반 콜백 URL (admin 서브도메인이면 admin.soopnote.com/auth/callback)
+      const callbackUrl = `${window.location.origin}/auth/callback`;
       if (provider === 'google') {
-        await signInWithGoogle();
+        await signInWithGoogle(callbackUrl);
       } else {
-        await signInWithKakao();
+        await signInWithKakao(callbackUrl);
       }
     } catch (err: any) {
       setError(err.message || '소셜 로그인에 실패했습니다.');
@@ -53,7 +61,7 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
-      router.push('/');
+      router.push(getPostLoginPath());
     } catch (err: any) {
       setError(err.message || '로그인에 실패했습니다.');
     } finally {

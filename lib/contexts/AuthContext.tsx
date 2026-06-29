@@ -16,8 +16,8 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  signInWithKakao: () => Promise<void>;
+  signInWithGoogle: (callbackUrl?: string) => Promise<void>;
+  signInWithKakao: (callbackUrl?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -186,21 +186,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function signInWithGoogle() {
+  async function signInWithGoogle(callbackUrl?: string) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl || `${window.location.origin}/auth/callback`,
       },
     });
     if (error) throw new Error(error.message || 'Google 로그인에 실패했습니다.');
   }
 
-  async function signInWithKakao() {
+  async function signInWithKakao(callbackUrl?: string) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'kakao',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl || `${window.location.origin}/auth/callback`,
       },
     });
     if (error) throw new Error(error.message || '카카오 로그인에 실패했습니다.');

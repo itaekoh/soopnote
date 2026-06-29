@@ -6,6 +6,14 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
 
+  // admin 서브도메인 여부 판단 (프록시 환경에서는 x-forwarded-host 우선)
+  const host =
+    request.headers.get('x-forwarded-host') ||
+    request.headers.get('host') ||
+    new URL(origin).host;
+  const isAdminSubdomain = host.startsWith('admin.');
+  const destPath = isAdminSubdomain ? '/admin' : '/';
+
   if (code) {
     const cookieStore = await cookies();
 
@@ -42,7 +50,7 @@ export async function GET(request: Request) {
         // warmup 실패해도 무시
       }
 
-      const response = NextResponse.redirect(`${origin}/`);
+      const response = NextResponse.redirect(`${origin}${destPath}`);
 
       // 핵심: 캡처한 쿠키를 리다이렉트 응답에 명시적으로 설정
       // httpOnly: false → 브라우저 JS(createBrowserClient)에서 document.cookie로 읽을 수 있어야 함

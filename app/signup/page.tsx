@@ -24,10 +24,11 @@ export default function SignUpPage() {
     setError('');
     setSocialLoading(true);
     try {
+      const callbackUrl = `${window.location.origin}/auth/callback`;
       if (provider === 'google') {
-        await signInWithGoogle();
+        await signInWithGoogle(callbackUrl);
       } else {
-        await signInWithKakao();
+        await signInWithKakao(callbackUrl);
       }
     } catch (err: any) {
       setError(err.message || '소셜 로그인에 실패했습니다.');
