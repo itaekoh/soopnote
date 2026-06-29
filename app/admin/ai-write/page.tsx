@@ -72,6 +72,8 @@ export default function AiWritePage() {
   // 본문 이미지 갤러리
   const [galleryImages, setGalleryImages] = useState<{ url: string; name: string }[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [pdfDragOver, setPdfDragOver] = useState(false);
+  const [galleryDragOver, setGalleryDragOver] = useState(false);
   const [length, setLength] = useState<LengthOption>('medium');
   const [tone, setTone] = useState<string>(TONE_OPTIONS[0]);
 
@@ -296,6 +298,29 @@ export default function AiWritePage() {
       setSavingStatus('');
     }
   };
+
+  // ── 첨부 헬퍼 (클릭 / 드래그앤드롭 공용) ──────────────────
+  const handlePdfFile = (file: File | undefined | null) => {
+    if (!file) return;
+    if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+      alert('PDF 파일만 첨부할 수 있습니다.');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      alert('PDF는 4MB 이하만 첨부할 수 있습니다.');
+      return;
+    }
+    setPdfFile(file);
+  };
+
+  const pickImageFiles = (list: FileList | null) =>
+    list
+      ? Array.from(list).filter(
+          (f) =>
+            f.type.startsWith('image/') ||
+            /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(f.name)
+        )
+      : [];
 
   // ── 본문 이미지 갤러리 ────────────────────────────────────
   const handleGalleryUpload = async (files: File[]) => {
@@ -578,31 +603,32 @@ export default function AiWritePage() {
                 type="file"
                 accept=".pdf,application/pdf"
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  if (file.type !== 'application/pdf') {
-                    alert('PDF 파일만 첨부할 수 있습니다.');
-                    e.target.value = '';
-                    return;
-                  }
-                  if (file.size > 4 * 1024 * 1024) {
-                    alert('PDF는 4MB 이하만 첨부할 수 있습니다.');
-                    e.target.value = '';
-                    return;
-                  }
-                  setPdfFile(file);
+                  handlePdfFile(e.target.files?.[0]);
+                  e.target.value = '';
                 }}
                 className="hidden"
                 id="pdf-upload"
               />
               <label
                 htmlFor="pdf-upload"
-                className="block border-2 border-dashed border-gray-300 rounded-lg px-3 py-3 text-center cursor-pointer hover:border-green-500 transition-colors text-sm"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setPdfDragOver(true);
+                }}
+                onDragLeave={() => setPdfDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setPdfDragOver(false);
+                  handlePdfFile(e.dataTransfer.files?.[0]);
+                }}
+                className={`block border-2 border-dashed rounded-lg px-3 py-3 text-center cursor-pointer transition-colors text-sm ${
+                  pdfDragOver ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-green-500'
+                }`}
               >
                 {pdfFile ? (
                   <span className="text-green-600 font-medium break-all">{pdfFile.name}</span>
                 ) : (
-                  <span className="text-gray-500">PDF 보고서 업로드</span>
+                  <span className="text-gray-500">PDF 끌어다 놓기 또는 클릭하여 업로드</span>
                 )}
               </label>
               {pdfFile && (
@@ -694,7 +720,22 @@ export default function AiWritePage() {
           {/* ── 우측: 결과 + 발행 ── */}
           <section className="space-y-4">
             {/* 본문 이미지 갤러리 — 항상 표시 (생성 전에도 업로드 가능, 삽입은 생성 후) */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-4">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setGalleryDragOver(true);
+              }}
+              onDragLeave={() => setGalleryDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setGalleryDragOver(false);
+                const dropped = pickImageFiles(e.dataTransfer.files);
+                if (dropped.length) handleGalleryUpload(dropped);
+              }}
+              className={`bg-white rounded-2xl border border-gray-200 p-4 transition-colors ${
+                galleryDragOver ? 'ring-2 ring-green-500 bg-green-50' : ''
+              }`}
+            >
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
                   <ImagePlus className="w-4 h-4" />
@@ -711,7 +752,7 @@ export default function AiWritePage() {
                   accept="image/*"
                   multiple
                   onChange={(e) => {
-                    const picked = e.target.files ? Array.from(e.target.files) : [];
+                    const picked = pickImageFiles(e.target.files);
                     if (picked.length) handleGalleryUpload(picked);
                     e.target.value = '';
                   }}
@@ -745,7 +786,7 @@ export default function AiWritePage() {
                 </div>
               ) : (
                 <p className="text-[11px] text-gray-400">
-                  “+ 사진 추가”로 미리 올려두면 썸네일이 생기고, 초안 생성 후 썸네일을 클릭하면 본문 커서 위치에 삽입됩니다.
+                  사진을 끌어다 놓거나 “+ 사진 추가”로 올리면 썸네일이 생기고, 초안 생성 후 클릭하면 본문 커서 위치에 삽입됩니다.
                 </p>
               )}
             </div>
