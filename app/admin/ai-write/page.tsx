@@ -57,6 +57,7 @@ export default function AiWritePage() {
   const [selectedMenuSlug, setSelectedMenuSlug] = useState<CategorySlug>('wildflower');
   const [subject, setSubject] = useState('');
   const [fieldNotes, setFieldNotes] = useState('');
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [keywords, setKeywords] = useState('');
   const [length, setLength] = useState<LengthOption>('medium');
   const [tone, setTone] = useState<string>(TONE_OPTIONS[0]);
@@ -132,8 +133,8 @@ export default function AiWritePage() {
       setError('주제(소재)를 입력해주세요.');
       return;
     }
-    if (!fieldNotes.trim()) {
-      setError('현장 메모·관찰 내용을 입력해주세요.');
+    if (!fieldNotes.trim() && !pdfFile) {
+      setError('현장 메모를 입력하거나 보고서 PDF를 첨부해주세요.');
       return;
     }
     if (!selectedMenuId) {
@@ -148,20 +149,19 @@ export default function AiWritePage() {
         throw new Error('인증 세션을 가져오지 못했습니다. 다시 로그인해주세요.');
       }
 
+      const formData = new FormData();
+      formData.append('categorySlug', selectedMenuSlug);
+      formData.append('subject', subject.trim());
+      formData.append('fieldNotes', fieldNotes.trim());
+      formData.append('keywords', keywords);
+      formData.append('length', length);
+      formData.append('tone', tone);
+      if (pdfFile) formData.append('pdf', pdfFile);
+
       const response = await fetch('/api/admin/ai-write', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          categorySlug: selectedMenuSlug,
-          subject: subject.trim(),
-          fieldNotes: fieldNotes.trim(),
-          keywords: keywords.split(',').map((k) => k.trim()).filter(Boolean),
-          length,
-          tone,
-        }),
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: formData,
       });
 
       if (!response.ok) {
@@ -423,9 +423,7 @@ export default function AiWritePage() {
 
             {/* 현장 메모 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                현장 메모 · 관찰 <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">현장 메모 · 관찰</label>
               <textarea
                 value={fieldNotes}
                 onChange={(e) => setFieldNotes(e.target.value)}
@@ -433,6 +431,54 @@ export default function AiWritePage() {
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-y text-sm"
                 placeholder={'본 것·증상·날씨·풍경·떠오른 생각을\n메모처럼 자유롭게 적어주세요.'}
               />
+            </div>
+
+            {/* 보고서 PDF 첨부 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">보고서 첨부 (PDF · 선택)</label>
+              <input
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.type !== 'application/pdf') {
+                    alert('PDF 파일만 첨부할 수 있습니다.');
+                    e.target.value = '';
+                    return;
+                  }
+                  if (file.size > 4 * 1024 * 1024) {
+                    alert('PDF는 4MB 이하만 첨부할 수 있습니다.');
+                    e.target.value = '';
+                    return;
+                  }
+                  setPdfFile(file);
+                }}
+                className="hidden"
+                id="pdf-upload"
+              />
+              <label
+                htmlFor="pdf-upload"
+                className="block border-2 border-dashed border-gray-300 rounded-lg px-3 py-3 text-center cursor-pointer hover:border-green-500 transition-colors text-sm"
+              >
+                {pdfFile ? (
+                  <span className="text-green-600 font-medium break-all">{pdfFile.name}</span>
+                ) : (
+                  <span className="text-gray-500">PDF 보고서 업로드</span>
+                )}
+              </label>
+              {pdfFile && (
+                <button
+                  type="button"
+                  onClick={() => setPdfFile(null)}
+                  className="mt-1 text-xs text-gray-400 hover:text-gray-600"
+                >
+                  첨부 제거
+                </button>
+              )}
+              <p className="mt-1 text-[11px] text-gray-400">
+                보고서를 올리면 그 내용을 바탕으로 글을 씁니다. 메모와 함께 써도 됩니다. (최대 4MB)
+              </p>
             </div>
 
             {/* 키워드 */}

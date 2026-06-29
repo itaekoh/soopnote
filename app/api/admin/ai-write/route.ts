@@ -8,15 +8,6 @@ export const maxDuration = 60;
 
 type LengthOption = 'short' | 'medium' | 'long';
 
-interface AiWritePayload {
-  categorySlug: string;
-  subject: string;
-  fieldNotes: string;
-  keywords?: string[];
-  length?: LengthOption;
-  tone?: string;
-}
-
 const LENGTH_GUIDE: Record<LengthOption, string> = {
   short: '약 600자 내외, 3~4개 문단',
   medium: '약 1,200자 내외, 5~7개 문단',
@@ -38,6 +29,7 @@ const SYSTEM_PROMPT = `당신은 'Julia'라는 필명으로 글을 쓰는 나무
 - 현장 경험에서 우러나온 진솔한 에세이. 정보 전달과 개인적 감상이 자연스럽게 어우러진다.
 - 과장이나 미사여구의 남발 없이, 담백하고 단정한 문장. 그러나 따뜻한 시선이 배어 있다.
 - 사실(관찰 내용)에 충실하되, 그 사실을 매끄러운 이야기로 엮는다. 입력에 없는 사실(수치, 지명, 학명 등)을 지어내지 않는다.
+- 보고서(PDF)가 첨부된 경우, 그 보고서의 사실·수치·진단 소견을 충실히 반영하되 딱딱한 보고서가 아니라 에세이형 글로 재구성한다. 보고서에 없는 내용을 덧붙이지 않는다.
 - 독자에게 가르치려 들지 않고, 함께 바라보는 듯한 어조.
 
 [출력 형식 — 매우 중요]
@@ -103,18 +95,43 @@ export async function POST(req: NextRequest) {
       return jsonError('Forbidden: Admin only', 403);
     }
 
-    // ── 3. 입력 검증 ──────────────────────────────────────
-    const body = (await req.json()) as AiWritePayload;
-    const subject = body.subject?.trim();
-    const fieldNotes = body.fieldNotes?.trim();
-    if (!subject || !fieldNotes) {
-      return jsonError('주제와 현장 메모는 필수입니다.', 400);
+    // ── 3. 입력 파싱 (multipart: 텍스트 필드 + 선택적 PDF) ──
+    const form = await req.formData();
+    const subject = (form.get('subject') as string | null)?.trim() || '';
+    const fieldNotes = (form.get('fieldNotes') as string | null)?.trim() || '';
+    const length = ((form.get('length') as string) || 'medium') as LengthOption;
+    const tone = (form.get('tone') as string | null)?.trim() || '따뜻한 에세이';
+    const keywords = ((form.get('keywords') as string | null) || '')
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean);
+    const categorySlug = (form.get('categorySlug') as string) || '';
+    const categoryGuide = CATEGORY_GUIDE[categorySlug] || '자연과 나무에 대한 에세이.';
+    const pdf = form.get('pdf') as File | null;
+
+    if (!subject) {
+      return jsonError('주제(소재)를 입력해주세요.', 400);
     }
-    const length: LengthOption = body.length ?? 'medium';
-    const tone = body.tone?.trim() || '따뜻한 에세이';
-    const keywords = (body.keywords ?? []).filter(Boolean);
-    const categoryGuide =
-      CATEGORY_GUIDE[body.categorySlug] || '자연과 나무에 대한 에세이.';
+    if (!fieldNotes && !pdf) {
+      return jsonError('현장 메모를 입력하거나 보고서 PDF를 첨부해주세요.', 400);
+    }
+
+    // PDF → base64 document 블록 (Anthropic은 본문 텍스트 앞에 배치)
+    let pdfBlock: { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } } | null = null;
+    if (pdf) {
+      if (pdf.type !== 'application/pdf') {
+        return jsonError('PDF 파일만 첨부할 수 있습니다.', 400);
+      }
+      const MAX_PDF_SIZE = 4 * 1024 * 1024; // Vercel 요청 본문 한도 고려
+      if (pdf.size > MAX_PDF_SIZE) {
+        return jsonError('보고서 PDF는 4MB 이하만 첨부할 수 있습니다.', 400);
+      }
+      const base64 = Buffer.from(await pdf.arrayBuffer()).toString('base64');
+      pdfBlock = {
+        type: 'document',
+        source: { type: 'base64', media_type: 'application/pdf', data: base64 },
+      };
+    }
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return jsonError('서버에 ANTHROPIC_API_KEY가 설정되지 않았습니다.', 500);
@@ -123,20 +140,30 @@ export async function POST(req: NextRequest) {
     // ── 4. Claude로 초안 생성 ─────────────────────────────
     const anthropic = new Anthropic();
 
-    const userPrompt = [
+    const promptLines = [
       `[카테고리] ${categoryGuide}`,
       `[주제·소재] ${subject}`,
       `[톤·문체] ${tone}`,
       `[분량] ${LENGTH_GUIDE[length]}`,
       keywords.length > 0 ? `[강조 키워드] ${keywords.join(', ')}` : '',
-      '',
-      '[현장 메모·관찰 내용]',
-      fieldNotes,
-      '',
-      '위 메모를 바탕으로, 지침에 맞는 블로그 글 초안을 작성해 주세요. 메모에 없는 구체적 사실은 지어내지 말고, 주어진 내용을 자연스러운 이야기로 엮어 주세요.',
-    ]
-      .filter(Boolean)
-      .join('\n');
+    ];
+    if (pdf) {
+      promptLines.push(
+        '[첨부 보고서] 사용자가 PDF 보고서를 첨부했습니다. 이 보고서의 내용(사실·수치·소견)을 핵심 근거로 삼아 글을 작성하세요. 보고서에 없는 사실은 지어내지 마세요.'
+      );
+    }
+    if (fieldNotes) {
+      promptLines.push('[현장 메모·관찰 내용]', fieldNotes);
+    }
+    promptLines.push(
+      '위 자료를 바탕으로, 지침에 맞는 블로그 글 초안을 작성해 주세요. 주어진 내용을 자연스러운 이야기로 엮되, 없는 사실은 지어내지 마세요.'
+    );
+    const userText = promptLines.filter(Boolean).join('\n');
+
+    // PDF가 있으면 document 블록을 텍스트 앞에 둔다
+    const userContent = pdfBlock
+      ? [pdfBlock, { type: 'text' as const, text: userText }]
+      : userText;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -147,7 +174,7 @@ export async function POST(req: NextRequest) {
         format: { type: 'json_schema', schema: OUTPUT_SCHEMA },
       },
       system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }],
+      messages: [{ role: 'user', content: userContent }],
     });
 
     if (message.stop_reason === 'refusal') {
