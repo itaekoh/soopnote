@@ -98,6 +98,7 @@ export default function AiWritePage() {
   const [location, setLocation] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [shareToFacebook, setShareToFacebook] = useState(false);
 
   const [generating, setGenerating] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -417,10 +418,34 @@ export default function AiWritePage() {
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('게시글 저장 시간 초과 (30초).')), 30000)
       );
-      await Promise.race([createPromise, timeoutPromise]);
+      const post = (await Promise.race([createPromise, timeoutPromise])) as { id: number };
+
+      // 발행 + 페이스북 페이지 공유 (체크 시, 발행일 때만)
+      let fbNotice = '';
+      if (!isDraft && shareToFacebook) {
+        setSavingStatus('페이스북 게시 중...');
+        try {
+          const postUrl = `https://www.soopnote.com/${selectedMenuSlug}/${post.id}`;
+          const { data: { session } } = await supabase.auth.getSession();
+          const fbRes = await fetch('/api/admin/facebook-share', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session?.access_token}`,
+            },
+            body: JSON.stringify({ url: postUrl, message: `${title}\n\n${excerpt}` }),
+          });
+          const fbData = await fbRes.json().catch(() => ({}));
+          fbNotice = fbRes.ok
+            ? '\n\n페이스북 페이지에도 게시했습니다.'
+            : `\n\n※ 페이스북 게시는 실패했습니다: ${fbData.error || `HTTP ${fbRes.status}`}`;
+        } catch (e: any) {
+          fbNotice = `\n\n※ 페이스북 게시 중 오류: ${e?.message || '알 수 없는 오류'}`;
+        }
+      }
 
       setSavingStatus('완료!');
-      alert(isDraft ? '임시저장되었습니다!' : '글이 발행되었습니다!');
+      alert((isDraft ? '임시저장되었습니다!' : '글이 발행되었습니다!') + fbNotice);
       router.push(`/${selectedMenuSlug}`);
     } catch (err: any) {
       console.error('저장 실패:', err);
@@ -1042,6 +1067,17 @@ export default function AiWritePage() {
                     {saving ? (savingStatus || '발행중') : '발행'}
                   </button>
                 </div>
+
+                {/* 페이스북 공유 옵션 */}
+                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={shareToFacebook}
+                    onChange={(e) => setShareToFacebook(e.target.checked)}
+                    className="w-4 h-4 accent-green-700"
+                  />
+                  발행 시 페이스북 페이지(나무의사)에도 올리기
+                </label>
 
                 {/* 메타 (발행 정보) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
