@@ -76,6 +76,7 @@ export default function AiWritePage() {
   const [galleryDragOver, setGalleryDragOver] = useState(false);
   const [length, setLength] = useState<LengthOption>('medium');
   const [tone, setTone] = useState<string>(TONE_OPTIONS[0]);
+  const [reviseInstruction, setReviseInstruction] = useState('');
 
   // 우측: 결과 + 발행
   const [hasResult, setHasResult] = useState(false);
@@ -226,6 +227,61 @@ export default function AiWritePage() {
     }
   };
 
+  // ── AI 수정 (현재 초안을 요청대로 다듬기) ─────────────────
+  const handleRevise = async () => {
+    setError('');
+    if (!editorRef.current) return;
+    const currentContent = editorRef.current.getContent();
+    if (!currentContent.trim()) {
+      setError('수정할 본문이 없습니다.');
+      return;
+    }
+    if (!reviseInstruction.trim()) {
+      setError('수정 요청 내용을 입력해주세요.');
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('인증 세션을 가져오지 못했습니다. 다시 로그인해주세요.');
+      }
+
+      const formData = new FormData();
+      formData.append('mode', 'revise');
+      formData.append('categorySlug', selectedMenuSlug);
+      formData.append('length', length);
+      formData.append('tone', tone);
+      formData.append('keywords', keywords);
+      formData.append('currentTitle', title);
+      formData.append('currentContent', currentContent);
+      formData.append('reviseInstruction', reviseInstruction.trim());
+
+      const response = await fetch('/api/admin/ai-write', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: formData,
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `수정 요청 실패 (HTTP ${response.status})`);
+      }
+      const result = await response.json();
+      setTitle(result.title || title);
+      setExcerpt(result.excerpt || excerpt);
+      setReadTime(result.readTime || readTime);
+      setGeneratedContent(result.contentHtml || '');
+      setGenerationId((n) => n + 1);
+      setReviseInstruction('');
+    } catch (err: any) {
+      console.error('AI 수정 실패:', err);
+      setError(err.message || 'AI 수정에 실패했습니다.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   // ── 저장 / 발행 ───────────────────────────────────────────
   const handleSave = async (isDraft: boolean) => {
     setError('');
@@ -239,11 +295,16 @@ export default function AiWritePage() {
       setError('요약을 입력해주세요.');
       return;
     }
-    const content = editorRef.current.getContent();
+    let content = editorRef.current.getContent();
     if (!content.trim()) {
       setError('본문이 비어 있습니다.');
       return;
     }
+    // 교체하지 않고 남은 "📷 [사진 자리] ..." 표시 문단은 발행 전 제거
+    content = content.replace(
+      /<p[^>]*>(?:(?!<\/p>)[\s\S])*?\[사진 자리\](?:(?!<\/p>)[\s\S])*?<\/p>/g,
+      ''
+    );
 
     setSaving(true);
     try {
@@ -396,7 +457,7 @@ export default function AiWritePage() {
       return;
     }
     editorRef.current.insertContent(
-      `<p><img src="${url}" alt="${name}" style="max-width:100%;height:auto;" /></p>`
+      `<figure><img src="${url}" alt="${name}" style="max-width:100%;height:auto;" /><figcaption>사진 설명을 입력하세요</figcaption></figure><p></p>`
     );
   };
 
@@ -696,17 +757,36 @@ export default function AiWritePage() {
               </select>
             </div>
 
-            {/* 생성 버튼 */}
+            {/* 수정 요청 (초안이 있을 때만) */}
+            {hasResult && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">수정 요청 (선택)</label>
+                <textarea
+                  value={reviseInstruction}
+                  onChange={(e) => setReviseInstruction(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-y text-sm"
+                  placeholder={'예) 말투를 더 따뜻하게\n진단 부분을 더 자세히\n3문단으로 줄여줘'}
+                />
+                <p className="mt-1 text-[11px] text-gray-400">
+                  내용을 적고 “다시 생성”을 누르면 현재 초안을 그대로 다듬습니다. 비우면 처음부터 새로 씁니다.
+                </p>
+              </div>
+            )}
+
+            {/* 생성 / 수정 버튼 */}
             <button
               type="button"
-              onClick={handleGenerate}
+              onClick={() =>
+                hasResult && reviseInstruction.trim() ? handleRevise() : handleGenerate()
+              }
               disabled={generating || saving}
               className="w-full py-3 rounded-lg bg-green-700 text-white font-semibold hover:bg-green-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {generating ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  초안 생성 중...
+                  {hasResult && reviseInstruction.trim() ? '수정 중...' : '초안 생성 중...'}
                 </>
               ) : (
                 <>

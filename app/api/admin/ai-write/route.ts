@@ -35,7 +35,8 @@ const SYSTEM_PROMPT = `당신은 'Julia'라는 필명으로 글을 쓰는 나무
 [출력 형식 — 매우 중요]
 - contentHtml은 TinyMCE 에디터에 그대로 붙여넣을 수 있는 HTML 본문이어야 한다.
 - <html>, <head>, <body> 태그는 절대 포함하지 않는다. 본문 요소만 출력한다.
-- 사용 가능한 태그: <p>, <h2>, <h3>, <blockquote>, <ul>, <li>, <strong>, <em>. 그 외 태그·인라인 style·class 속성은 사용하지 않는다.
+- 새로 쓰는 본문에 사용 가능한 태그: <p>, <h2>, <h3>, <blockquote>, <ul>, <li>, <strong>, <em>. 새 요소에는 인라인 style·class를 쓰지 않는다.
+- 본문에 이미 들어있는 <figure>, <figcaption>, <img> 태그(사진)는 내용·위치·속성을 그대로 보존한다. 사진을 새로 만들어 넣지는 않는다.
 - 소제목이 필요하면 <h2>를 사용한다. 글 맨 앞에 제목(<h1> 또는 제목 문단)은 넣지 않는다 (제목은 title 필드로 별도 제공).
 - 각 문단은 <p>로 감싼다.
 
@@ -108,17 +109,27 @@ export async function POST(req: NextRequest) {
     const categorySlug = (form.get('categorySlug') as string) || '';
     const categoryGuide = CATEGORY_GUIDE[categorySlug] || '자연과 나무에 대한 에세이.';
     const pdf = form.get('pdf') as File | null;
+    const mode = (form.get('mode') as string) === 'revise' ? 'revise' : 'generate';
+    const currentTitle = (form.get('currentTitle') as string | null)?.trim() || '';
+    const currentContent = (form.get('currentContent') as string | null) || '';
+    const reviseInstruction = (form.get('reviseInstruction') as string | null)?.trim() || '';
 
-    if (!subject) {
-      return jsonError('주제(소재)를 입력해주세요.', 400);
-    }
-    if (!fieldNotes && !pdf) {
-      return jsonError('현장 메모를 입력하거나 보고서 PDF를 첨부해주세요.', 400);
+    if (mode === 'revise') {
+      if (!currentContent.trim() || !reviseInstruction) {
+        return jsonError('수정할 초안과 수정 요청 내용이 필요합니다.', 400);
+      }
+    } else {
+      if (!subject) {
+        return jsonError('주제(소재)를 입력해주세요.', 400);
+      }
+      if (!fieldNotes && !pdf) {
+        return jsonError('현장 메모를 입력하거나 보고서 PDF를 첨부해주세요.', 400);
+      }
     }
 
-    // PDF → base64 document 블록 (Anthropic은 본문 텍스트 앞에 배치)
+    // PDF → base64 document 블록 (생성 모드에서만; Anthropic은 본문 텍스트 앞에 배치)
     let pdfBlock: { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } } | null = null;
-    if (pdf) {
+    if (pdf && mode === 'generate') {
       if (pdf.type !== 'application/pdf') {
         return jsonError('PDF 파일만 첨부할 수 있습니다.', 400);
       }
@@ -140,25 +151,47 @@ export async function POST(req: NextRequest) {
     // ── 4. Claude로 초안 생성 ─────────────────────────────
     const anthropic = new Anthropic();
 
-    const promptLines = [
-      `[카테고리] ${categoryGuide}`,
-      `[주제·소재] ${subject}`,
-      `[톤·문체] ${tone}`,
-      `[분량] ${LENGTH_GUIDE[length]}`,
-      keywords.length > 0 ? `[강조 키워드] ${keywords.join(', ')}` : '',
-    ];
-    if (pdf) {
+    let userText: string;
+    if (mode === 'revise') {
+      // 수정 모드: 현재 초안을 사용자의 요청대로 다듬는다
+      const lines = [
+        `[카테고리] ${categoryGuide}`,
+        `[톤·문체] ${tone}`,
+        `[분량] ${LENGTH_GUIDE[length]}`,
+        keywords.length > 0 ? `[강조 키워드] ${keywords.join(', ')}` : '',
+        '아래는 현재 작성된 초안입니다. 사용자의 [수정 요청]에 따라 이 초안을 다듬어 주세요.',
+        '- 본문에 이미 들어있는 <img>·<figure>·<figcaption>(사진)은 내용·위치를 그대로 유지하세요.',
+        '- "📷 [사진 자리] ..." 형태의 사진 자리 표시도 그대로 유지하세요.',
+        '- 수정 요청과 무관한 부분은 원래의 톤과 흐름을 최대한 보존하세요.',
+        `[수정 요청] ${reviseInstruction}`,
+        `[현재 제목] ${currentTitle}`,
+        '[현재 본문 HTML]',
+        currentContent,
+      ];
+      userText = lines.filter(Boolean).join('\n');
+    } else {
+      // 생성 모드: 새 초안 작성
+      const promptLines = [
+        `[카테고리] ${categoryGuide}`,
+        `[주제·소재] ${subject}`,
+        `[톤·문체] ${tone}`,
+        `[분량] ${LENGTH_GUIDE[length]}`,
+        keywords.length > 0 ? `[강조 키워드] ${keywords.join(', ')}` : '',
+      ];
+      if (pdf) {
+        promptLines.push(
+          '[첨부 보고서] 사용자가 PDF 보고서를 첨부했습니다. 이 보고서의 내용(사실·수치·소견)을 핵심 근거로 삼아 글을 작성하세요. 보고서에 없는 사실은 지어내지 마세요.'
+        );
+      }
+      if (fieldNotes) {
+        promptLines.push('[현장 메모·관찰 내용]', fieldNotes);
+      }
       promptLines.push(
-        '[첨부 보고서] 사용자가 PDF 보고서를 첨부했습니다. 이 보고서의 내용(사실·수치·소견)을 핵심 근거로 삼아 글을 작성하세요. 보고서에 없는 사실은 지어내지 마세요.'
+        '사진이 들어가면 좋을 위치 2~4곳에 정확히 <p>📷 [사진 자리] 추천 캡션</p> 형식으로 자리 표시를 넣어 주세요. 추천 캡션은 그 자리에 어울리는 짧은 사진 설명입니다. (실제 <img>는 넣지 않습니다.)',
+        '위 자료를 바탕으로, 지침에 맞는 블로그 글 초안을 작성해 주세요. 주어진 내용을 자연스러운 이야기로 엮되, 없는 사실은 지어내지 마세요.'
       );
+      userText = promptLines.filter(Boolean).join('\n');
     }
-    if (fieldNotes) {
-      promptLines.push('[현장 메모·관찰 내용]', fieldNotes);
-    }
-    promptLines.push(
-      '위 자료를 바탕으로, 지침에 맞는 블로그 글 초안을 작성해 주세요. 주어진 내용을 자연스러운 이야기로 엮되, 없는 사실은 지어내지 마세요.'
-    );
-    const userText = promptLines.filter(Boolean).join('\n');
 
     // PDF가 있으면 document 블록을 텍스트 앞에 둔다
     const userContent = pdfBlock
