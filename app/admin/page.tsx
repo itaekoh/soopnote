@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Star, FolderTree, FileText, Gamepad2, HardDrive, CreditCard } from 'lucide-react';
+import { Shield, Users, Star, FolderTree, FileText, Gamepad2, HardDrive, CreditCard, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { checkAdminPermission, checkSuperAdminPermission } from '@/lib/api/admin';
@@ -87,12 +88,21 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-red-600" />
-            <h1 className="text-3xl font-bold text-gray-900">관리자 페이지</h1>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Shield className="w-8 h-8 text-red-600" />
+              <h1 className="text-3xl font-bold text-gray-900">관리자 페이지</h1>
+            </div>
+            <p className="text-gray-600">회원, 게시글, 카테고리를 관리합니다.</p>
           </div>
-          <p className="text-gray-600">회원, 게시글, 카테고리를 관리합니다.</p>
+          <Link
+            href="/admin/ai-write"
+            className="shrink-0 px-5 py-3 rounded-lg bg-green-700 text-white font-semibold hover:bg-green-800 transition-colors inline-flex items-center gap-2"
+          >
+            <Sparkles className="w-5 h-5" />
+            AI 글쓰기
+          </Link>
         </div>
 
         {/* 탭 */}
