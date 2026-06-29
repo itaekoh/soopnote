@@ -85,6 +85,11 @@ export async function middleware(request: NextRequest) {
     if (!profile || !['super_admin', 'writer'].includes(profile.role)) {
       return NextResponse.redirect(new URL('/', request.url))
     }
+
+    // 권한 있어도 www에서 /admin 접근 시 → admin 서브도메인으로 리다이렉트
+    return NextResponse.redirect(
+      new URL(pathname, 'https://admin.soopnote.com')
+    )
   }
 
   return response
