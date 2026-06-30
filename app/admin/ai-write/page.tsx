@@ -25,6 +25,8 @@ import {
   X,
   ImagePlus,
   Settings,
+  Film,
+  Copy,
 } from 'lucide-react';
 import { getMenuCategories } from '@/lib/api/categories';
 import { createPost } from '@/lib/api/posts';
@@ -36,6 +38,13 @@ import imageCompression from 'browser-image-compression';
 type CategorySlug = 'wildflower' | 'tree-diagnose' | 'logs';
 type LengthOption = 'short' | 'medium' | 'long';
 type ApiStatus = 'checking' | 'connected' | 'not_configured' | 'invalid_key' | 'error';
+type ShortsScript = {
+  title: string;
+  hook: string;
+  scenes: { narration: string; visual: string }[];
+  description: string;
+  hashtags: string[];
+};
 
 const LENGTH_OPTIONS: { value: LengthOption; label: string; hint: string }[] = [
   { value: 'short', label: '짧게', hint: '약 600자' },
@@ -68,6 +77,13 @@ export default function AiWritePage() {
   const [personaLoading, setPersonaLoading] = useState(false);
   const [personaSaving, setPersonaSaving] = useState(false);
   const [personaMsg, setPersonaMsg] = useState('');
+
+  // 숏츠 대본
+  const [shortsOpen, setShortsOpen] = useState(false);
+  const [shortsLoading, setShortsLoading] = useState(false);
+  const [shortsData, setShortsData] = useState<ShortsScript | null>(null);
+  const [shortsError, setShortsError] = useState('');
+  const [copiedLabel, setCopiedLabel] = useState('');
 
   // 좌측: 생성 컨트롤
   const [menuCategories, setMenuCategories] = useState<Category[]>([]);
@@ -238,6 +254,49 @@ export default function AiWritePage() {
       setPersonaMsg(e.message || '저장에 실패했습니다.');
     } finally {
       setPersonaSaving(false);
+    }
+  };
+
+  // ── 숏츠 대본 생성 ────────────────────────────────────────
+  const handleShorts = async () => {
+    if (!editorRef.current) return;
+    const articleText = editorRef.current.getContent({ format: 'text' }) as string;
+    if (!articleText.trim()) {
+      alert('숏츠로 만들 본문이 없습니다.');
+      return;
+    }
+    setShortsOpen(true);
+    setShortsError('');
+    setShortsData(null);
+    setShortsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('인증 세션을 가져오지 못했습니다.');
+      const res = await fetch('/api/admin/shorts-script', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ title, articleText }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `생성 실패 (HTTP ${res.status})`);
+      setShortsData(data as ShortsScript);
+    } catch (e: any) {
+      setShortsError(e.message || '숏츠 대본 생성에 실패했습니다.');
+    } finally {
+      setShortsLoading(false);
+    }
+  };
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedLabel(label);
+      setTimeout(() => setCopiedLabel(''), 1500);
+    } catch {
+      alert('복사에 실패했습니다. 직접 선택해 복사해주세요.');
     }
   };
 
@@ -1079,6 +1138,17 @@ export default function AiWritePage() {
                   발행 시 페이스북 페이지(나무의사)에도 올리기
                 </label>
 
+                {/* 숏츠 대본 생성 */}
+                <button
+                  type="button"
+                  onClick={handleShorts}
+                  disabled={generating || saving}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <Film className="w-4 h-4" />
+                  이 글로 숏츠 대본 만들기 (Vrew용)
+                </button>
+
                 {/* 메타 (발행 정보) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -1257,6 +1327,159 @@ export default function AiWritePage() {
                   {personaSaving ? '저장 중...' : '저장'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 숏츠 대본 모달 */}
+      {shortsOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          onClick={() => setShortsOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-2xl max-h-[88vh] flex flex-col shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <Film className="w-5 h-5 text-gray-600" />
+                <h2 className="text-lg font-bold text-gray-900">숏츠 대본 (Vrew용)</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShortsOpen(false)}
+                aria-label="닫기"
+                className="text-gray-400 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 overflow-y-auto flex-1 space-y-4">
+              {shortsLoading ? (
+                <div className="py-12 text-center text-gray-500 flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" /> 숏츠 대본 생성 중...
+                </div>
+              ) : shortsError ? (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {shortsError}
+                </div>
+              ) : shortsData ? (
+                <>
+                  {/* 제목 */}
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 mb-1">숏츠 제목</div>
+                    <div className="flex items-start gap-2">
+                      <p className="flex-1 text-sm font-semibold text-gray-900">{shortsData.title}</p>
+                      <button
+                        type="button"
+                        onClick={() => copyText(shortsData.title, '제목')}
+                        className="shrink-0 text-xs text-green-700 hover:underline inline-flex items-center gap-1"
+                      >
+                        <Copy className="w-3 h-3" /> 복사
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Vrew 붙여넣기용 내레이션 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-xs font-medium text-gray-500">
+                        Vrew 붙여넣기용 내레이션 <span className="text-gray-400">(한 줄 = 한 컷)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyText(
+                            [shortsData.hook, ...shortsData.scenes.map((s) => s.narration)].join('\n'),
+                            '내레이션'
+                          )
+                        }
+                        className="text-xs text-green-700 hover:underline inline-flex items-center gap-1"
+                      >
+                        <Copy className="w-3 h-3" /> 복사
+                      </button>
+                    </div>
+                    <textarea
+                      readOnly
+                      rows={Math.min(10, shortsData.scenes.length + 2)}
+                      value={[shortsData.hook, ...shortsData.scenes.map((s) => s.narration)].join('\n')}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm leading-relaxed bg-gray-50"
+                    />
+                  </div>
+
+                  {/* 컷별 화면 제안 */}
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 mb-1.5">컷별 화면 제안</div>
+                    <ol className="space-y-2">
+                      <li className="text-sm">
+                        <span className="text-green-700 font-medium">훅</span> · {shortsData.hook}
+                      </li>
+                      {shortsData.scenes.map((s, i) => (
+                        <li key={i} className="text-sm border-t border-gray-100 pt-2">
+                          <span className="text-gray-500 font-medium">컷 {i + 1}</span> · {s.narration}
+                          <div className="text-xs text-gray-400 mt-0.5">🎬 {s.visual}</div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+
+                  {/* 설명 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-xs font-medium text-gray-500">유튜브 설명</div>
+                      <button
+                        type="button"
+                        onClick={() => copyText(shortsData.description, '설명')}
+                        className="text-xs text-green-700 hover:underline inline-flex items-center gap-1"
+                      >
+                        <Copy className="w-3 h-3" /> 복사
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-700">{shortsData.description}</p>
+                  </div>
+
+                  {/* 해시태그 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-xs font-medium text-gray-500">해시태그</div>
+                      <button
+                        type="button"
+                        onClick={() => copyText(shortsData.hashtags.join(' '), '해시태그')}
+                        className="text-xs text-green-700 hover:underline inline-flex items-center gap-1"
+                      >
+                        <Copy className="w-3 h-3" /> 복사
+                      </button>
+                    </div>
+                    <p className="text-sm text-green-700">{shortsData.hashtags.join(' ')}</p>
+                  </div>
+
+                  {copiedLabel && (
+                    <p className="text-xs text-green-600 text-right">✓ {copiedLabel} 복사됨</p>
+                  )}
+                </>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-200">
+              {shortsData && !shortsLoading && (
+                <button
+                  type="button"
+                  onClick={handleShorts}
+                  className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 text-sm"
+                >
+                  다시 생성
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShortsOpen(false)}
+                className="px-5 py-2 rounded-lg bg-green-700 text-white font-semibold hover:bg-green-800 text-sm"
+              >
+                닫기
+              </button>
             </div>
           </div>
         </div>
