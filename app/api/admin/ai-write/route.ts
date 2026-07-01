@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
       max_tokens: 32000,
       thinking: { type: 'adaptive' },
       output_config: {
-        effort: 'high',
+        effort: 'medium',
         format: { type: 'json_schema', schema: OUTPUT_SCHEMA },
       },
       system: systemPrompt,
