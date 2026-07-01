@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
+      max_tokens: 12000,
       thinking: { type: 'adaptive' },
       output_config: {
         effort: 'medium',
@@ -120,6 +120,9 @@ export async function POST(req: NextRequest) {
 
     if (message.stop_reason === 'refusal') {
       return jsonError('AI가 이 요청에 대한 작성을 거절했습니다.', 422);
+    }
+    if (message.stop_reason === 'max_tokens') {
+      return jsonError('숏츠 대본이 최대 길이에 도달해 잘렸습니다. 다시 시도해 주세요.', 502);
     }
     const textBlock = message.content.find((b: any) => b.type === 'text') as
       | { type: 'text'; text: string }

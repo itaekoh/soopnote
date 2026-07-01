@@ -193,7 +193,8 @@ export async function POST(req: NextRequest) {
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 16000,
+      // adaptive thinking 토큰도 max_tokens에 포함되므로, 긴 글이 잘리지 않게 넉넉히 확보
+      max_tokens: 32000,
       thinking: { type: 'adaptive' },
       output_config: {
         effort: 'high',
@@ -205,6 +206,10 @@ export async function POST(req: NextRequest) {
 
     if (message.stop_reason === 'refusal') {
       return jsonError('AI가 이 요청에 대한 작성을 거절했습니다. 내용을 조정해 다시 시도해 주세요.', 422);
+    }
+    // 토큰 한도 도달 → 구조화 출력이 JSON을 자동으로 닫아 '잘린 본문'이 되는 것을 방지
+    if (message.stop_reason === 'max_tokens') {
+      return jsonError('생성 결과가 최대 길이에 도달해 본문이 잘렸습니다. 분량을 줄이거나 다시 시도해 주세요.', 502);
     }
 
     const textBlock = message.content.find((b: any) => b.type === 'text') as
