@@ -19,7 +19,7 @@ const CATEGORY_GUIDE: Record<string, string> = {
   wildflower:
     '식물 관찰 일지. 야생화·들풀을 현장에서 만난 경험. 식물의 생김새, 자생 환경, 계절감, 관찰자의 감상을 섬세하게 담는다.',
   'tree-diagnose':
-    '나무진단 현장 기록. 수목의 병해충·생리장해 진단 경험. 증상 관찰 → 원인 추정 → 진단 소견의 흐름을 자연스럽게 녹이되, 전문 용어는 풀어서 설명한다.',
+    '수목 진료 현장 기록. 나무의사의 예찰·진단·처방·처치 경험. 병해충·생리장해의 증상 관찰 → 원인 추정 → 진단·처방의 흐름을 자연스럽게 녹이되, 전문 용어는 풀어서 설명한다.',
   logs:
     '아카이브 에세이. 나무의사로서의 생각, 현장에서 얻은 통찰, 자연과 사람에 대한 사유를 담담하게 풀어낸다.',
 };
@@ -191,7 +191,9 @@ export async function POST(req: NextRequest) {
       ? [pdfBlock, { type: 'text' as const, text: userText }]
       : userText;
 
-    const message = await anthropic.messages.create({
+    // 큰 max_tokens 비스트리밍 요청은 SDK가 "10분 초과 가능"으로 막으므로 스트리밍으로 받는다.
+    // (finalMessage()는 create()와 동일한 Message 반환 — stop_reason/content 그대로 사용)
+    const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-6',
       // adaptive thinking 토큰도 max_tokens에 포함되므로, 긴 글이 잘리지 않게 넉넉히 확보
       max_tokens: 32000,
@@ -203,6 +205,7 @@ export async function POST(req: NextRequest) {
       system: systemPrompt,
       messages: [{ role: 'user', content: userContent }],
     });
+    const message = await stream.finalMessage();
 
     if (message.stop_reason === 'refusal') {
       return jsonError('AI가 이 요청에 대한 작성을 거절했습니다. 내용을 조정해 다시 시도해 주세요.', 422);

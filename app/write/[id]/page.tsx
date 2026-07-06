@@ -504,39 +504,15 @@ export default function EditPostPage() {
           />
         </div>
 
-        {/* 상세 주소 (식물 관찰, 나무진단만) */}
-        {(selectedMenuSlug === 'wildflower' || selectedMenuSlug === 'tree-diagnose') && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">상세 주소</label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="예: 강원도 강릉시 주문진읍 또는 GPS 좌표"
-            />
-          </div>
-        )}
-
-        {/* 동적 서브카테고리 필드 */}
-        {Object.keys(subCategories).length > 0 && (
+        {/* 서브카테고리 필드 (아카이브만 유지) */}
+        {selectedMenuSlug === 'logs' && Object.keys(subCategories).length > 0 && (
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              속성 선택 (여러 개 선택 가능)
+              서브카테고리 (여러 개 선택 가능)
             </label>
             <div className="space-y-4">
               {Object.entries(subCategories).map(([groupKey, categories]) => (
                 <div key={groupKey} className="border border-gray-200 rounded-lg p-4">
-                  <div className="text-sm font-medium text-gray-700 mb-3 capitalize">
-                    {groupKey === 'region' && '지역별'}
-                    {groupKey === 'month' && '월별'}
-                    {groupKey === 'species' && '수종'}
-                    {groupKey === 'pest' && '병해충'}
-                    {groupKey === 'equipment' && '장비'}
-                    {groupKey === 'status' && '상태'}
-                    {groupKey === 'subcategory' && '서브카테고리'}
-                    {!['region', 'month', 'species', 'pest', 'equipment', 'status', 'subcategory'].includes(groupKey) && groupKey}
-                  </div>
                   <div className="flex flex-wrap gap-2">
                     {categories.map((cat) => (
                       <button

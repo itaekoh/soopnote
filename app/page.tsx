@@ -143,7 +143,7 @@ export default function Home() {
       badge: 'bg-amber-100 text-amber-700',
       icon: 'text-amber-700',
       link: '/tree-diagnose',
-      name: '나무진단',
+      name: '수목 진료',
     },
     logs: {
       bg: 'from-purple-50 to-violet-100',
@@ -272,7 +272,7 @@ export default function Home() {
           {treePosts.length > 0 && (
             <section className="max-w-6xl mx-auto px-6 mb-16">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#26422E]">🌳 나무진단</h2>
+                <h2 className="text-2xl font-bold text-[#26422E]">🌳 수목 진료</h2>
                 <Link href="/tree-diagnose" className="flex items-center gap-1 text-sm text-amber-700 hover:underline">
                   더보기 <ArrowRight className="w-4 h-4" />
                 </Link>

@@ -106,7 +106,8 @@ export async function POST(req: NextRequest) {
       '위 글을 바탕으로, 지침에 맞는 세로 숏츠 대본을 만들어 주세요.',
     ].join('\n');
 
-    const message = await anthropic.messages.create({
+    // 큰 max_tokens 비스트리밍 요청은 SDK가 "10분 초과 가능"으로 막으므로 스트리밍으로 받는다.
+    const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 12000,
       thinking: { type: 'adaptive' },
@@ -117,6 +118,7 @@ export async function POST(req: NextRequest) {
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userPrompt }],
     });
+    const message = await stream.finalMessage();
 
     if (message.stop_reason === 'refusal') {
       return jsonError('AI가 이 요청에 대한 작성을 거절했습니다.', 422);

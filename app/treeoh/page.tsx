@@ -13,6 +13,8 @@ export const metadata: Metadata = {
     'Tree-Oh',
     '트리오 앱',
     '나무의사 시험',
+    '나무의사 실기시험',
+    '수종 공부법',
     '나무의사 수목감별',
     '수목 퀴즈',
     '수목 사진 퀴즈',
@@ -280,6 +282,25 @@ const audiences = [
   },
 ];
 
+// 실기시험 수종 공부법 (블로그 홍보글 흡수)
+const studyTips = [
+  {
+    no: '①',
+    title: '다양한 사진 반복',
+    desc: '같은 사진이 아니라 여러 각도·부위를 봐야 실전에서 헷갈리지 않습니다.',
+  },
+  {
+    no: '②',
+    title: '틀린 것 집중',
+    desc: '아는 것 말고, 혼동되는 수종만 골라 반복하세요.',
+  },
+  {
+    no: '③',
+    title: '빠른 판단',
+    desc: '사진을 보고 즉시 이름을 떠올리는 연습이 실기 합격을 좌우합니다.',
+  },
+];
+
 const faqs = [
   {
     q: '트리오는 어떤 앱인가요?',
@@ -431,6 +452,42 @@ export default function TreeohPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* ── 수종 공부법 (실기시험 대비) ── */}
+        <section className="max-w-4xl mx-auto px-4 py-10">
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-3">
+            수종 공부, 왜 어려울까?
+          </h2>
+          <p className="text-center text-gray-600 mb-8 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+            나무의사·산림·조경 실기시험에서는 실제 나무를 보고 이름을 맞춰야 합니다.
+            책으로 외우는 데는 한계가 있고, 결국 사진을 보고 바로 떠올릴 수 있어야 합니다.
+          </p>
+
+          <div className="max-w-2xl mx-auto mb-10 bg-green-50 border-l-4 border-green-600 rounded-r-xl px-5 py-4 text-green-800 text-sm sm:text-base">
+            💬 <strong>&ldquo;아는데 이름이 기억 안 나는 상황&rdquo;</strong> — 이걸 없애는 것이 수종 공부의 핵심입니다.
+          </div>
+
+          <h3 className="text-lg font-bold text-gray-900 text-center mb-6">
+            효율적인 공부법
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {studyTips.map((t) => (
+              <div key={t.title} className="bg-white rounded-2xl shadow-sm p-6">
+                <div className="text-2xl font-bold text-green-700 mb-2" aria-hidden="true">
+                  {t.no}
+                </div>
+                <h4 className="font-bold text-gray-900 mb-2">{t.title}</h4>
+                <p className="text-sm text-gray-600 leading-relaxed">{t.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-gray-700 mt-8 text-sm sm:text-base leading-relaxed">
+            트리오는 이 세 가지를 그대로 훈련하도록 만들었습니다 —
+            <br className="hidden sm:block" />
+            다양한 각도의 사진, 오답 집중 복습, 빠른 판단 훈련.
+          </p>
         </section>
 
         {/* ── How to Start ── */}

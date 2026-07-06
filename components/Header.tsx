@@ -66,7 +66,7 @@ export function Header() {
             식물 관찰
           </Link>
           <Link className="text-sm hover:text-green-700 transition-colors" href="/tree-diagnose">
-            나무진단
+            수목 진료
           </Link>
           <Link className="text-sm hover:text-green-700 transition-colors" href="/logs">
             아카이브
@@ -208,7 +208,7 @@ export function Header() {
                 onClick={() => setShowMobileMenu(false)}
                 className="block text-base py-4 px-4 rounded-xl bg-white text-gray-900 font-medium shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
               >
-                🌳 나무진단
+                🌳 수목 진료
               </Link>
               <Link
                 href="/logs"

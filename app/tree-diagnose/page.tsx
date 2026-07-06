@@ -21,10 +21,6 @@ export default function TreeDiagnoseList() {
   const [error, setError] = useState<string | null>(null);
   const POSTS_PER_PAGE = 12;
 
-  useEffect(() => {
-    console.log('🔄 [STATE] loading:', loading, 'posts.length:', posts.length);
-  }, [loading, posts]);
-
   // sortBy 또는 searchQuery 변경 시 page를 1로 리셋
   useEffect(() => {
     setPage(1);
@@ -40,17 +36,14 @@ export default function TreeDiagnoseList() {
         const isInitialLoad = page === 1;
         if (isInitialLoad) {
           setLoading(true);
-          setError(null); // 에러 초기화
+          setError(null);
         } else {
           setLoadingMore(true);
         }
 
-        console.log(`=== 나무진단 로딩 (페이지 ${page}) ===`);
-
         const category = await getCategoryBySlug('tree-diagnose');
 
         if (!category) {
-          console.error('✗ 카테고리를 찾을 수 없습니다.');
           if (!cancelled) {
             setLoading(false);
             setLoadingMore(false);
@@ -74,7 +67,6 @@ export default function TreeDiagnoseList() {
             setPosts(prev => [...prev, ...result.data]);
           }
           setTotalCount(result.total);
-          console.log('✓ 로딩 완료:', result.data.length, '개 (총', result.total, '개)');
         }
       } catch (error: any) {
         console.error('✗ 게시글 로딩 실패:', error);
@@ -105,7 +97,6 @@ export default function TreeDiagnoseList() {
       };
     }
 
-    // 그라데이션 색상 배열
     const gradients = [
       'from-green-100 via-emerald-100 to-teal-100',
       'from-amber-100 via-orange-100 to-red-100',
@@ -121,21 +112,7 @@ export default function TreeDiagnoseList() {
     };
   };
 
-  // 이모지 배열
   const emojis = ['🌳', '🌲', '🌸', '🍂', '🍁', '🌿', '🌴', '🎋', '🎍', '🪴'];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case '양호':
-        return 'bg-green-50 text-green-700';
-      case '치료중':
-        return 'bg-orange-50 text-orange-700';
-      case '치료완료':
-        return 'bg-blue-50 text-blue-700';
-      default:
-        return 'bg-gray-50 text-gray-700';
-    }
-  };
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -151,9 +128,9 @@ export default function TreeDiagnoseList() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-100 mb-4">
             <Stethoscope className="w-8 h-8 text-amber-700" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-[#26422E] mb-4">나무진단</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-[#26422E] mb-4">수목 진료</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            나무의사의 전문적인 진단과 치료 기록. 건강한 나무를 위한 세심한 관찰과 처방을 담았습니다.
+            나무의사의 현장 기록 — 예찰부터 진단, 처방과 처치까지, 나무를 살리는 과정을 담습니다.
           </p>
         </div>
 
@@ -161,14 +138,14 @@ export default function TreeDiagnoseList() {
         <div className="mb-8">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="나무 종류나 진단 내용으로 검색..."
+            placeholder="수목 종류나 증상으로 검색..."
           />
         </div>
 
         {/* 필터/정렬 */}
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
           <div className="text-sm text-gray-600">
-            총 <span className="font-semibold text-amber-700">{totalCount}</span>개의 진단 기록
+            총 <span className="font-semibold text-amber-700">{totalCount}</span>개의 진료 기록
           </div>
           <div className="flex gap-2">
             <button
@@ -226,8 +203,8 @@ export default function TreeDiagnoseList() {
         {/* 게시물 없음 */}
         {!loading && !error && posts.length === 0 && (
           <div className="text-center py-20">
-            <div className="text-gray-600 mb-4">아직 진단 기록이 없습니다.</div>
-            <p className="text-sm text-gray-500">첫 번째 나무 진단 기록을 작성해보세요!</p>
+            <div className="text-gray-600 mb-4">아직 진료 기록이 없습니다.</div>
+            <p className="text-sm text-gray-500">첫 번째 수목 진료 기록을 작성해보세요!</p>
           </div>
         )}
 
@@ -288,7 +265,7 @@ export default function TreeDiagnoseList() {
                     {/* 하단 태그 */}
                     <div className="px-5 pb-4">
                       <div className="inline-block px-3 py-1 text-xs rounded-full bg-amber-50 text-amber-700 font-medium">
-                        나무진단
+                        수목 진료
                       </div>
                     </div>
                   </article>
@@ -312,7 +289,7 @@ export default function TreeDiagnoseList() {
                   로딩 중...
                 </>
               ) : (
-                <>더 많은 진단 기록 보기 ({posts.length} / {totalCount})</>
+                <>더 많은 진료 기록 보기 ({posts.length} / {totalCount})</>
               )}
             </button>
           </div>

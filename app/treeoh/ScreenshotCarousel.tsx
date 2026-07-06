@@ -22,13 +22,14 @@ export default function ScreenshotCarousel() {
     const el = scrollRef.current;
     if (!el) return;
     const maxScroll = el.scrollWidth - el.clientWidth;
-    if (maxScroll < 10) {
+    // clientWidth가 0(레이아웃 전/숨김)이면 나눗셈이 Infinity가 되어 Array.from이 깨짐 → 가드
+    if (el.clientWidth <= 0 || maxScroll < 10) {
       setPageCount(1);
       setActivePage(0);
       return;
     }
-    // 스크롤 가능 영역을 뷰포트 단위로 나눠 페이지 수 산출 (올림)
-    const pages = Math.ceil(maxScroll / el.clientWidth) + 1;
+    // 스크롤 가능 영역을 뷰포트 단위로 나눠 페이지 수 산출 (올림). 항목 수로 상한.
+    const pages = Math.min(screenshots.length, Math.ceil(maxScroll / el.clientWidth) + 1);
     setPageCount(pages);
 
     const ratio = el.scrollLeft / maxScroll;

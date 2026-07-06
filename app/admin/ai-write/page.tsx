@@ -85,6 +85,11 @@ export default function AiWritePage() {
   const [shortsError, setShortsError] = useState('');
   const [copiedLabel, setCopiedLabel] = useState('');
 
+  // 발행 완료 → Vrew(숏츠) 단계 정보
+  const [publishedInfo, setPublishedInfo] = useState<
+    { id: number; title: string; url: string; articleText: string; fbNotice: string } | null
+  >(null);
+
   // 좌측: 생성 컨트롤
   const [menuCategories, setMenuCategories] = useState<Category[]>([]);
   const [selectedMenuId, setSelectedMenuId] = useState<number | null>(null);
@@ -111,7 +116,6 @@ export default function AiWritePage() {
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [readTime, setReadTime] = useState('');
-  const [location, setLocation] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [shareToFacebook, setShareToFacebook] = useState(false);
@@ -259,8 +263,9 @@ export default function AiWritePage() {
 
   // ── 숏츠 대본 생성 ────────────────────────────────────────
   const handleShorts = async () => {
-    if (!editorRef.current) return;
-    const articleText = editorRef.current.getContent({ format: 'text' }) as string;
+    // 발행 완료 후에는 저장해 둔 본문을, 그 전에는 에디터 본문을 사용
+    const articleText =
+      publishedInfo?.articleText ?? ((editorRef.current?.getContent({ format: 'text' }) as string) || '');
     if (!articleText.trim()) {
       alert('숏츠로 만들 본문이 없습니다.');
       return;
@@ -467,7 +472,6 @@ export default function AiWritePage() {
         content,
         category_id: selectedMenuId,
         published_date: date,
-        location: location || undefined,
         read_time: readTime || undefined,
         featured_image_url: imageUrl,
         status: (isDraft ? 'draft' : 'published') as 'draft' | 'published',
@@ -504,8 +508,20 @@ export default function AiWritePage() {
       }
 
       setSavingStatus('완료!');
-      alert((isDraft ? '임시저장되었습니다!' : '글이 발행되었습니다!') + fbNotice);
-      router.push(`/${selectedMenuSlug}`);
+      if (isDraft) {
+        alert('임시저장되었습니다!');
+        router.push(`/${selectedMenuSlug}`);
+      } else {
+        // 발행 완료 → 같은 화면에서 Vrew(숏츠) 단계로 전환
+        const articleText = (editorRef.current?.getContent({ format: 'text' }) as string) || '';
+        setPublishedInfo({
+          id: post.id,
+          title,
+          url: `/${selectedMenuSlug}/${post.id}`,
+          articleText,
+          fbNotice: fbNotice.trim(),
+        });
+      }
     } catch (err: any) {
       console.error('저장 실패:', err);
       setError(err.message || '글 저장에 실패했습니다.');
@@ -612,7 +628,7 @@ export default function AiWritePage() {
       return;
     }
     editorRef.current.insertContent(
-      `<figure><img src="${url}" alt="${name}" style="max-width:100%;height:auto;" /><figcaption>사진 설명을 입력하세요</figcaption></figure><p></p>`
+      `<figure style="text-align:center;"><img style="display:block; margin-left:auto; margin-right:auto; max-width:100%; height:auto;" src="${url}" alt="${name}" /><figcaption>사진 설명을 입력하세요</figcaption></figure><p style="font-size:19px"></p>`
     );
   };
 
@@ -1097,6 +1113,58 @@ export default function AiWritePage() {
                 <p className="text-gray-700 font-medium mb-1">왼쪽에서 입력하고 “AI 초안 생성”을 눌러주세요</p>
                 <p className="text-sm text-gray-400">생성된 초안이 여기에 표시되고, 바로 다듬어 발행할 수 있습니다.</p>
               </div>
+            ) : publishedInfo ? (
+              // ── 발행 완료 → Vrew(숏츠) 단계 ──
+              <div className="bg-white rounded-2xl border border-gray-200 p-8 space-y-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-green-50 mb-4">
+                    <CheckCircle2 className="w-7 h-7 text-green-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">발행 완료</h2>
+                  <p className="text-gray-600">{publishedInfo.title}</p>
+                  {publishedInfo.fbNotice && (
+                    <p className="mt-2 text-sm text-gray-500 whitespace-pre-line">{publishedInfo.fbNotice}</p>
+                  )}
+                  <a
+                    href={publishedInfo.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-1.5 text-sm text-green-700 font-medium hover:underline"
+                  >
+                    발행된 글 보기 →
+                  </a>
+                </div>
+
+                <div className="border-t border-gray-100 pt-6">
+                  <p className="text-sm font-medium text-gray-700 mb-1">다음 단계 — 숏츠 영상 (선택)</p>
+                  <p className="text-sm text-gray-500 mb-4">이 글로 Vrew용 숏츠 대본을 만들 수 있어요.</p>
+                  <button
+                    type="button"
+                    onClick={handleShorts}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-black transition-colors"
+                  >
+                    <Film className="w-4 h-4" />
+                    이 글로 숏츠 대본 만들기 (Vrew용)
+                  </button>
+                </div>
+
+                <div className="border-t border-gray-100 pt-6 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/${selectedMenuSlug}`)}
+                    className="flex-1 px-4 py-2.5 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors"
+                  >
+                    목록으로
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    새 글 쓰기
+                  </button>
+                </div>
+              </div>
             ) : (
               // 결과 + 발행
               <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
@@ -1138,17 +1206,6 @@ export default function AiWritePage() {
                   발행 시 페이스북 페이지(나무의사)에도 올리기
                 </label>
 
-                {/* 숏츠 대본 생성 */}
-                <button
-                  type="button"
-                  onClick={handleShorts}
-                  disabled={generating || saving}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  <Film className="w-4 h-4" />
-                  이 글로 숏츠 대본 만들기 (Vrew용)
-                </button>
-
                 {/* 메타 (발행 정보) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -1160,18 +1217,6 @@ export default function AiWritePage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                   </div>
-                  {(selectedMenuSlug === 'wildflower' || selectedMenuSlug === 'tree-diagnose') && (
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">상세 주소 (선택)</label>
-                      <input
-                        type="text"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="예: 강원도 강릉시 주문진읍"
-                      />
-                    </div>
-                  )}
                   {selectedMenuSlug === 'logs' && (
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">읽기 시간</label>

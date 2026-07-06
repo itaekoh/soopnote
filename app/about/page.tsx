@@ -36,7 +36,7 @@ export default function AboutPage() {
             <h2 className="text-2xl font-semibold text-[#26422E]">주요 콘텐츠</h2>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>식물 관찰</strong> — 계절별 야생화 관찰 기록과 사진</li>
-              <li><strong>나무진단</strong> — 수목 건강 진단 및 치료 사례</li>
+              <li><strong>수목 진료</strong> — 예찰·진단·처방·처치 등 나무의사의 현장 기록</li>
               <li><strong>아카이브</strong> — 기술, AI, 실무 팁 등 다양한 기록</li>
             </ul>
           </section>
