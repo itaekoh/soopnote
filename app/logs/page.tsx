@@ -23,10 +23,6 @@ export default function LogsList() {
   const [error, setError] = useState<string | null>(null);
   const POSTS_PER_PAGE = 12;
 
-  useEffect(() => {
-    console.log('🔄 [STATE] loading:', loading, 'posts.length:', posts.length);
-  }, [loading, posts]);
-
   // 서브카테고리 로드
   useEffect(() => {
     loadSubCategories();
@@ -38,7 +34,6 @@ export default function LogsList() {
       // 'subcategory' 그룹의 카테고리들 가져오기
       const subcategoryList = grouped['subcategory'] || [];
       setSubCategories(subcategoryList);
-      console.log('✓ 서브카테고리 로드 완료:', subcategoryList.length, '개');
     } catch (error) {
       console.error('✗ 서브카테고리 로드 실패:', error);
     }
@@ -63,8 +58,6 @@ export default function LogsList() {
         } else {
           setLoadingMore(true);
         }
-
-        console.log(`=== 아카이브 로딩 (페이지 ${page}) ===`);
 
         const category = await getCategoryBySlug('logs');
 
@@ -94,7 +87,6 @@ export default function LogsList() {
             setPosts(prev => [...prev, ...result.data]);
           }
           setTotalCount(result.total);
-          console.log('✓ 로딩 완료:', result.data.length, '개 (총', result.total, '개)');
         }
       } catch (error: any) {
         console.error('✗ 게시글 로딩 실패:', error);

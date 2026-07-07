@@ -21,10 +21,6 @@ export default function WildflowerList() {
   const [error, setError] = useState<string | null>(null);
   const POSTS_PER_PAGE = 12;
 
-  useEffect(() => {
-    console.log('🔄 [STATE] loading:', loading, 'posts.length:', posts.length);
-  }, [loading, posts]);
-
   // sortBy 또는 searchQuery 변경 시 page를 1로 리셋
   useEffect(() => {
     setPage(1);
@@ -44,8 +40,6 @@ export default function WildflowerList() {
         } else {
           setLoadingMore(true);
         }
-
-        console.log(`=== 야생화 일지 로딩 (페이지 ${page}) ===`);
 
         const category = await getCategoryBySlug('wildflower');
 
@@ -74,7 +68,6 @@ export default function WildflowerList() {
             setPosts(prev => [...prev, ...result.data]);
           }
           setTotalCount(result.total);
-          console.log('✓ 로딩 완료:', result.data.length, '개 (총', result.total, '개)');
         }
       } catch (error: any) {
         console.error('✗ 게시글 로딩 실패:', error);

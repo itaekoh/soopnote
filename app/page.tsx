@@ -18,8 +18,6 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('🎬 [MAIN] 컴포넌트 마운트됨 - useEffect 실행');
-
     // 타임아웃 추가: 30초 후에도 로딩 중이면 강제로 로딩 해제
     const loadTimeout = setTimeout(() => {
       console.warn('⚠️ 콘텐츠 로딩 타임아웃 - 기본 상태로 전환');
@@ -27,19 +25,14 @@ export default function Home() {
     }, 30000); // 30초 타임아웃
 
     loadAllPosts()
-      .then(() => {
-        console.log('✅ [MAIN] loadAllPosts 완료');
-      })
       .catch((error) => {
         console.error('❌ [MAIN] loadAllPosts 에러:', error);
       })
       .finally(() => {
         clearTimeout(loadTimeout);
-        console.log('🏁 [MAIN] finally 블록 실행');
       });
 
     return () => {
-      console.log('🔚 [MAIN] 컴포넌트 언마운트 - cleanup');
       clearTimeout(loadTimeout);
     };
   }, []);
@@ -48,7 +41,6 @@ export default function Home() {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 [MAIN] 메인 페이지 로딩 시작');
 
       // 모든 데이터를 완전 병렬로 로드 (카테고리 ID + 게시글)
       const results = await Promise.allSettled([
@@ -69,33 +61,27 @@ export default function Home() {
       // 결과 처리
       if (results[0].status === 'fulfilled') {
         setFeaturedPosts(results[0].value);
-        console.log('✓ [MAIN] Featured 게시글:', results[0].value.length, '개');
       } else {
         console.error('✗ [MAIN] Featured 로딩 실패:', results[0].reason);
       }
 
       if (results[1].status === 'fulfilled') {
         setWildflowerPosts(results[1].value);
-        console.log('✓ [MAIN] 야생화 일지:', results[1].value.length, '개');
       } else {
         console.error('✗ [MAIN] 야생화 일지 로딩 실패:', results[1].reason);
       }
 
       if (results[2].status === 'fulfilled') {
         setTreePosts(results[2].value);
-        console.log('✓ [MAIN] 나무진단:', results[2].value.length, '개');
       } else {
         console.error('✗ [MAIN] 나무진단 로딩 실패:', results[2].reason);
       }
 
       if (results[3].status === 'fulfilled') {
         setLogsPosts(results[3].value);
-        console.log('✓ [MAIN] 아카이브:', results[3].value.length, '개');
       } else {
         console.error('✗ [MAIN] 아카이브 로딩 실패:', results[3].reason);
       }
-
-      console.log('✓ [MAIN] 모든 게시글 로딩 완료');
 
       // 모든 데이터가 비어있는지 체크 (results에서 직접 확인)
       const featuredCount = results[0].status === 'fulfilled' ? results[0].value.length : 0;
@@ -125,7 +111,6 @@ export default function Home() {
       setError('게시글을 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 캐시를 삭제해주세요.');
     } finally {
       setLoading(false);
-      console.log('✓ [MAIN] 로딩 상태 해제');
     }
   }
 

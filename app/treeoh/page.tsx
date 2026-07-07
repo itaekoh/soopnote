@@ -339,7 +339,7 @@ const faqs = [
 
 export default function TreeohPage() {
   return (
-    <>
+    <div className="min-h-screen bg-[#F5F3EE]">
       {/* 구조화 데이터: SEO + 생성형 AI(GEO) 인식 강화 */}
       <script
         type="application/ld+json"
@@ -355,8 +355,7 @@ export default function TreeohPage() {
       />
 
       <Header />
-      <div className="min-h-screen bg-[#F5F3EE]">
-        {/* ── Hero ── */}
+      {/* ── Hero ── */}
         <section className="max-w-4xl mx-auto px-4 pt-12 pb-10 text-center">
           <div className="text-6xl mb-4" aria-hidden="true">
             🌳
@@ -617,8 +616,7 @@ export default function TreeohPage() {
             </p>
           </div>
         </section>
-      </div>
       <Footer />
-    </>
+    </div>
   );
 }

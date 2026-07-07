@@ -60,18 +60,13 @@ export default function LogsDetailClient({ postId }: { postId: number }) {
 
   // 본문 이미지 클릭 시 확대 기능
   useEffect(() => {
-    if (!contentRef.current) {
-      console.log('❌ contentRef.current가 없음');
-      return;
-    }
+    if (!contentRef.current) return;
 
     const content = contentRef.current;
     const images = content.querySelectorAll('img');
-    console.log('🖼️ 이미지 개수:', images.length);
 
     // 이미지에 커서 스타일 적용
-    images.forEach((img, index) => {
-      console.log(`이미지 ${index + 1}:`, img.src);
+    images.forEach((img) => {
       img.style.cursor = 'pointer';
     });
 
@@ -80,7 +75,6 @@ export default function LogsDetailClient({ postId }: { postId: number }) {
       const target = e.target as HTMLElement;
       if (target.tagName === 'IMG') {
         const img = target as HTMLImageElement;
-        console.log('🖱️ 이미지 클릭:', img.src);
         setSelectedImage(img.src);
       }
     };
@@ -134,14 +128,6 @@ export default function LogsDetailClient({ postId }: { postId: number }) {
       setLikeCount(postData.like_count);
       setCommentCount(postData.comment_count);
       setLoading(false);
-
-      // 첨부파일 정보 로그
-      console.log('📎 첨부파일 정보:', {
-        url: postData.attachment_url,
-        name: postData.attachment_name,
-        size: postData.attachment_size,
-        type: postData.attachment_type,
-      });
 
       // 조회수 증가
       incrementViewCount(postId).catch(console.error);
@@ -245,7 +231,6 @@ export default function LogsDetailClient({ postId }: { postId: number }) {
       // Web Share API 지원 확인
       if (navigator.share) {
         await navigator.share(shareData);
-        console.log('공유 성공');
       } else {
         // Web Share API 미지원 시 클립보드 복사
         await navigator.clipboard.writeText(window.location.href);
