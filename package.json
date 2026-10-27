@@ -20,7 +20,7 @@
     "heic2any": "^0.0.4",
     "lucide-react": "^0.344.0",
     "nanoid": "^5.1.6",
-    "next": "^15.1.4",
+    "next": "^15.5.28",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sharp": "^0.34.5",
@@ -34,7 +34,7 @@
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.18",
     "eslint": "^8",
-    "eslint-config-next": "^15.1.4",
+    "eslint-config-next": "^15.5.28",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3"
