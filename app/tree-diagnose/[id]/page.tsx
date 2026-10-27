@@ -39,6 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ...(post.subcategory_names || []),
     ],
     authors: [{ name: post.author_name || 'Soopnote' }],
+    alternates: { canonical: url },
     openGraph: {
       type: 'article',
       locale: 'ko_KR',

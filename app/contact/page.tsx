@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 export const metadata: Metadata = {
   title: 'Contact',
   description: 'Soopnote에 문의하기 - 이메일: treedoctor@kakao.com',
+  alternates: { canonical: '/contact' },
 };
 
 export default function ContactPage() {

@@ -17,11 +17,7 @@ export const metadata: Metadata = {
   },
   description: '자연 속의 관찰과 나무의사의 시선을 담은 기록 공간입니다. 식물 관찰, 수목 진료, 일상의 기록을 공유합니다.',
   keywords: ['숲의 기록', '식물 관찰', '야생화', '나무의사', '수목 진료', '나무진단', '자연관찰', '식물일지', 'soopnote'],
-  // 모든 페이지의 기본 canonical — 개별 페이지에서 override 가능
-  // 'www.soopnote.com' 을 정식 도메인으로 명시 (Google이 자의적으로 no-www 선택하지 않도록)
-  alternates: {
-    canonical: '/',
-  },
+  // canonical은 페이지별로 지정 — 여기 두면 모든 하위 페이지가 홈('/')을 canonical로 상속함
   authors: [{ name: 'Soopnote' }],
   creator: 'Soopnote',
   publisher: 'Soopnote',

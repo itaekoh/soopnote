@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'Soopnote 개인정보처리방침 - 데이터 수집, 쿠키, 광고 네트워크 안내',
+  alternates: { canonical: '/privacy' },
 };
 
 export default function PrivacyPage() {

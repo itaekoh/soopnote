@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 export const metadata: Metadata = {
   title: '환불 정책',
   description: '숲노트(Soopnote) 앱 인앱 결제 환불 정책 안내',
+  alternates: { canonical: '/refund' },
 };
 
 export default function RefundPage() {

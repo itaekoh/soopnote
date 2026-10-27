@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 export const metadata: Metadata = {
   title: 'About',
   description: 'Soopnote는 숲과 나무, 야생화를 관찰하고 기록하는 개인 블로그입니다. 나무의사의 시선으로 자연을 담습니다.',
+  alternates: { canonical: '/about' },
 };
 
 export default function AboutPage() {
