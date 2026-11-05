@@ -84,17 +84,33 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
+    // API 및 글쓰기 경로는 통과 (API 호출, 일반 글쓰기 에디터)
+    // 이게 없으면 /api/* 가 /admin 페이지로 rewrite 되어 모든 API 호출이 깨짐
+    //
+    // 역할 조회보다 먼저 빠져나간다. 예전에는 조회를 마친 뒤에야 통과시켜서,
+    // 관리자 화면이 부르는 API 호출 하나하나가 sn_users 왕복을 일으켰다.
+    //
+    // 보호가 약해지는 건 아니다. 같은 API 를 www.soopnote.com 으로 부르면
+    // 미들웨어의 역할 검사는 원래 거치지 않는다(아래 www 분기는 /admin 경로만
+    // 본다). 즉 이 검사는 실질적인 관문이 아니었고, 관문은 각 라우트에 있다.
+    //
+    // 2026-11-05 기준 app/api 전수 확인:
+    //   - admin/*, upload, storage-cleanup, quiz/{upload,move-file,
+    //     delete-file,storage-cleanup} : sn_users 의 role 을 직접 확인
+    //   - account/delete : 세션만 확인 (본인 탈퇴라 역할과 무관)
+    //   - quiz/image/[id] : 공개 퀴즈 이미지. 의도적으로 무인증
+    // 라우트를 새로 만들 때는 미들웨어에 기대지 말고 여기서 직접 확인할 것.
+    //
+    // 여기서 막아야 할 것은 관리자 '화면' 이고, 그건 아래 역할 검사가 맡는다.
+    if (pathname.startsWith('/api') || pathname.startsWith('/write')) {
+      return response
+    }
+
     // role 확인 (super_admin 또는 writer만 허용)
     const role = await readRole(supabase, session.user.id)
 
     if (!role || !ALLOWED_ROLES.includes(role)) {
       return NextResponse.redirect(new URL('/login', request.url))
-    }
-
-    // API 및 글쓰기 경로는 통과 (API 호출, 일반 글쓰기 에디터)
-    // 이게 없으면 /api/* 가 /admin 페이지로 rewrite 되어 모든 API 호출이 깨짐
-    if (pathname.startsWith('/api') || pathname.startsWith('/write')) {
-      return response
     }
 
     // 루트(/) 접속 → /admin 으로 rewrite
