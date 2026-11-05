@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BookOpen, Calendar, Eye } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
@@ -321,10 +322,15 @@ export function LogsListClient({ initial }: { initial: InitialListData }) {
                     {/* 썸네일 */}
                     {background.type === 'image' ? (
                       <div className="h-48 relative">
-                        <img
+                        <Image
                           src={background.value}
                           alt={post.title}
-                          className="w-full h-full object-cover object-center"
+                          fill
+                          // 카드는 모바일 1열, 태블릿 2열, 데스크톱 3열이다.
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover object-center"
+                          // 첫 화면 위 카드만 먼저 받고 나머지는 미룬다.
+                          loading={index < 3 ? 'eager' : 'lazy'}
                         />
                         {post.read_time && (
                           <div className="absolute top-3 right-3 px-3 py-1 text-xs rounded-full font-medium bg-white/80 backdrop-blur-sm text-gray-700">

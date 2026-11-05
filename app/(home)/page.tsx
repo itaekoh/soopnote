@@ -1,5 +1,6 @@
 import { Leaf, Calendar, MapPin, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { getHomeData } from '@/lib/api/server-posts';
@@ -184,11 +185,16 @@ function FeaturedCard({ post }: { post: PostFull }) {
       <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer">
         {/* 썸네일 */}
         {post.featured_image_url ? (
-          <div className="h-64">
-            <img
+          <div className="relative h-64">
+            <Image
               src={post.featured_image_url}
               alt={post.title}
-              className="w-full h-full object-cover object-center"
+              fill
+              // 추천은 모바일 1열, 데스크톱 2열.
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover object-center"
+              // 첫 화면에 바로 보이므로 미루지 않는다.
+              priority
             />
           </div>
         ) : (
@@ -240,11 +246,16 @@ function PostCard({ post, colors }: { post: PostFull; colors: CategoryStyle }) {
       <article className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer h-full">
         {/* 썸네일 */}
         {post.featured_image_url ? (
-          <div className="h-40">
-            <img
+          <div className="relative h-40">
+            <Image
               src={post.featured_image_url}
               alt={post.title}
-              className="w-full h-full object-cover object-center"
+              fill
+              // 모바일 1열, 태블릿 2열, 데스크톱 4열.
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              className="object-cover object-center"
+              // 스크롤해야 보이는 자리다. 한꺼번에 당기지 않는다.
+              loading="lazy"
             />
           </div>
         ) : (

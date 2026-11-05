@@ -11,6 +11,15 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      // 게시글 썸네일이 올라가는 Supabase 스토리지.
+      // 여기를 열어 둬야 next/image 가 원본 대신 줄인 WebP/AVIF 를 내줄 수 있다.
+      // 예전에는 <img src> 로 원본을 그대로 받아서, 홈 한 번 여는 데
+      // 이미지만 8.85MB(그중 한 장이 5.6MB PNG)가 나갔다.
+      {
+        protocol: 'https',
+        hostname: 'otthqvsekttrljmonvdg.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
     ],
   },
   experimental: {

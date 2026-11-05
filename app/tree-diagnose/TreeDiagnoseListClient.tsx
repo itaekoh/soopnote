@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Stethoscope, Calendar, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SearchBar } from '@/components/SearchBar';
@@ -247,11 +248,17 @@ export function TreeDiagnoseListClient({ initial }: { initial: InitialListData }
                   <article className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer">
                     {/* 썸네일 */}
                     {background.type === 'image' ? (
-                      <div className="h-48">
-                        <img
+                      <div className="relative h-48">
+                        <Image
                           src={background.value}
                           alt={post.title}
-                          className="w-full h-full object-cover object-center"
+                          fill
+                          // 카드는 모바일 1열, 태블릿 2열, 데스크톱 3열이다.
+                          // 이 값으로 Next 가 화면에 맞는 크기만 내준다.
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover object-center"
+                          // 첫 화면 바로 위 카드만 먼저 받고 나머지는 미룬다.
+                          loading={index < 3 ? 'eager' : 'lazy'}
                         />
                       </div>
                     ) : (
