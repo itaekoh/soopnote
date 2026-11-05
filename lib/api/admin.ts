@@ -3,6 +3,7 @@
 // ============================================
 
 import { supabase } from '@/lib/supabase/client';
+import { getCurrentUserRole } from '@/lib/supabase/current-user';
 import type { User, Post, Category, UserRole } from '@/lib/types/database.types';
 
 /**
@@ -10,23 +11,9 @@ import type { User, Post, Category, UserRole } from '@/lib/types/database.types'
  */
 export async function checkAdminPermission(): Promise<boolean> {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const role = await getCurrentUserRole();
 
-    if (authError || !user) {
-      return false;
-    }
-
-    const { data, error } = await supabase
-      .from('sn_users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (error || !data) {
-      return false;
-    }
-
-    return data.role === 'writer' || data.role === 'super_admin';
+    return role === 'writer' || role === 'super_admin';
   } catch (error) {
     console.error('권한 확인 실패:', error);
     return false;
@@ -38,23 +25,9 @@ export async function checkAdminPermission(): Promise<boolean> {
  */
 export async function checkSuperAdminPermission(): Promise<boolean> {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const role = await getCurrentUserRole();
 
-    if (authError || !user) {
-      return false;
-    }
-
-    const { data, error } = await supabase
-      .from('sn_users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (error || !data) {
-      return false;
-    }
-
-    return data.role === 'super_admin';
+    return role === 'super_admin';
   } catch (error) {
     console.error('Super Admin 권한 확인 실패:', error);
     return false;

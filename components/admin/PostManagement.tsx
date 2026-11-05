@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FileText, Edit, Trash2, Eye, Calendar, User } from 'lucide-react';
 import { getAllPostsForAdmin } from '@/lib/api/admin';
 import { supabase } from '@/lib/supabase/client';
+import { getCurrentUser } from '@/lib/supabase/current-user';
 import type { PostFull } from '@/lib/types/database.types';
 
 export function PostManagement() {
@@ -20,7 +21,7 @@ export function PostManagement() {
   }, []);
 
   async function loadCurrentUser() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (user) {
       setCurrentUserId(user.id);
 

@@ -11,6 +11,7 @@ import { ImageModal } from '@/components/ImageModal';
 import { getPostFullById, incrementViewCount } from '@/lib/api/posts';
 import { checkLikeUniversal, toggleLikeUniversal } from '@/lib/api/likes';
 import { supabase } from '@/lib/supabase/client';
+import { getCurrentUser, getCurrentUserRole } from '@/lib/supabase/current-user';
 import type { PostFull } from '@/lib/types/database.types';
 import { pushToDataLayer } from '@/lib/types/gtm';
 
@@ -87,19 +88,10 @@ export default function LogsDetailClient({ postId }: { postId: number }) {
   }, [post]);
 
   async function loadCurrentUser() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (user) {
       setCurrentUserId(user.id);
-
-      const { data } = await supabase
-        .from('sn_users')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (data) {
-        setUserRole(data.role);
-      }
+      setUserRole(await getCurrentUserRole());
     } else {
       // 로그아웃 상태
       setCurrentUserId(null);

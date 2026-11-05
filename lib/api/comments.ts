@@ -1,4 +1,5 @@
 import { supabase } from '../supabase/client';
+import { getCurrentUser } from '../supabase/current-user';
 import type { Comment, CommentWithUser, CreateCommentRequest } from '../types/database.types';
 
 /**
@@ -43,9 +44,9 @@ export async function getCommentsByPostId(postId: number): Promise<CommentWithUs
 export async function createComment(request: CreateCommentRequest): Promise<Comment> {
   try {
     // 현재 로그인한 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       throw new Error('로그인이 필요합니다.');
     }
 
@@ -80,9 +81,9 @@ export async function createComment(request: CreateCommentRequest): Promise<Comm
 export async function deleteComment(commentId: number): Promise<void> {
   try {
     // 현재 로그인한 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       throw new Error('로그인이 필요합니다.');
     }
 
@@ -126,9 +127,9 @@ export async function deleteComment(commentId: number): Promise<void> {
 export async function updateComment(commentId: number, content: string): Promise<Comment> {
   try {
     // 현재 로그인한 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       throw new Error('로그인이 필요합니다.');
     }
 

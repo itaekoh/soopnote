@@ -1,4 +1,5 @@
 import { supabase } from '../supabase/client';
+import { getCurrentUser } from '../supabase/current-user';
 import type { Like } from '../types/database.types';
 
 // RPC 함수 반환 타입
@@ -14,9 +15,9 @@ interface AnonymousLikeResponse {
 export async function addLike(postId: number): Promise<Like> {
   try {
     // 현재 로그인한 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       throw new Error('로그인이 필요합니다.');
     }
 
@@ -63,9 +64,9 @@ export async function addLike(postId: number): Promise<Like> {
 export async function removeLike(postId: number): Promise<void> {
   try {
     // 현재 로그인한 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       throw new Error('로그인이 필요합니다.');
     }
 
@@ -95,9 +96,9 @@ export async function removeLike(postId: number): Promise<void> {
 export async function checkUserLike(postId: number): Promise<boolean> {
   try {
     // 현재 로그인한 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (authError || !user) {
+    if (!user) {
       return false;
     }
 
@@ -258,7 +259,7 @@ export function checkAnonymousLike(postId: number): boolean {
 export async function toggleLikeUniversal(postId: number): Promise<boolean> {
   try {
     // 로그인 확인
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (user) {
       // 로그인한 사용자: 기존 방식
@@ -292,7 +293,7 @@ export async function toggleLikeUniversal(postId: number): Promise<boolean> {
  */
 export async function checkLikeUniversal(postId: number): Promise<boolean> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (user) {
       return await checkUserLike(postId);

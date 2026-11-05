@@ -3,6 +3,7 @@
 // ============================================
 
 import { supabase } from '@/lib/supabase/client';
+import { getCurrentUser as getCachedAuthUser } from '@/lib/supabase/current-user';
 import type { User, UserRole } from '@/lib/types/database.types';
 
 /**
@@ -101,9 +102,7 @@ export async function getCurrentUser(): Promise<{
   user: any;
   profile: User | null;
 } | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedAuthUser();
 
   if (!user) {
     return null;

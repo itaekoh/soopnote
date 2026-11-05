@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { User, Trash2, Edit2, X } from 'lucide-react';
 import { getCommentsByPostId, createComment, deleteComment, updateComment } from '@/lib/api/comments';
 import { supabase } from '@/lib/supabase/client';
+import { getCurrentUser } from '@/lib/supabase/current-user';
 import type { CommentWithUser } from '@/lib/types/database.types';
 
 interface CommentsProps {
@@ -51,7 +52,7 @@ export function Comments({ postId, initialCount, accentColor = 'green', onCountC
   }, [postId]);
 
   async function checkUser() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     setCurrentUserId(user?.id || null);
   }
 
