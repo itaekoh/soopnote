@@ -68,11 +68,12 @@ export async function getCategoriesByParent(parentId: number): Promise<Category[
  */
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   return withRetryAndTimeout(
-    async () => {
+    async (signal) => {
       const { data, error } = await supabase
         .from('sn_categories')
         .select('*')
         .eq('slug', slug)
+        .abortSignal(signal)
         .single();
 
       if (error) {
@@ -85,11 +86,8 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 
       return data;
     },
-    {
-      maxRetries: 3,
-      delay: 1000,
-      timeoutMs: 15000, // 타임아웃 15초
-    }
+    // maxRetries·delay·timeoutMs 는 lib/utils/retry.ts 의 기본값을 쓴다.
+    // (8초 타임아웃 + 1회 재시도 = 최악 17초)
   );
 }
 

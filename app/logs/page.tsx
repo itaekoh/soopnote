@@ -21,6 +21,10 @@ export default function LogsList() {
   const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // '다시 시도' 전용 카운터. 예전에는 버튼이 setPage(1) 만 불렀는데, 실패는
+  // 애초에 1페이지에서 나므로 값이 그대로라 effect 가 다시 돌지 않았다.
+  // 오류만 지워지고 재요청은 없어서 "기록이 없습니다" 가 뜨곤 했다.
+  const [reloadKey, setReloadKey] = useState(0);
   const POSTS_PER_PAGE = 12;
 
   // 서브카테고리 로드
@@ -106,7 +110,7 @@ export default function LogsList() {
     return () => {
       cancelled = true;
     };
-  }, [sortBy, page, searchQuery, selectedSubcategoryIds]);
+  }, [sortBy, page, searchQuery, selectedSubcategoryIds, reloadKey]);
 
   // 이미지가 있으면 이미지, 없으면 그라데이션 사용
   const getPostBackground = (post: PostFull, index: number) => {
@@ -258,6 +262,7 @@ export default function LogsList() {
                   setPage(1);
                   setPosts([]);
                   setError(null);
+                  setReloadKey((k) => k + 1);
                 }}
                 className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >

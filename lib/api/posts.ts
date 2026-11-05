@@ -209,7 +209,7 @@ export async function getPosts(
   filters: PostFilterParams = {}
 ): Promise<PaginatedResponse<PostFull>> {
   return withRetryAndTimeout(
-    async () => {
+    async (signal) => {
       const {
         page = 1,
         limit = 10,
@@ -227,16 +227,18 @@ export async function getPosts(
       const finalSubcategoryIds = subcategory_ids;
       const finalCategoryId = category_id;
 
-      const { data, error } = await supabase.rpc('get_paginated_posts', {
-        in_category_id: finalCategoryId,
-        in_subcategory_ids: finalSubcategoryIds,
-        in_author_id: author_id,
-        in_status: status,
-        in_search: search,
-        in_sort: sort,
-        in_page: page,
-        in_limit: limit,
-      });
+      const { data, error } = await supabase
+        .rpc('get_paginated_posts', {
+          in_category_id: finalCategoryId,
+          in_subcategory_ids: finalSubcategoryIds,
+          in_author_id: author_id,
+          in_status: status,
+          in_search: search,
+          in_sort: sort,
+          in_page: page,
+          in_limit: limit,
+        })
+        .abortSignal(signal);
 
       if (error) {
         console.error('Error fetching posts via RPC:', error);
@@ -259,11 +261,8 @@ export async function getPosts(
         totalPages: Math.ceil(totalCount / limit),
       };
     },
-    {
-      maxRetries: 3,
-      delay: 1000,
-      timeoutMs: 15000, // 타임아웃 15초
-    }
+    // maxRetries·delay·timeoutMs 는 lib/utils/retry.ts 의 기본값을 쓴다.
+    // (8초 타임아웃 + 1회 재시도 = 최악 17초)
   );
 }
 
@@ -276,11 +275,13 @@ export async function getLatestPostsByCategory(
   limit: number = 5
 ): Promise<PostFull[]> {
   return withRetryAndTimeout(
-    async () => {
-      const { data, error } = await supabase.rpc('get_latest_posts_by_category', {
-        in_category_id: categoryId,
-        in_limit: limit,
-      });
+    async (signal) => {
+      const { data, error } = await supabase
+        .rpc('get_latest_posts_by_category', {
+          in_category_id: categoryId,
+          in_limit: limit,
+        })
+        .abortSignal(signal);
 
       if (error) {
         console.error('Error fetching latest posts via RPC:', error);
@@ -289,11 +290,8 @@ export async function getLatestPostsByCategory(
 
       return data || [];
     },
-    {
-      maxRetries: 3,
-      delay: 1000,
-      timeoutMs: 15000, // 타임아웃 15초
-    }
+    // maxRetries·delay·timeoutMs 는 lib/utils/retry.ts 의 기본값을 쓴다.
+    // (8초 타임아웃 + 1회 재시도 = 최악 17초)
   );
 }
 
@@ -302,10 +300,12 @@ export async function getLatestPostsByCategory(
  */
 export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
   return withRetryAndTimeout(
-    async () => {
-      const { data, error } = await supabase.rpc('get_featured_posts', {
-        in_limit: limit,
-      });
+    async (signal) => {
+      const { data, error } = await supabase
+        .rpc('get_featured_posts', {
+          in_limit: limit,
+        })
+        .abortSignal(signal);
 
       if (error) {
         console.error('Error fetching featured posts via RPC:', error);
@@ -314,11 +314,8 @@ export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
 
       return data || [];
     },
-    {
-      maxRetries: 3,
-      delay: 1000,
-      timeoutMs: 15000, // 타임아웃 15초
-    }
+    // maxRetries·delay·timeoutMs 는 lib/utils/retry.ts 의 기본값을 쓴다.
+    // (8초 타임아웃 + 1회 재시도 = 최악 17초)
   );
 }
 
