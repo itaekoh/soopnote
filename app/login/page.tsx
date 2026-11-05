@@ -49,7 +49,10 @@ export default function LoginPage() {
     const MESSAGES: Record<string, string> = {
       missing_code_verifier:
         '로그인 정보가 중간에 사라졌습니다. 브라우저의 쿠키 차단이나 시크릿 모드가 원인일 수 있습니다.',
-      exchange_failed: '로그인 확인에 실패했습니다. 잠시 후 다시 시도해주세요.',
+      // 못 쓰게 된 검증 쿠키는 콜백에서 이미 지웠다. 그래서 "다시 눌러보라" 가
+      // 빈말이 아니다 — 다음 시도는 새 값으로 시작한다.
+      exchange_failed:
+        '로그인 정보가 만료되어 초기화했습니다. 버튼을 한 번 더 눌러주세요.',
       no_code: '로그인 응답을 받지 못했습니다. 다시 시도해주세요.',
       access_denied: '로그인이 취소되었습니다.',
     };

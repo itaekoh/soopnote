@@ -9,13 +9,34 @@ import { cookies } from 'next/headers';
  *
  * 이제 실패 사유를 쿼리로 넘기고 서버 로그에도 남긴다.
  */
-function fail(origin: string, reason: string, detail?: string) {
+function fail(
+  origin: string,
+  reason: string,
+  detail?: string,
+  staleVerifiers: string[] = []
+) {
   console.error(`[auth/callback] 실패: ${reason}${detail ? ` — ${detail}` : ''}`);
   const url = new URL('/login', origin);
   url.searchParams.set('error', 'auth_callback_error');
   url.searchParams.set('reason', reason);
   if (detail) url.searchParams.set('detail', detail.slice(0, 200));
-  return NextResponse.redirect(url.toString());
+
+  const response = NextResponse.redirect(url.toString());
+
+  // 쓸 수 없게 된 PKCE 검증 쿠키를 지운다.
+  //
+  // 구글과 카카오는 이 쿠키 하나(sb-<ref>-auth-token-code-verifier)를 같이
+  // 쓴다. 로그인을 시작했다가 중간에 그만두거나 flow state 가 만료되면
+  // 못 쓰는 값이 남는데, 그대로 두면 다음 시도에서도 같은 값이 서버로 가서
+  // 또 거부된다. 한 번 어긋나면 두 공급자 모두 계속 실패하는 이유다.
+  // (앱 퀴즈는 signInWithIdToken 이라 이 쿠키를 쓰지 않아 영향이 없다.)
+  //
+  // 지워 두면 다음 시도가 새 값으로 깨끗하게 시작한다.
+  for (const name of staleVerifiers) {
+    response.cookies.set(name, '', { maxAge: 0, path: '/' });
+  }
+
+  return response;
 }
 
 export async function GET(request: Request) {
@@ -64,17 +85,19 @@ export async function GET(request: Request) {
     // 이 교환은 브라우저가 로그인을 시작할 때 심어 둔 PKCE 검증 쿠키
     // (sb-<ref>-auth-token-code-verifier) 가 이 요청에 함께 와야 성공한다.
     // 실패 원인을 가르기 위해 쿠키가 왔는지도 함께 남긴다.
-    const hasVerifier = cookieStore
+    const verifierCookies = cookieStore
       .getAll()
-      .some((c) => c.name.includes('auth-token-code-verifier'));
+      .filter((c) => c.name.includes('auth-token-code-verifier'))
+      .map((c) => c.name);
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
       return fail(
         origin,
-        hasVerifier ? 'exchange_failed' : 'missing_code_verifier',
-        error.message
+        verifierCookies.length > 0 ? 'exchange_failed' : 'missing_code_verifier',
+        error.message,
+        verifierCookies
       );
     }
 
