@@ -34,6 +34,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import type { Category } from '@/lib/types/database.types';
 import imageCompression from 'browser-image-compression';
+import { uploadPostImage } from '@/lib/images/uploadPostImage';
 
 type CategorySlug = 'wildflower' | 'tree-diagnose' | 'logs';
 type LengthOption = 'short' | 'medium' | 'long';
@@ -453,16 +454,17 @@ export default function AiWritePage() {
           return;
         }
         setSavingStatus('이미지 업로드 중...');
-        const fileExt = imageFile.name.split('.').pop();
-        const filePath = `posts/${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('images').upload(filePath, imageFile);
-        if (uploadError) {
-          setError(`이미지 업로드 실패: ${uploadError.message}`);
+
+        // 이 화면은 대표 이미지에 압축이 전혀 없어서, 원본이 그대로
+        // 올라가고 있었다(2816x1536 / 5.33MB PNG). 이제 /api/upload 를
+        // 거쳐 서버가 최장변 1600px WebP 로 줄인다.
+        try {
+          imageUrl = await uploadPostImage(imageFile);
+        } catch (err) {
+          setError(`이미지 업로드 실패: ${err instanceof Error ? err.message : String(err)}`);
           setSaving(false);
           return;
         }
-        const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(filePath);
-        imageUrl = publicUrl;
       }
 
       setSavingStatus('게시글 저장 중...');

@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import type { Category } from '@/lib/types/database.types';
 import imageCompression from 'browser-image-compression';
+import { uploadPostImage } from '@/lib/images/uploadPostImage';
 
 type CategorySlug = 'wildflower' | 'tree-diagnose' | 'logs';
 
@@ -222,24 +223,17 @@ export default function WritePage() {
 
         setSavingStatus(`이미지 업로드 중... (${(imageFile.size / 1024 / 1024).toFixed(2)}MB)`);
         console.log('2. 이미지 업로드 중...');
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `posts/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('images')
-          .upload(filePath, imageFile);
-
-        if (uploadError) {
-          console.error('✗ 이미지 업로드 실패:', uploadError);
-          alert(`이미지 업로드 실패: ${uploadError.message}`);
-          return;
-        } else {
-          const { data: { publicUrl } } = supabase.storage
-            .from('images')
-            .getPublicUrl(filePath);
-          imageUrl = publicUrl;
+        // 스토리지에 직접 올리지 않고 /api/upload 를 거친다.
+        // 서버가 최장변 1600px WebP 로 줄여서 저장한다.
+        try {
+          imageUrl = await uploadPostImage(imageFile);
           console.log('✓ 이미지 업로드 완료:', imageUrl);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error('✗ 이미지 업로드 실패:', message);
+          alert(`이미지 업로드 실패: ${message}`);
+          return;
         }
       } else {
         console.log('2. 이미지 없음 - 스킵');

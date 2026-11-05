@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createBrowserClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
+import { optimizeUpload } from '@/lib/images/optimize';
 
-export const runtime = 'edge';
+// edge 가 아니라 nodejs. sharp 로 서버에서 이미지를 줄이기 때문이다.
+// 예전에는 edge 라 서버에서 손댈 방법이 없어 브라우저 압축에만 기댔고,
+// 그래서 압축을 안 하는 경로(관리자 AI 글쓰기)로 5MB 짜리가 그대로 올라갔다.
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -78,19 +82,31 @@ export async function POST(req: NextRequest) {
 
     const userId = user.id;
 
-    const EXTENSION_MAP: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
-    const fileExtension = EXTENSION_MAP[file.type] || 'jpg';
+    // 서버에서 줄인다. 브라우저 압축은 업로드 시간을 줄여 주지만,
+    // 경로마다 설정이 다르고 PNG 는 목표치를 못 맞추면 원본을 그대로
+    // 돌려주기 때문에 최종 보장이 되지 못한다.
+    const optimized = await optimizeUpload(await file.arrayBuffer(), file.type);
 
     // 안전한 파일명 생성 (nanoid + 확장자)
-    const fileName = `${nanoid()}.${fileExtension}`;
-    const filePath = `public/${userId}/${fileName}`;
+    const fileName = `${nanoid()}.${optimized.extension}`;
 
-    console.log('📁 업로드:', { path: filePath, size: file.size, type: file.type });
+    // folder=posts 면 대표 이미지(썸네일), 아니면 에디터 본문 이미지.
+    // 썸네일도 이 API 를 거치게 해서 최적화를 한곳에서 책임진다.
+    const folder = formData.get('folder');
+    const filePath =
+      folder === 'posts' ? `posts/${fileName}` : `public/${userId}/${fileName}`;
+
+    console.log('📁 업로드:', {
+      path: filePath,
+      원본: `${(optimized.originalBytes / 1024 / 1024).toFixed(2)}MB ${file.type}`,
+      저장: `${(optimized.bytes / 1024 / 1024).toFixed(2)}MB ${optimized.contentType}`,
+      크기: optimized.width ? `${optimized.width}x${optimized.height}` : '-',
+    });
 
     // Service Role Key로 Storage에 업로드 (RLS 우회)
     const { error: uploadError } = await supabaseAdmin.storage
       .from('images')
-      .upload(filePath, file);
+      .upload(filePath, optimized.buffer, { contentType: optimized.contentType });
 
     if (uploadError) {
       console.error('Supabase Upload Error:', uploadError);
@@ -107,7 +123,13 @@ export async function POST(req: NextRequest) {
     }
     
     return new NextResponse(
-      JSON.stringify({ location: publicUrlData.publicUrl }),
+      JSON.stringify({
+        location: publicUrlData.publicUrl,
+        bytes: optimized.bytes,
+        originalBytes: optimized.originalBytes,
+        width: optimized.width,
+        height: optimized.height,
+      }),
       {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
