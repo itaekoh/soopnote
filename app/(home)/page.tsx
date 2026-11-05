@@ -1,143 +1,68 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import { Leaf, Calendar, MapPin, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { getFeaturedPosts, getLatestPostsByCategory } from '@/lib/api/posts';
-import { getCategoryBySlug } from '@/lib/api/categories';
+import { getHomeData } from '@/lib/api/server-posts';
 import type { PostFull } from '@/lib/types/database.types';
+import { RetryButton } from './RetryButton';
 
-export default function Home() {
-  const [featuredPosts, setFeaturedPosts] = useState<PostFull[]>([]);
-  const [wildflowerPosts, setWildflowerPosts] = useState<PostFull[]>([]);
-  const [treePosts, setTreePosts] = useState<PostFull[]>([]);
-  const [logsPosts, setLogsPosts] = useState<PostFull[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * 홈을 서버에서 그린다.
+ *
+ * 예전에는 브라우저가 열린 뒤에 요청 7개를 보냈다 — 추천 1개, 카테고리
+ * 세 개(3개), 그 결과로 최신 글(3개). 카테고리와 글이 쌍으로 이어져 있어
+ * 한쪽만 늦어도 그 섹션이 통째로 비었다. 그걸 가리려고 "30초 뒤에 강제로
+ * 로딩 해제" 하는 타이머까지 붙어 있었다.
+ *
+ * 이제 HTML 에 네 묶음이 실려 나간다. 첫 화면에 네트워크가 끼지 않으므로
+ * 그 타이머도 필요 없다.
+ */
+export const revalidate = 60;
 
-  useEffect(() => {
-    // 타임아웃 추가: 30초 후에도 로딩 중이면 강제로 로딩 해제
-    const loadTimeout = setTimeout(() => {
-      console.warn('⚠️ 콘텐츠 로딩 타임아웃 - 기본 상태로 전환');
-      setLoading(false);
-    }, 30000); // 30초 타임아웃
+type CategoryStyle = {
+  bg: string;
+  badge: string;
+  icon: string;
+  link: string;
+  name: string;
+};
 
-    loadAllPosts()
-      .catch((error) => {
-        console.error('❌ [MAIN] loadAllPosts 에러:', error);
-      })
-      .finally(() => {
-        clearTimeout(loadTimeout);
-      });
+const categoryColors: Record<'wildflower' | 'tree' | 'logs', CategoryStyle> = {
+  wildflower: {
+    bg: 'from-green-50 to-emerald-100',
+    badge: 'bg-green-100 text-green-700',
+    icon: 'text-green-700',
+    link: '/wildflower',
+    name: '식물 관찰',
+  },
+  tree: {
+    bg: 'from-amber-50 to-yellow-100',
+    badge: 'bg-amber-100 text-amber-700',
+    icon: 'text-amber-700',
+    link: '/tree-diagnose',
+    name: '수목 진료',
+  },
+  logs: {
+    bg: 'from-purple-50 to-violet-100',
+    badge: 'bg-purple-100 text-purple-700',
+    icon: 'text-purple-700',
+    link: '/logs',
+    name: '아카이브',
+  },
+};
 
-    return () => {
-      clearTimeout(loadTimeout);
-    };
-  }, []);
+// 추천 카드는 글이 속한 카테고리로 색을 고른다. slug 가 위 셋과 다를 수 있다.
+function styleForSlug(slug: string | null): CategoryStyle | null {
+  if (slug === 'tree-diagnose') return categoryColors.tree;
+  if (slug === 'wildflower') return categoryColors.wildflower;
+  if (slug === 'logs') return categoryColors.logs;
+  return null;
+}
 
-  async function loadAllPosts() {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // 모든 데이터를 완전 병렬로 로드 (카테고리 ID + 게시글)
-      const results = await Promise.allSettled([
-        // Featured 게시글
-        getFeaturedPosts(2),
-        // 카테고리별 슬러그로 직접 조회 + 게시글
-        getCategoryBySlug('wildflower').then(cat =>
-          cat ? getLatestPostsByCategory(cat.id, 4) : []
-        ),
-        getCategoryBySlug('tree-diagnose').then(cat =>
-          cat ? getLatestPostsByCategory(cat.id, 4) : []
-        ),
-        getCategoryBySlug('logs').then(cat =>
-          cat ? getLatestPostsByCategory(cat.id, 4) : []
-        ),
-      ]);
-
-      // 결과 처리
-      if (results[0].status === 'fulfilled') {
-        setFeaturedPosts(results[0].value);
-      } else {
-        console.error('✗ [MAIN] Featured 로딩 실패:', results[0].reason);
-      }
-
-      if (results[1].status === 'fulfilled') {
-        setWildflowerPosts(results[1].value);
-      } else {
-        console.error('✗ [MAIN] 야생화 일지 로딩 실패:', results[1].reason);
-      }
-
-      if (results[2].status === 'fulfilled') {
-        setTreePosts(results[2].value);
-      } else {
-        console.error('✗ [MAIN] 나무진단 로딩 실패:', results[2].reason);
-      }
-
-      if (results[3].status === 'fulfilled') {
-        setLogsPosts(results[3].value);
-      } else {
-        console.error('✗ [MAIN] 아카이브 로딩 실패:', results[3].reason);
-      }
-
-      // 모든 데이터가 비어있는지 체크 (results에서 직접 확인)
-      const featuredCount = results[0].status === 'fulfilled' ? results[0].value.length : 0;
-      const wildflowerCount = results[1].status === 'fulfilled' ? results[1].value.length : 0;
-      const treeCount = results[2].status === 'fulfilled' ? results[2].value.length : 0;
-      const logsCount = results[3].status === 'fulfilled' ? results[3].value.length : 0;
-
-      if (featuredCount === 0 && wildflowerCount === 0 && treeCount === 0 && logsCount === 0) {
-        console.warn('⚠️ [MAIN] 모든 게시글이 비어있음 - 네트워크나 API 문제 가능성');
-        console.warn('⚠️ [MAIN] 결과 상태:', {
-          featured: results[0].status,
-          wildflower: results[1].status,
-          tree: results[2].status,
-          logs: results[3].status
-        });
-
-        // 모든 요청이 실패했다면 에러 표시
-        const allFailed = results.every(r => r.status === 'rejected');
-        if (allFailed) {
-          console.error('❌ [MAIN] 모든 API 요청 실패!');
-          setError('서버와 연결할 수 없습니다. 인터넷 연결을 확인하거나 잠시 후 다시 시도해주세요.');
-        }
-      }
-
-    } catch (error) {
-      console.error('✗ [MAIN] 메인 페이지 로딩 실패:', error);
-      setError('게시글을 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 캐시를 삭제해주세요.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // 카테고리별 색상
-  const categoryColors = {
-    wildflower: {
-      bg: 'from-green-50 to-emerald-100',
-      badge: 'bg-green-100 text-green-700',
-      icon: 'text-green-700',
-      link: '/wildflower',
-      name: '식물 관찰',
-    },
-    tree: {
-      bg: 'from-amber-50 to-yellow-100',
-      badge: 'bg-amber-100 text-amber-700',
-      icon: 'text-amber-700',
-      link: '/tree-diagnose',
-      name: '수목 진료',
-    },
-    logs: {
-      bg: 'from-purple-50 to-violet-100',
-      badge: 'bg-purple-100 text-purple-700',
-      icon: 'text-purple-700',
-      link: '/logs',
-      name: '아카이브',
-    },
-  };
+export default async function Home() {
+  const { featured, wildflower, tree, logs, allFailed } = await getHomeData();
+  const isEmpty =
+    featured.length === 0 && wildflower.length === 0 && tree.length === 0 && logs.length === 0;
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#F5F3EE_0%,#F8FAF8_60%)] text-gray-800">
@@ -158,137 +83,54 @@ export default function Home() {
         </div>
       </section>
 
-      {loading ? (
-        <div className="max-w-6xl mx-auto px-6 py-20 min-h-[400px] text-center text-gray-600">
-          콘텐츠를 불러오는 중...
-        </div>
-      ) : error ? (
+      {allFailed ? (
         <div className="max-w-6xl mx-auto px-6 py-20 text-center">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 max-w-md mx-auto">
-            <div className="text-red-600 text-lg font-semibold mb-2">
-              ⚠️ 오류 발생
-            </div>
-            <p className="text-red-700 mb-4">{error}</p>
-            <button
-              onClick={() => loadAllPosts()}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              다시 시도
-            </button>
+            <div className="text-red-600 text-lg font-semibold mb-2">⚠️ 오류 발생</div>
+            <p className="text-red-700 mb-4">
+              서버와 연결할 수 없습니다. 인터넷 연결을 확인하거나 잠시 후 다시 시도해주세요.
+            </p>
+            <RetryButton />
           </div>
         </div>
       ) : (
         <>
-          {/* Featured 게시글 */}
-          {featuredPosts.length > 0 && (
+          {/* 추천 게시글 */}
+          {featured.length > 0 && (
             <section className="max-w-6xl mx-auto px-6 mb-16">
               <h2 className="text-2xl font-bold text-[#26422E] mb-6">추천 게시글</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {featuredPosts.map((post) => (
-                  <Link key={post.id} href={`/${post.category_slug}/${post.id}`}>
-                    <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer">
-                      {/* 썸네일 */}
-                      {post.featured_image_url ? (
-                        <div className="h-64">
-                          <img
-                            src={post.featured_image_url}
-                            alt={post.title}
-                            className="w-full h-full object-cover object-center"
-                          />
-                        </div>
-                      ) : (
-                        <div className={`h-64 w-full bg-gradient-to-br ${categoryColors[post.category_slug as keyof typeof categoryColors]?.bg || 'from-gray-100 to-gray-200'} flex items-center justify-center`}>
-                          <Leaf className="w-20 h-20 text-green-700 opacity-20" />
-                        </div>
-                      )}
-
-                      {/* 콘텐츠 */}
-                      <div className="p-6">
-                        <div className={`inline-block px-3 py-1 text-xs rounded-full ${categoryColors[post.category_slug as keyof typeof categoryColors]?.badge || 'bg-gray-100 text-gray-700'} font-medium mb-3`}>
-                          {post.category_name}
-                        </div>
-                        <h3 className="font-bold text-xl text-[#26422E] mb-2 line-clamp-2">
-                          {post.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-4">
-                          {post.excerpt}
-                        </p>
-
-                        {/* 메타 정보 */}
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>{post.published_date}</span>
-                          </div>
-                          {post.location && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              <span>{post.location.split(' ')[0]}</span>
-                            </div>
-                          )}
-                          <div>읽음 {post.view_count}</div>
-                        </div>
-                      </div>
-                    </article>
-                  </Link>
+                {featured.map((post) => (
+                  <FeaturedCard key={post.id} post={post} />
                 ))}
               </div>
             </section>
           )}
 
-          {/* 식물 관찰 */}
-          {wildflowerPosts.length > 0 && (
-            <section className="max-w-6xl mx-auto px-6 mb-16">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#26422E]">🌸 식물 관찰</h2>
-                <Link href="/wildflower" className="flex items-center gap-1 text-sm text-green-700 hover:underline">
-                  더보기 <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {wildflowerPosts.map((post) => (
-                  <PostCard key={post.id} post={post} colors={categoryColors.wildflower} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* 나무진단 */}
-          {treePosts.length > 0 && (
-            <section className="max-w-6xl mx-auto px-6 mb-16">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#26422E]">🌳 수목 진료</h2>
-                <Link href="/tree-diagnose" className="flex items-center gap-1 text-sm text-amber-700 hover:underline">
-                  더보기 <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {treePosts.map((post) => (
-                  <PostCard key={post.id} post={post} colors={categoryColors.tree} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* 아카이브 */}
-          {logsPosts.length > 0 && (
-            <section className="max-w-6xl mx-auto px-6 mb-16">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#26422E]">✍️ 아카이브</h2>
-                <Link href="/logs" className="flex items-center gap-1 text-sm text-purple-700 hover:underline">
-                  더보기 <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {logsPosts.map((post) => (
-                  <PostCard key={post.id} post={post} colors={categoryColors.logs} />
-                ))}
-              </div>
-            </section>
-          )}
+          <CategorySection
+            title="🌸 식물 관찰"
+            href="/wildflower"
+            linkClass="text-green-700"
+            posts={wildflower}
+            colors={categoryColors.wildflower}
+          />
+          <CategorySection
+            title="🌳 수목 진료"
+            href="/tree-diagnose"
+            linkClass="text-amber-700"
+            posts={tree}
+            colors={categoryColors.tree}
+          />
+          <CategorySection
+            title="✍️ 아카이브"
+            href="/logs"
+            linkClass="text-purple-700"
+            posts={logs}
+            colors={categoryColors.logs}
+          />
 
           {/* 게시글이 없을 때 */}
-          {featuredPosts.length === 0 && wildflowerPosts.length === 0 && treePosts.length === 0 && logsPosts.length === 0 && (
+          {isEmpty && (
             <section className="max-w-6xl mx-auto px-6 py-20 text-center">
               <div className="text-gray-600 mb-4">아직 게시글이 없습니다.</div>
               <p className="text-sm text-gray-500">첫 번째 기록을 작성해보세요!</p>
@@ -302,8 +144,97 @@ export default function Home() {
   );
 }
 
+function CategorySection({
+  title,
+  href,
+  linkClass,
+  posts,
+  colors,
+}: {
+  title: string;
+  href: string;
+  linkClass: string;
+  posts: PostFull[];
+  colors: CategoryStyle;
+}) {
+  if (posts.length === 0) return null;
+
+  return (
+    <section className="max-w-6xl mx-auto px-6 mb-16">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-[#26422E]">{title}</h2>
+        <Link href={href} className={`flex items-center gap-1 text-sm ${linkClass} hover:underline`}>
+          더보기 <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {posts.map((post) => (
+          <PostCard key={post.id} post={post} colors={colors} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FeaturedCard({ post }: { post: PostFull }) {
+  const style = styleForSlug(post.category_slug);
+
+  return (
+    <Link href={`/${post.category_slug}/${post.id}`}>
+      <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer">
+        {/* 썸네일 */}
+        {post.featured_image_url ? (
+          <div className="h-64">
+            <img
+              src={post.featured_image_url}
+              alt={post.title}
+              className="w-full h-full object-cover object-center"
+            />
+          </div>
+        ) : (
+          <div
+            className={`h-64 w-full bg-gradient-to-br ${
+              style?.bg || 'from-gray-100 to-gray-200'
+            } flex items-center justify-center`}
+          >
+            <Leaf className="w-20 h-20 text-green-700 opacity-20" />
+          </div>
+        )}
+
+        {/* 콘텐츠 */}
+        <div className="p-6">
+          <div
+            className={`inline-block px-3 py-1 text-xs rounded-full ${
+              style?.badge || 'bg-gray-100 text-gray-700'
+            } font-medium mb-3`}
+          >
+            {post.category_name}
+          </div>
+          <h3 className="font-bold text-xl text-[#26422E] mb-2 line-clamp-2">{post.title}</h3>
+          <p className="text-sm text-gray-600 line-clamp-2 mb-4">{post.excerpt}</p>
+
+          {/* 메타 정보 */}
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              <span>{post.published_date}</span>
+            </div>
+            {post.location && (
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                <span>{post.location.split(' ')[0]}</span>
+              </div>
+            )}
+            <div>읽음 {post.view_count}</div>
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
+}
+
 // 게시글 카드 컴포넌트
-function PostCard({ post, colors }: { post: PostFull; colors: { bg: string; badge: string; icon: string; link: string; name: string } }) {
+function PostCard({ post, colors }: { post: PostFull; colors: CategoryStyle }) {
   return (
     <Link href={`${colors.link}/${post.id}`}>
       <article className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer h-full">
@@ -317,7 +248,9 @@ function PostCard({ post, colors }: { post: PostFull; colors: { bg: string; badg
             />
           </div>
         ) : (
-          <div className={`h-40 w-full bg-gradient-to-br ${colors.bg} flex items-center justify-center`}>
+          <div
+            className={`h-40 w-full bg-gradient-to-br ${colors.bg} flex items-center justify-center`}
+          >
             <Leaf className={`w-12 h-12 ${colors.icon} opacity-30`} />
           </div>
         )}
@@ -327,9 +260,7 @@ function PostCard({ post, colors }: { post: PostFull; colors: { bg: string; badg
           <h3 className="font-semibold text-base text-[#26422E] mb-2 line-clamp-1 leading-snug">
             {post.title}
           </h3>
-          <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-            {post.excerpt}
-          </p>
+          <p className="text-sm text-gray-600 line-clamp-2 mb-3">{post.excerpt}</p>
 
           {/* 메타 정보 */}
           <div className="flex items-center justify-between text-xs text-gray-500">

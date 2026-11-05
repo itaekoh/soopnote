@@ -23,7 +23,7 @@ export function LogsListClient({ initial }: { initial: InitialListData }) {
   const [sortBy, setSortBy] = useState<PostSortOption>('latest');
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [subCategories, setSubCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>(initial.subcategories);
   const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
   // '다시 시도' 전용 카운터. 예전에는 버튼이 setPage(1) 만 불렀는데, 실패는
@@ -38,8 +38,14 @@ export function LogsListClient({ initial }: { initial: InitialListData }) {
   const categoryIdRef = useRef<number | null>(initial.categoryId);
 
   // 서브카테고리 로드
+  //
+  // 서버가 이미 넘겨줬으면 부르지 않는다. 예전에는 이것도 브라우저에서
+  // 카테고리를 찾고(1) 그 id 로 하위 속성을 받는(2) 순차 왕복이었다.
   useEffect(() => {
+    if (initial.subcategories.length > 0) return;
     loadSubCategories();
+    // 서버가 준 목록은 렌더 동안 바뀌지 않는다. 첫 렌더에서만 판단한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadSubCategories() {
