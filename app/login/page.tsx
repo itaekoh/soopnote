@@ -31,6 +31,36 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
+  // 소셜 로그인 실패로 되돌아온 경우 사유를 보여준다.
+  //
+  // 예전에는 /auth/callback 이 ?error=auth_callback_error 를 붙여 보내도
+  // 이 화면이 읽지 않아서, 구글/카카오를 눌렀다 그냥 로그인 화면으로
+  // 돌아오는 것으로만 보였다. 사용자도 우리도 원인을 알 길이 없었다.
+  //
+  // useSearchParams 대신 window.location 을 쓴다. 이 페이지를 Suspense
+  // 경계로 감싸지 않기 위해서다.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get('error')) return;
+
+    const reason = params.get('reason') || '';
+    const detail = params.get('detail') || '';
+
+    const MESSAGES: Record<string, string> = {
+      missing_code_verifier:
+        '로그인 정보가 중간에 사라졌습니다. 브라우저의 쿠키 차단이나 시크릿 모드가 원인일 수 있습니다.',
+      exchange_failed: '로그인 확인에 실패했습니다. 잠시 후 다시 시도해주세요.',
+      no_code: '로그인 응답을 받지 못했습니다. 다시 시도해주세요.',
+      access_denied: '로그인이 취소되었습니다.',
+    };
+
+    const base = MESSAGES[reason] || '소셜 로그인에 실패했습니다.';
+    setError(detail ? `${base} (${reason}: ${detail})` : reason ? `${base} (${reason})` : base);
+
+    // 주소를 정리해 새로고침 때 메시지가 다시 뜨지 않게 한다.
+    window.history.replaceState(null, '', window.location.pathname);
+  }, []);
+
   const handleSocialLogin = async (provider: 'google' | 'kakao') => {
     setError('');
     setSocialLoading(true);
