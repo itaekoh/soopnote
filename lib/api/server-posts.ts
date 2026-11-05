@@ -140,6 +140,40 @@ export const getPostForPage = cache(async (postId: number): Promise<PostFull | n
   }
 });
 
+/**
+ * 한 카테고리의 공개된 글 id 목록 (generateStaticParams 용)
+ *
+ * 이게 없으면 [id] 경로는 요청마다 새로 그려지고 Cache-Control 이
+ * private, no-store 로 나가서 CDN 이 아무것도 보관하지 않는다.
+ * 2026-11-05 측정: 상세 페이지 TTFB 1.2초, 세 번 다 MISS.
+ * 목록 페이지는 같은 조건에서 PRERENDER, 150ms 였다.
+ *
+ * 글 id 를 미리 알려주면 빌드 때 만들어 두고 revalidate 주기로 갱신한다.
+ * 새로 쓴 글은 dynamicParams 기본값(true) 덕에 첫 요청에서 그려진 뒤 캐시된다.
+ */
+export async function getPublishedPostIds(categorySlug: string): Promise<number[]> {
+  try {
+    const category = await getCategoryBySlugServer(categorySlug);
+    if (!category) return [];
+
+    return await withServerTimeout(async (signal) => {
+      const { data, error } = await supabase
+        .from('sn_posts')
+        .select('id')
+        .eq('category_id', category.id)
+        .eq('status', 'published')
+        .abortSignal(signal);
+
+      if (error) throw error;
+      return (data || []).map((row) => row.id as number);
+    });
+  } catch (error) {
+    // 빌드를 막지 않는다. 빈 배열이면 모든 글이 첫 요청에 그려진 뒤 캐시된다.
+    console.error(`[${categorySlug}] 글 id 목록 조회 실패:`, error);
+    return [];
+  }
+}
+
 /** 메뉴 아래 달린 속성(아카이브의 서브카테고리 등) */
 export async function getSubcategoriesServer(categoryId: number): Promise<Category[]> {
   return withServerTimeout(async (signal) => {

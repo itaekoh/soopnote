@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getPostForPage } from '@/lib/api/server-posts';
+import { getPostForPage, getPublishedPostIds } from '@/lib/api/server-posts';
 import { ArticleJsonLd } from '@/components/ArticleJsonLd';
 import TreeDiagnoseDetailClient from './TreeDiagnoseDetailClient';
 
@@ -76,6 +76,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * 이제 글을 서버에서 받아 넘기므로 HTML 안에 본문이 들어간다.
  */
 export const revalidate = 300;
+
+/**
+ * 공개된 글을 미리 만들어 둔다.
+ *
+ * 이게 없으면 [id] 경로가 요청마다 새로 그려지고 Cache-Control 이
+ * private, no-store 로 나가서 CDN 이 보관하지 않는다. 측정해 보니
+ * 상세 TTFB 1.2초(MISS), 목록은 150ms(PRERENDER) 였다.
+ *
+ * 새 글은 여기 목록에 없어도 첫 요청에서 그려진 뒤 캐시된다(dynamicParams 기본값).
+ */
+export async function generateStaticParams() {
+  const ids = await getPublishedPostIds('tree-diagnose');
+  return ids.map((id) => ({ id: String(id) }));
+}
 
 export default async function TreeDiagnoseDetailPage({ params }: Props) {
   const { id } = await params;
