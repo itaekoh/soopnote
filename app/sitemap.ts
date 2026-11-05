@@ -69,6 +69,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.3,
     },
+    // 이용약관·환불정책이 빠져 있었다. 푸터에서 링크는 되지만 사이트맵에
+    // 없으면 색인이 늦고, 애드센스 심사에서도 확인하는 페이지들이다.
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/refund`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.3,
+    },
   ];
 
   // 게시글 동적 페이지 (published만)

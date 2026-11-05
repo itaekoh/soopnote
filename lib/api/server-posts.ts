@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type {
   Category,
@@ -103,6 +104,41 @@ export async function getPostsServer(params: {
     };
   });
 }
+
+/**
+ * 글 한 편 (상세 페이지용)
+ *
+ * 상세 페이지는 제목·설명 같은 메타데이터만 서버에서 만들고, 본문은
+ * 브라우저가 열린 뒤에 따로 받아 왔다. 그래서 크롤러가 처음 받는 HTML 에는
+ * 본문이 없었다 — 2026-11-05 확인 당시 보이는 텍스트가 273자뿐이었고,
+ * 그나마도 헤더와 푸터였다. 검색 노출과 애드센스 심사 모두에 불리하다.
+ *
+ * cache() 로 감싸서 generateMetadata 와 페이지 본문이 같은 요청 안에서
+ * 조회를 한 번만 하게 한다.
+ */
+export const getPostForPage = cache(async (postId: number): Promise<PostFull | null> => {
+  if (!Number.isFinite(postId)) return null;
+
+  try {
+    return await withServerTimeout(async (signal) => {
+      const { data, error } = await supabase
+        .from('sn_posts_full')
+        .select('*')
+        .eq('id', postId)
+        .abortSignal(signal)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') return null; // 결과 없음
+        throw error;
+      }
+      return data as PostFull;
+    });
+  } catch (error) {
+    console.error(`[post ${postId}] 서버 조회 실패 — 클라이언트에서 다시 시도합니다:`, error);
+    return null;
+  }
+});
 
 /** 메뉴 아래 달린 속성(아카이브의 서브카테고리 등) */
 export async function getSubcategoriesServer(categoryId: number): Promise<Category[]> {

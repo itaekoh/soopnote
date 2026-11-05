@@ -15,16 +15,23 @@ import { getCurrentUser, getCurrentUserRole } from '@/lib/supabase/current-user'
 import type { PostFull } from '@/lib/types/database.types';
 import { pushToDataLayer } from '@/lib/types/gtm';
 
-export default function WildflowerDetailClient({ postId }: { postId: number }) {
+export default function WildflowerDetailClient({
+  postId,
+  initialPost = null,
+}: {
+  postId: number;
+  /** 서버가 미리 받아 넘긴 글. 있으면 브라우저가 다시 받지 않는다. */
+  initialPost?: PostFull | null;
+}) {
   const router = useRouter();
 
-  const [post, setPost] = useState<PostFull | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState<PostFull | null>(initialPost);
+  const [loading, setLoading] = useState(!initialPost);
   const [error, setError] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(initialPost?.like_count ?? 0);
   const [isLiking, setIsLiking] = useState(false);
-  const [commentCount, setCommentCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(initialPost?.comment_count ?? 0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -113,7 +120,9 @@ export default function WildflowerDetailClient({ postId }: { postId: number }) {
         return;
       }
 
-      const postData = await getPostFullById(postId);
+      // 서버가 이미 글을 넘겨줬으면 다시 받지 않는다.
+      // 조회수 증가와 GTM 이벤트는 아래에서 그대로 처리한다.
+      const postData = initialPost ?? (await getPostFullById(postId));
 
       if (!postData) {
         setError('게시글을 찾을 수 없습니다.');

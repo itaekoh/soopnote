@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { notFound } from 'next/navigation';
+import { getPostForPage } from '@/lib/api/server-posts';
+import { ArticleJsonLd } from '@/components/ArticleJsonLd';
 import LogsDetailClient from './LogsDetailClient';
 
 type Props = {
@@ -7,15 +9,11 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const supabase = await createClient();
   const { id } = await params;
   const postId = Number(id);
 
-  const { data: post } = await supabase
-    .from('sn_posts_full')
-    .select('*')
-    .eq('id', postId)
-    .single();
+  // cache() 로 감싸져 있어 아래 페이지 본문과 조회를 공유한다.
+  const post = await getPostForPage(postId);
 
   if (!post) {
     return {
@@ -69,7 +67,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/**
+ * 본문을 서버에서 그린다.
+ *
+ * 예전에는 메타데이터만 서버에서 만들고 본문은 브라우저가 따로 받아 왔다.
+ * 그래서 크롤러가 처음 받는 HTML 에 글이 없었다(보이는 텍스트 273자).
+ * 이제 글을 서버에서 받아 넘기므로 HTML 안에 본문이 들어간다.
+ */
+export const revalidate = 300;
+
 export default async function LogsDetailPage({ params }: Props) {
   const { id } = await params;
-  return <LogsDetailClient postId={Number(id)} />;
+  const postId = Number(id);
+  const post = await getPostForPage(postId);
+
+  // 없는 글은 빈 화면 대신 제대로 404 를 준다.
+  // 예전에는 클라이언트가 "찾을 수 없습니다" 를 그렸고, 서버는 200 을
+  // 돌려줬다. 검색엔진에는 '내용 없는 정상 페이지' 로 보인다.
+  if (!post) notFound();
+
+  return (
+    <>
+      <ArticleJsonLd post={post} url={`https://www.soopnote.com/logs/${postId}`} />
+      <LogsDetailClient postId={postId} initialPost={post} />
+    </>
+  );
 }
