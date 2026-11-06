@@ -29,8 +29,12 @@ export default function AdSlot({ adSlot, adFormat, className }: AdSlotProps) {
     }
   }, []);
 
-  // AdSense 미승인 상태에서는 placeholder 표시
-  if (process.env.NODE_ENV !== 'production' || !process.env.NEXT_PUBLIC_ADSENSE_ENABLED) {
+  // AdSense 미승인(ENABLED 미설정): 운영에서는 아무것도 표시하지 않음 — 빈 "광고 영역" 박스가
+  // 사용자에게 미완성 화면처럼 보였음. 개발 환경에서만 위치 확인용 placeholder 표시.
+  if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_ADSENSE_ENABLED) {
+    return null;
+  }
+  if (process.env.NODE_ENV !== 'production') {
     return (
       <div
         className={`flex items-center justify-center bg-gray-100 border border-dashed border-gray-300 rounded-xl text-gray-400 text-sm py-8 ${className ?? ''}`}

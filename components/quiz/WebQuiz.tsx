@@ -11,12 +11,13 @@ interface WebQuizProps {
   initialQuestions: WebQuizQuestion[];
 }
 
-interface AnswerRecord {
+export interface AnswerRecord {
   speciesId: string;
   correct: boolean;
 }
 
-type Phase = 'intro' | 'loading' | 'playing' | 'mid-ad' | 'finished';
+// 중간 광고 단계(mid-ad)는 제거 — 5문제 체험 흐름을 끊지 않도록 (광고는 결과 화면에서만)
+type Phase = 'intro' | 'loading' | 'playing' | 'finished';
 
 /** 모든 이미지를 프리로드하고 완료 시 resolve */
 function preloadImages(urls: string[]): Promise<void> {
@@ -76,12 +77,6 @@ export default function WebQuiz({ initialQuestions }: WebQuizProps) {
   const advanceToNext = useCallback(() => {
     const nextIndex = currentIndex + 1;
 
-    // Show mid-quiz ad after question 3 (index 2)
-    if (currentIndex === 2 && nextIndex < total) {
-      setPhase('mid-ad');
-      return;
-    }
-
     if (nextIndex >= total) {
       setPhase('finished');
       return;
@@ -111,23 +106,15 @@ export default function WebQuiz({ initialQuestions }: WebQuizProps) {
     if (!showFeedback) return;
 
     const timer = setTimeout(() => {
-      if (currentIndex + 1 >= total && currentIndex !== 2) {
-        setPhase('finished');
-      } else {
-        advanceToNext();
-      }
+      advanceToNext();
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [showFeedback, advanceToNext, currentIndex, total]);
+  }, [showFeedback, advanceToNext]);
 
   const handleStart = () => {
     setLoadProgress(0);
     setPhase('loading');
-  };
-
-  const handleRetry = () => {
-    window.location.reload();
   };
 
   const handleQuit = () => {
@@ -136,13 +123,6 @@ export default function WebQuiz({ initialQuestions }: WebQuizProps) {
     setSelectedAnswer(null);
     setShowFeedback(false);
     setAnswers([]);
-  };
-
-  const handleAdContinue = () => {
-    setPhase('playing');
-    setCurrentIndex((prev) => prev + 1);
-    setSelectedAnswer(null);
-    setShowFeedback(false);
   };
 
   // ──────────────── INTRO ────────────────
@@ -207,27 +187,9 @@ export default function WebQuiz({ initialQuestions }: WebQuizProps) {
     );
   }
 
-  // ──────────────── MID-AD ────────────────
-  if (phase === 'mid-ad') {
-    return (
-      <div className="space-y-4">
-        <AdSlot adSlot="quiz-between" />
-        <div className="text-center">
-          <button
-            onClick={handleAdContinue}
-            className="px-6 py-3 bg-green-700 text-white font-medium rounded-xl hover:bg-green-800 transition-colors"
-          >
-            계속 풀기
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // ──────────────── FINISHED ────────────────
   if (phase === 'finished') {
-    const score = answers.filter((a) => a.correct).length;
-    return <QuizSummary score={score} total={total} onRetry={handleRetry} />;
+    return <QuizSummary questions={initialQuestions} answers={answers} />;
   }
 
   // ──────────────── PLAYING ────────────────
