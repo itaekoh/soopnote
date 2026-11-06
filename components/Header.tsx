@@ -1,6 +1,6 @@
 'use client';
 
-import { Leaf, LogOut, User as UserIcon, Edit, Shield, Menu, X, Settings } from 'lucide-react';
+import { Leaf, LogOut, User as UserIcon, Edit, Shield, Menu, X, Settings, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -59,9 +59,33 @@ export function Header() {
 
         {/* 데스크톱 네비게이션 */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link className="text-sm hover:text-green-700 transition-colors" href="/treeoh">
-            트리오
-          </Link>
+          {/* 트리오 — 서브메뉴 (트리오 소개 / 일일 퀴즈) */}
+          <div className="relative group">
+            <Link
+              className="text-sm hover:text-green-700 transition-colors inline-flex items-center gap-1"
+              href="/treeoh"
+              aria-haspopup="true"
+            >
+              트리오
+              <ChevronDown className="w-3.5 h-3.5 transition-transform group-hover:rotate-180" aria-hidden="true" />
+            </Link>
+            <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 hidden group-hover:block group-focus-within:block z-50">
+              <div className="w-36 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg">
+                <Link
+                  href="/treeoh"
+                  className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 hover:text-green-700"
+                >
+                  트리오 소개
+                </Link>
+                <Link
+                  href="/quiz"
+                  className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-50 hover:text-green-700"
+                >
+                  일일 퀴즈
+                </Link>
+              </div>
+            </div>
+          </div>
           <Link className="text-sm hover:text-green-700 transition-colors" href="/wildflower">
             식물 관찰
           </Link>
@@ -189,13 +213,24 @@ export function Header() {
 
           <div className="h-[calc(100vh-73px)] overflow-y-auto p-6 bg-[#F5F3EE]">
             <div className="flex flex-col space-y-3">
-              <Link
-                href="/treeoh"
-                onClick={() => setShowMobileMenu(false)}
-                className="block text-base py-4 px-4 rounded-xl bg-white text-gray-900 font-medium shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
-              >
-                🌿 트리오
-              </Link>
+              {/* 트리오 — 하위 메뉴를 펼친 상태로 표시 (모바일은 다 보이는 게 편함) */}
+              <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+                <div className="text-base py-3 px-4 text-gray-900 font-medium">🌿 트리오</div>
+                <Link
+                  href="/treeoh"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="block text-[15px] py-3 pl-10 pr-4 text-gray-800 border-t border-gray-100 hover:bg-gray-50 active:bg-gray-100"
+                >
+                  트리오 소개
+                </Link>
+                <Link
+                  href="/quiz"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="block text-[15px] py-3 pl-10 pr-4 text-gray-800 border-t border-gray-100 hover:bg-gray-50 active:bg-gray-100"
+                >
+                  일일 퀴즈
+                </Link>
+              </div>
               <Link
                 href="/wildflower"
                 onClick={() => setShowMobileMenu(false)}
