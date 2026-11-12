@@ -9,6 +9,8 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/write',
           '/write/*',
+          '/preview',
+          '/preview/*',
           '/admin',
           '/account',
           '/api/*',

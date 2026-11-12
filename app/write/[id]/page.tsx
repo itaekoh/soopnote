@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Editor } from '@tinymce/tinymce-react';
-import { Leaf, Stethoscope, BookOpen, Save, X, Calendar, Upload, FileText } from 'lucide-react';
+import { Leaf, Stethoscope, BookOpen, Save, X, Calendar, Upload, FileText, Eye } from 'lucide-react';
 import { getMenuCategories, getCategoryAttributesGrouped } from '@/lib/api/categories';
 import { createPost, getPostFullById, updatePost } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase/client';
@@ -803,6 +803,16 @@ export default function EditPostPage() {
             <X className="w-5 h-5" />
             취소
           </button>
+          <a
+            href={`/preview/${postId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-3 rounded-lg bg-white border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
+            title="저장된 내용을 새 탭에서 미리봅니다"
+          >
+            <Eye className="w-5 h-5" />
+            미리보기
+          </a>
           <button
             onClick={() => handleSave(true)}
             disabled={saving}
