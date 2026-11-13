@@ -324,15 +324,15 @@ export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
  */
 export async function incrementViewCount(postId: number): Promise<void> {
   try {
-    // 현재 게시글 조회
-    const post = await getPostById(postId);
-    if (post) {
-      // 조회수 1 증가
-      await supabase
-        .from('sn_posts')
-        .update({ view_count: post.view_count + 1 })
-        .eq('id', postId);
-    }
+    // 원자적 증가 (SECURITY DEFINER RPC → RLS 우회).
+    //
+    // 예전에는 getPostById 로 읽은 뒤 count+1 을 update 했는데, 두 가지가 깨졌다:
+    //   1) 익명 사용자의 sn_posts UPDATE 는 RLS 가 조용히 막아서(0행, 에러 없음)
+    //      로그인 상태로 본 조회만 집계됐다 → 실제 독자 대비 크게 누락.
+    //   2) read-then-write 라 동시 접속 시 레이스로 증가분이 유실됐다.
+    // RPC 는 published 글만 증가시키고 anon/authenticated 모두에 GRANT 돼 있다.
+    const { error } = await supabase.rpc('increment_post_view', { p_post_id: postId });
+    if (error) console.error('조회수 증가 실패:', error.message);
   } catch (error) {
     console.error('조회수 증가 중 오류:', error);
   }
