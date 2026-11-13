@@ -135,8 +135,12 @@ export default function WildflowerDetailClient({
       setCommentCount(postData.comment_count);
       setLoading(false);
 
-      // 조회수 증가
-      incrementViewCount(postId).catch(console.error);
+      // 조회수 증가 — 반환된 최신 숫자로 화면 갱신 (ISR 캐시로 얼어붙은 값 보정)
+      incrementViewCount(postId)
+        .then((n) => {
+          if (typeof n === 'number') setPost((p) => (p ? { ...p, view_count: n } : p));
+        })
+        .catch(console.error);
 
       // GTM 이벤트: 게시글 조회
       pushToDataLayer({

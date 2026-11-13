@@ -322,19 +322,28 @@ export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
 /**
  * 조회수 증가
  */
-export async function incrementViewCount(postId: number): Promise<void> {
+export async function incrementViewCount(postId: number): Promise<number | null> {
   try {
-    // 원자적 증가 (SECURITY DEFINER RPC → RLS 우회).
+    // 원자적 증가 (SECURITY DEFINER RPC → RLS 우회). 증가된 최신 조회수를 반환한다.
     //
     // 예전에는 getPostById 로 읽은 뒤 count+1 을 update 했는데, 두 가지가 깨졌다:
     //   1) 익명 사용자의 sn_posts UPDATE 는 RLS 가 조용히 막아서(0행, 에러 없음)
     //      로그인 상태로 본 조회만 집계됐다 → 실제 독자 대비 크게 누락.
     //   2) read-then-write 라 동시 접속 시 레이스로 증가분이 유실됐다.
     // RPC 는 published 글만 증가시키고 anon/authenticated 모두에 GRANT 돼 있다.
-    const { error } = await supabase.rpc('increment_post_view', { p_post_id: postId });
-    if (error) console.error('조회수 증가 실패:', error.message);
+    //
+    // 반환값으로 최신 조회수를 돌려주는 이유: 상세 페이지는 5분 ISR 캐시라
+    // 서버가 넘기는 view_count 가 얼어붙는다. 클라이언트가 이 반환값으로
+    // 화면을 갱신하면 캐시와 무관하게 실시간 숫자를 보여줄 수 있다.
+    const { data, error } = await supabase.rpc('increment_post_view', { p_post_id: postId });
+    if (error) {
+      console.error('조회수 증가 실패:', error.message);
+      return null;
+    }
+    return typeof data === 'number' ? data : null;
   } catch (error) {
     console.error('조회수 증가 중 오류:', error);
+    return null;
   }
 }
 
