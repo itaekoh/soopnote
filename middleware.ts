@@ -102,7 +102,11 @@ export async function middleware(request: NextRequest) {
     // 라우트를 새로 만들 때는 미들웨어에 기대지 말고 여기서 직접 확인할 것.
     //
     // 여기서 막아야 할 것은 관리자 '화면' 이고, 그건 아래 역할 검사가 맡는다.
-    if (pathname.startsWith('/api') || pathname.startsWith('/write')) {
+    if (
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/write') ||
+      pathname.startsWith('/preview')
+    ) {
       return response
     }
 
