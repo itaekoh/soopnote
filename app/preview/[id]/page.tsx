@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Clock, MapPin, ArrowLeft, User, Edit, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import type { PostFull } from '@/lib/types/database.types';
@@ -30,10 +31,28 @@ export default async function PreviewPage({ params }: Props) {
   const postId = Number(id);
   if (!Number.isFinite(postId)) notFound();
 
-  // 로그인 쿠키를 들고 조회 → RLS 에 의해 관리자(작성자)만 비공개 글을 볼 수 있다.
-  // 비로그인·권한 없음·없는 글이면 null 이 되어 404.
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  // 1) 로그인 확인 (쿠키 세션). 비로그인 → 404
+  const cookieClient = await createClient();
+  const { data: { user } } = await cookieClient.auth.getUser();
+  if (!user) notFound();
+
+  // 2) 권한 확인 (관리자/작성자만). service role 로 역할 조회 후 검증.
+  //    draft 는 RLS 로 작성자에게도 안 열리므로, 인증을 직접 확인한 뒤 service role 로 읽는다
+  //    (admin API 들과 동일한 패턴).
+  const service = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
+  const { data: profile } = await service
+    .from('sn_users')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  if (!profile || !['super_admin', 'writer'].includes(profile.role)) notFound();
+
+  // 3) 글 조회 (service role → draft 포함). 없으면 404
+  const { data, error } = await service
     .from('sn_posts_full')
     .select('*')
     .eq('id', postId)
