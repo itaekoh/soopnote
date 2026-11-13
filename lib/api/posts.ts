@@ -322,8 +322,29 @@ export async function getFeaturedPosts(limit: number = 5): Promise<PostFull[]> {
 /**
  * 조회수 증가
  */
+const VIEW_LOG_KEY = 'post_view_log';
+const VIEW_WINDOW_MS = 24 * 60 * 60 * 1000; // 24시간
+
 export async function incrementViewCount(postId: number): Promise<number | null> {
   try {
+    // 24시간당 1회만 집계 (회원·게스트 동일).
+    // 같은 브라우저에서 새로고침/연속 재방문은 중복 집계하지 않고, 24시간이 지나
+    // 다시 오면 1회 더 집계한다('일 방문' 성격). localStorage 에 글별 마지막
+    // 집계 시각을 기록한다. 조회수는 보안 대상이 아니라 클라이언트 중복방지로 충분하다.
+    const hasWindow = typeof window !== 'undefined';
+    const now = Date.now();
+
+    if (hasWindow) {
+      let last: unknown;
+      try {
+        const raw = JSON.parse(localStorage.getItem(VIEW_LOG_KEY) || '{}');
+        if (raw && typeof raw === 'object' && !Array.isArray(raw)) last = raw[String(postId)];
+      } catch {}
+      if (typeof last === 'number' && now - last < VIEW_WINDOW_MS) {
+        return null; // 24시간 내 재방문 → 집계하지 않음
+      }
+    }
+
     // 원자적 증가 (SECURITY DEFINER RPC → RLS 우회). 증가된 최신 조회수를 반환한다.
     //
     // 예전에는 getPostById 로 읽은 뒤 count+1 을 update 했는데, 두 가지가 깨졌다:
@@ -340,6 +361,17 @@ export async function incrementViewCount(postId: number): Promise<number | null>
       console.error('조회수 증가 실패:', error.message);
       return null;
     }
+
+    // 증가가 실제로 일어난 뒤에만 집계 시각을 기록한다(실패 시 다음 방문에 재시도되도록).
+    if (hasWindow && typeof data === 'number') {
+      try {
+        const raw = JSON.parse(localStorage.getItem(VIEW_LOG_KEY) || '{}');
+        const log = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+        log[String(postId)] = now;
+        localStorage.setItem(VIEW_LOG_KEY, JSON.stringify(log));
+      } catch {}
+    }
+
     return typeof data === 'number' ? data : null;
   } catch (error) {
     console.error('조회수 증가 중 오류:', error);
