@@ -331,9 +331,16 @@ export async function incrementViewCount(postId: number): Promise<number | null>
     // 같은 브라우저에서 새로고침/연속 재방문은 중복 집계하지 않고, 24시간이 지나
     // 다시 오면 1회 더 집계한다('일 방문' 성격). localStorage 에 글별 마지막
     // 집계 시각을 기록한다. 조회수는 보안 대상이 아니라 클라이언트 중복방지로 충분하다.
+    //
+    // ★ 반환값은 '집계 여부와 무관하게' 언제나 현재 DB 조회수다.
+    //   상세 페이지는 5분 ISR 캐시라 서버가 넘기는 view_count 가 얼어붙어, 화면이
+    //   실제 DB 값보다 뒤처져 보인다(예: 화면 45 vs DB 52). 그래서 집계하지 않는
+    //   방문에서도 현재 값을 읽어와 돌려주고, 클라이언트가 그 값으로 화면을 갱신해
+    //   항상 진짜 숫자를 보여주게 한다.
     const hasWindow = typeof window !== 'undefined';
     const now = Date.now();
 
+    let deduped = false;
     if (hasWindow) {
       let last: unknown;
       try {
@@ -341,38 +348,38 @@ export async function incrementViewCount(postId: number): Promise<number | null>
         if (raw && typeof raw === 'object' && !Array.isArray(raw)) last = raw[String(postId)];
       } catch {}
       if (typeof last === 'number' && now - last < VIEW_WINDOW_MS) {
-        return null; // 24시간 내 재방문 → 집계하지 않음
+        deduped = true; // 24시간 내 재방문 → 집계하지 않음(화면 표시는 아래에서 현재값으로)
       }
     }
 
-    // 원자적 증가 (SECURITY DEFINER RPC → RLS 우회). 증가된 최신 조회수를 반환한다.
-    //
-    // 예전에는 getPostById 로 읽은 뒤 count+1 을 update 했는데, 두 가지가 깨졌다:
-    //   1) 익명 사용자의 sn_posts UPDATE 는 RLS 가 조용히 막아서(0행, 에러 없음)
-    //      로그인 상태로 본 조회만 집계됐다 → 실제 독자 대비 크게 누락.
-    //   2) read-then-write 라 동시 접속 시 레이스로 증가분이 유실됐다.
-    // RPC 는 published 글만 증가시키고 anon/authenticated 모두에 GRANT 돼 있다.
-    //
-    // 반환값으로 최신 조회수를 돌려주는 이유: 상세 페이지는 5분 ISR 캐시라
-    // 서버가 넘기는 view_count 가 얼어붙는다. 클라이언트가 이 반환값으로
-    // 화면을 갱신하면 캐시와 무관하게 실시간 숫자를 보여줄 수 있다.
-    const { data, error } = await supabase.rpc('increment_post_view', { p_post_id: postId });
-    if (error) {
-      console.error('조회수 증가 실패:', error.message);
-      return null;
+    if (!deduped) {
+      // 원자적 증가 (SECURITY DEFINER RPC → RLS 우회). 증가된 최신 조회수를 반환.
+      //   예전 read-then-write 는 ① 익명 UPDATE 가 RLS 에 막혀 로그인 조회만 집계되고
+      //   ② 동시 접속 레이스로 유실됐다. RPC 는 published 글만 원자적 증가.
+      const { data, error } = await supabase.rpc('increment_post_view', { p_post_id: postId });
+      if (!error && typeof data === 'number') {
+        // 증가가 실제로 일어난 뒤에만 집계 시각 기록(실패 시 다음 방문에 재시도되도록).
+        if (hasWindow) {
+          try {
+            const raw = JSON.parse(localStorage.getItem(VIEW_LOG_KEY) || '{}');
+            const log = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+            log[String(postId)] = now;
+            localStorage.setItem(VIEW_LOG_KEY, JSON.stringify(log));
+          } catch {}
+        }
+        return data; // 증가된 최신값
+      }
+      if (error) console.error('조회수 증가 실패:', error.message);
+      // 에러 시엔 아래 현재값 읽기로 폴백
     }
 
-    // 증가가 실제로 일어난 뒤에만 집계 시각을 기록한다(실패 시 다음 방문에 재시도되도록).
-    if (hasWindow && typeof data === 'number') {
-      try {
-        const raw = JSON.parse(localStorage.getItem(VIEW_LOG_KEY) || '{}');
-        const log = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
-        log[String(postId)] = now;
-        localStorage.setItem(VIEW_LOG_KEY, JSON.stringify(log));
-      } catch {}
-    }
-
-    return typeof data === 'number' ? data : null;
+    // 집계하지 않는 방문(또는 증가 실패) → 현재 DB 조회수를 읽어와 화면이 진짜 값을 보이게 한다.
+    const { data: row } = await supabase
+      .from('sn_posts_full')
+      .select('view_count')
+      .eq('id', postId)
+      .maybeSingle();
+    return row && typeof row.view_count === 'number' ? row.view_count : null;
   } catch (error) {
     console.error('조회수 증가 중 오류:', error);
     return null;
