@@ -181,8 +181,8 @@ function FeaturedCard({ post }: { post: PostFull }) {
   const style = styleForSlug(post.category_slug);
 
   return (
-    <Link href={`/${post.category_slug}/${post.id}`}>
-      <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer">
+    <Link href={`/${post.category_slug}/${post.id}`} className="block h-full">
+      <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer h-full flex flex-col">
         {/* 썸네일 */}
         {post.featured_image_url ? (
           <div className="relative h-64">
@@ -208,19 +208,20 @@ function FeaturedCard({ post }: { post: PostFull }) {
         )}
 
         {/* 콘텐츠 */}
-        <div className="p-6">
+        <div className="p-6 flex flex-col flex-1">
           <div
-            className={`inline-block px-3 py-1 text-xs rounded-full ${
+            className={`inline-block self-start px-3 py-1 text-xs rounded-full ${
               style?.badge || 'bg-gray-100 text-gray-700'
             } font-medium mb-3`}
           >
             {post.category_name}
           </div>
-          <h3 className="font-bold text-xl text-[#26422E] mb-2 line-clamp-2">{post.title}</h3>
+          {/* 제목이 1줄이어도 2줄 높이를 확보해 카드 간 아래 요소가 어긋나지 않게 한다. */}
+          <h3 className="font-bold text-xl text-[#26422E] mb-2 line-clamp-2 min-h-[3.5rem]">{post.title}</h3>
           <p className="text-sm text-gray-600 line-clamp-2 mb-4">{post.excerpt}</p>
 
-          {/* 메타 정보 */}
-          <div className="flex items-center gap-4 text-xs text-gray-500">
+          {/* 메타 정보 — 카드 높이가 달라도 항상 하단에 정렬 */}
+          <div className="mt-auto flex items-center gap-4 text-xs text-gray-500">
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               <span>{post.published_date}</span>
